@@ -4,6 +4,10 @@ import MatchCard from '@/components/MatchCard';
 import MatchRow from '@/components/MatchRow';
 import { getMatches, demoData } from '@/lib/api';
 
+export function generateStaticParams() {
+  return ['epl', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'ucl', 'f1', 'nba'].map(slug => ({ slug }));
+}
+
 export default async function LeaguePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const league = demoData.leagues.find(l => l.slug === slug);

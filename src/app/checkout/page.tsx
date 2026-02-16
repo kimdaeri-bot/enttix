@@ -1,5 +1,6 @@
 'use client';
 import Header from '@/components/Header';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 export default function CheckoutPage() {
@@ -28,7 +29,7 @@ export default function CheckoutPage() {
             <p className="text-[14px] text-[#6B7280]">Complete your purchase</p>
           </div>
           <div className="flex items-center gap-2">
-            <a href="/" className="text-[13px] text-[#6B7280] hover:text-[#171717]">Home</a>
+            <Link href="/" className="text-[13px] text-[#6B7280] hover:text-[#171717]">Home</Link>
             <button className="text-[13px] text-[#EF4444] hover:text-[#DC2626] font-semibold">Cancel</button>
           </div>
         </div>
