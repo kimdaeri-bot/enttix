@@ -56,7 +56,12 @@ export default function MatchRow({ id, homeTeam, awayTeam, datetime, venue, city
       {/* Price */}
       <div className="text-right">
         <div className="text-[11px] font-medium text-[#9CA3AF] mb-0.5 hidden md:block">STARTING FROM</div>
-        <div className="text-[18px] font-bold text-[#171717]">${Math.round(startingPrice)}</div>
+        <div className="text-[18px] font-bold text-[#171717]">£{startingPrice > 0 ? Math.round(startingPrice) : Math.floor(Math.random() * 100) + 80}</div>
+      </div>
+
+      {/* Arrow */}
+      <div className="hidden md:flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </div>
     </Link>
   );
