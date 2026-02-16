@@ -2,10 +2,14 @@
 import Header from '@/components/Header';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useCart } from '@/context/CartContext';
 
 export default function CheckoutPage() {
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes
+  const { items, totalPrice, totalItems, clearCart } = useCart();
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [agreements, setAgreements] = useState({ fee: false, personal: false, thirdParty: false });
+  const [processing, setProcessing] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 1000);
@@ -16,11 +20,61 @@ export default function CheckoutPage() {
   const seconds = timeLeft % 60;
   const allAgreed = agreements.fee && agreements.personal && agreements.thirdParty;
 
+  const handleCheckout = async () => {
+    setProcessing(true);
+    for (const item of items) {
+      if (item.holdId) {
+        try {
+          await fetch(`https://sandbox-pf.tixstock.com/v1/orders/add/${item.holdId}/${item.quantity}`, {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              buyer_name: 'Demo User', buyer_email: 'test@enttix.com',
+              buyer_phone: '01011112222', shipping_address: 'Demo Address',
+            }),
+          });
+        } catch {}
+      }
+    }
+    clearCart();
+    setProcessing(false);
+    setCompleted(true);
+  };
+
+  if (completed) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FA]">
+        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="max-w-[600px] mx-auto px-4 py-16 text-center">
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-12">
+            <p className="text-[48px] mb-4">🎉</p>
+            <h1 className="text-[28px] font-bold text-[#171717] mb-2">Order Confirmed!</h1>
+            <p className="text-[14px] text-[#6B7280] mb-6">Your tickets have been ordered. You&apos;ll receive a confirmation email shortly.</p>
+            <p className="text-[12px] text-[#F59E0B] italic mb-6">This was a demo transaction. No actual payment was processed.</p>
+            <Link href="/" className="px-6 py-3 rounded-[10px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold text-[14px] transition-colors">
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FA]">
+        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="max-w-[600px] mx-auto px-4 py-16 text-center">
+          <h1 className="text-[24px] font-bold text-[#171717] mb-4">No items in cart</h1>
+          <Link href="/all-tickets" className="text-[#2B7FFF] hover:underline">Browse events</Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]">
-        <Header />
-      </div>
+      <div className="bg-[#0F172A]"><Header /></div>
 
       <div className="max-w-[900px] mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
@@ -29,8 +83,7 @@ export default function CheckoutPage() {
             <p className="text-[14px] text-[#6B7280]">Complete your purchase</p>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/" className="text-[13px] text-[#6B7280] hover:text-[#171717]">Home</Link>
-            <button className="text-[13px] text-[#EF4444] hover:text-[#DC2626] font-semibold">Cancel</button>
+            <Link href="/cart" className="text-[13px] text-[#6B7280] hover:text-[#171717]">← Back to Cart</Link>
           </div>
         </div>
 
@@ -41,7 +94,6 @@ export default function CheckoutPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left Column */}
           <div className="flex-1 flex flex-col gap-6">
             {/* Buyer Info */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
@@ -49,7 +101,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] block mb-1.5">Name</label>
-                  <input defaultValue="ftest ltest" className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF]" />
+                  <input defaultValue="Demo User" className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF]" />
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] block mb-1.5">Email</label>
@@ -65,14 +117,11 @@ export default function CheckoutPage() {
             {/* Shipping Address */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
               <h2 className="text-[16px] font-bold text-[#171717] mb-4">Shipping Address</h2>
-              <textarea
-                defaultValue="31 Incheon tower-daero 25beon-gil, Yeonsu-gu, Incheon, Republic of Korea, 123"
-                rows={2}
-                className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] resize-none"
-              />
+              <textarea defaultValue="31 Incheon tower-daero 25beon-gil, Yeonsu-gu, Incheon, Republic of Korea" rows={2}
+                className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] resize-none" />
             </div>
 
-            {/* Payment Method */}
+            {/* Payment */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
               <h2 className="text-[16px] font-bold text-[#171717] mb-4">Payment Method</h2>
               <div className="flex items-center gap-3 p-3 rounded-[8px] border border-[#2B7FFF] bg-[#EFF6FF]">
@@ -99,7 +148,8 @@ export default function CheckoutPage() {
                 { key: 'personal', label: 'Personal Information Collection' },
                 { key: 'thirdParty', label: 'Third Party Information Sharing' },
               ].map(item => (
-                <label key={item.key} className="flex items-center justify-between py-2 cursor-pointer">
+                <label key={item.key} className="flex items-center justify-between py-2 cursor-pointer"
+                  onClick={() => setAgreements(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}>
                   <div className="flex items-center gap-3">
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${agreements[item.key as keyof typeof agreements] ? 'bg-[#2B7FFF] border-[#2B7FFF]' : 'border-[#D1D5DB]'}`}>
                       {agreements[item.key as keyof typeof agreements] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>}
@@ -113,45 +163,47 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Right Column - Order Summary */}
+          {/* Right Column */}
           <div className="w-full lg:w-[340px] flex-shrink-0">
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 sticky top-4">
               <h2 className="text-[16px] font-bold text-[#171717] mb-4">Order Summary</h2>
-              <div className="flex flex-col gap-2 text-[13px]">
-                <div className="flex justify-between"><span className="text-[#6B7280]">Section</span><span className="font-semibold">104</span></div>
-                <div className="flex justify-between"><span className="text-[#6B7280]">Row</span><span className="font-semibold">Standing</span></div>
-                <div className="flex justify-between"><span className="text-[#6B7280]">Tickets</span><span className="font-semibold">1 ticket</span></div>
-                <div className="flex justify-between"><span className="text-[#6B7280]">Ticket Type</span><span className="font-semibold">eTicket</span></div>
-              </div>
-              <div className="border-t border-[#E5E7EB] mt-4 pt-4">
+
+              {items.map(item => (
+                <div key={item.listingId} className="mb-3 pb-3 border-b border-[#F1F5F9] last:border-0">
+                  <p className="text-[13px] font-semibold text-[#171717] truncate">{item.eventName}</p>
+                  <div className="flex justify-between text-[12px] text-[#6B7280] mt-1">
+                    <span>Sec {item.section} • Row {item.row} × {item.quantity}</span>
+                    <span className="font-semibold text-[#171717]">${(item.pricePerTicket * item.quantity).toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+
+              <div className="border-t border-[#E5E7EB] mt-2 pt-4">
                 <div className="flex justify-between text-[13px] mb-2">
-                  <span className="text-[#6B7280]">Price ($ 151.45 x 1)</span>
-                  <span className="font-semibold">$ 151.45</span>
+                  <span className="text-[#6B7280]">Tickets ({totalItems})</span>
+                  <span className="font-semibold">${totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-[13px] mb-2">
                   <span className="text-[#6B7280]">Service Fee</span>
-                  <span className="font-semibold">$ 0.00</span>
+                  <span className="font-semibold">$0.00</span>
                 </div>
                 <div className="flex justify-between text-[16px] font-bold mt-3 pt-3 border-t border-[#E5E7EB]">
                   <span>Total</span>
-                  <span>$ 151.45</span>
+                  <span>${totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 
               <button
-                disabled={!allAgreed}
-                className={`w-full mt-6 py-3.5 rounded-[12px] font-semibold text-[14px] transition-colors ${allAgreed ? 'bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'}`}
+                onClick={handleCheckout}
+                disabled={!allAgreed || processing}
+                className={`w-full mt-6 py-3.5 rounded-[12px] font-semibold text-[14px] transition-colors ${allAgreed && !processing ? 'bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'}`}
               >
-                Complete Payment
+                {processing ? 'Processing...' : 'Complete Payment'}
               </button>
               <p className="text-center text-[11px] text-[#9CA3AF] mt-2">🔒 Secured with SSL encryption</p>
             </div>
 
-            {/* Event Details */}
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mt-4">
-              <p className="text-[12px] text-[#6B7280] mb-3">
-                You are purchasing tickets for this event. Please verify all details before completing your purchase.
-              </p>
               <div className="flex flex-col gap-2 text-[12px] text-[#6B7280]">
                 <span>✅ 100% Buyer Guarantee</span>
                 <span>🔒 Secure Transaction</span>

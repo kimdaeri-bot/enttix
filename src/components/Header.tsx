@@ -1,94 +1,160 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useCart } from '@/context/CartContext';
+
+const sportsItems = [
+  'Football', 'Tennis', 'Golf', 'Rugby', 'Cricket', 'Formula 1', 'MotoGP',
+  'Boxing', 'UFC', 'Darts', 'Ice Hockey', 'Basketball', 'Baseball',
+  'American Football', 'Winter Games', 'Athletics', 'Cycling',
+];
+
+const concertItems = [
+  'Pop', 'Rock', 'Rap/Hip-hop', 'R&B', 'Country', 'Latin',
+  'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
+];
+
+function toSlug(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+function DropdownMenu({ items, basePath, onClose }: { items: string[]; basePath: string; onClose: () => void }) {
+  return (
+    <div className="absolute top-full left-0 mt-1 bg-white rounded-[12px] shadow-xl border border-[#E5E7EB] py-2 min-w-[220px] z-50 grid grid-cols-2 gap-0">
+      {items.map(item => (
+        <Link
+          key={item}
+          href={`${basePath}/${toSlug(item)}`}
+          className="px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
+          onClick={onClose}
+        >
+          {item}
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function Header({ transparent = false }: { transparent?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  let cartBadge = 0;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { totalItems } = useCart();
+    cartBadge = totalItems;
+  } catch {
+    // CartProvider not mounted yet
+  }
 
-  const navLinks = [
-    { href: '/all-tickets', label: 'All Tickets' },
-    { href: '/cities', label: 'Cities' },
-    { href: '/about', label: 'About Us' },
-  ];
+  const handleEnter = (name: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setOpenDropdown(name);
+  };
+  const handleLeave = () => {
+    timeoutRef.current = setTimeout(() => setOpenDropdown(null), 150);
+  };
+
+  useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 
   return (
     <header className={`w-full px-4 md:px-10 py-0 ${transparent ? '' : 'bg-[#0F172A]'}`}>
       <div className="max-w-[1280px] mx-auto flex items-center justify-between h-[80px]">
-        {/* Logo */}
         <Link href="/" className="hover:opacity-80 transition-opacity">
-          <div className="text-white font-extrabold text-[24px] italic tracking-[-1px]">
-            enttix
-          </div>
+          <div className="text-white font-extrabold text-[24px] italic tracking-[-1px]">enttix</div>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map(link => (
+          {/* Sports dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('sports')} onMouseLeave={handleLeave}>
             <Link
-              key={link.href}
-              href={link.href}
-              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
+              href="/sport/football"
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
             >
-              {link.label}
+              Sports
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
-          ))}
+            {openDropdown === 'sports' && <DropdownMenu items={sportsItems} basePath="/sport" onClose={() => setOpenDropdown(null)} />}
+          </div>
+
+          {/* Concerts dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('concerts')} onMouseLeave={handleLeave}>
+            <Link
+              href="/concert/pop"
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            >
+              Concerts
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
+            </Link>
+            {openDropdown === 'concerts' && <DropdownMenu items={concertItems} basePath="/concert" onClose={() => setOpenDropdown(null)} />}
+          </div>
+
+          <Link href="/all-tickets" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
+            All Tickets
+          </Link>
+          <Link href="/cities" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
+            Cities
+          </Link>
+
           <div className="w-[1px] h-8 bg-[rgba(255,255,255,0.2)] mx-2" />
-          <Link
-            href="/login"
-            className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors"
-          >
+
+          {/* Cart icon */}
+          <Link href="/cart" className="relative px-3 py-2.5 text-[#DBEAFE] hover:text-white transition-colors">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+            </svg>
+            {cartBadge > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#EF4444] text-white text-[10px] font-bold flex items-center justify-center">
+                {cartBadge}
+              </span>
+            )}
+          </Link>
+
+          <Link href="/login" className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors">
             Sign In
           </Link>
-          <Link
-            href="/sell"
-            className="ml-2 px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors"
-          >
+          <Link href="/sell" className="ml-2 px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors">
             Sell Tickets
           </Link>
         </nav>
 
-        {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
           className="md:hidden w-10 h-10 rounded-lg border border-[rgba(255,255,255,0.2)] hover:border-white/40 flex items-center justify-center text-white transition-all active:scale-95"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            {mobileOpen ? (
-              <path d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path d="M4 6h16M4 12h16M4 18h16" />
-            )}
+            {mobileOpen ? <path d="M6 18L18 6M6 6l12 12" /> : <path d="M4 6h16M4 12h16M4 18h16" />}
           </svg>
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden pb-4">
-          {navLinks.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link
-            href="/login"
-            className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white"
-            onClick={() => setMobileOpen(false)}
-          >
-            Sign In
+          <div className="mb-2">
+            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Sports</p>
+            {sportsItems.map(item => (
+              <Link key={item} href={`/sport/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
+                {item}
+              </Link>
+            ))}
+          </div>
+          <div className="mb-2">
+            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Concerts</p>
+            {concertItems.map(item => (
+              <Link key={item} href={`/concert/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
+                {item}
+              </Link>
+            ))}
+          </div>
+          <Link href="/all-tickets" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>All Tickets</Link>
+          <Link href="/cities" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Cities</Link>
+          <Link href="/cart" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
+            Cart {cartBadge > 0 && `(${cartBadge})`}
           </Link>
-          <Link
-            href="/sell"
-            className="block mx-4 mt-2 px-4 py-3 text-center text-[16px] font-semibold text-white bg-[#2B7FFF] rounded-[8px]"
-            onClick={() => setMobileOpen(false)}
-          >
-            Sell Tickets
-          </Link>
+          <Link href="/login" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Sign In</Link>
+          <Link href="/sell" className="block mx-4 mt-2 px-4 py-3 text-center text-[16px] font-semibold text-white bg-[#2B7FFF] rounded-[8px]" onClick={() => setMobileOpen(false)}>Sell Tickets</Link>
         </div>
       )}
     </header>
