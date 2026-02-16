@@ -2,10 +2,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MatchCard from '@/components/MatchCard';
 import MatchRow from '@/components/MatchRow';
-import { demoData } from '@/lib/api';
+import { getMatches } from '@/lib/api';
 
-export default function AllTicketsPage() {
-  const { matches } = demoData;
+export default async function AllTicketsPage() {
+  const matches = await getMatches({ per_page: '50' });
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">

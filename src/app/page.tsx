@@ -3,10 +3,24 @@ import Footer from '@/components/Footer';
 import MatchCard from '@/components/MatchCard';
 import MatchRow from '@/components/MatchRow';
 import Link from 'next/link';
-import { demoData } from '@/lib/api';
+import { getMatches, demoData } from '@/lib/api';
 
-export default function Home() {
-  const { matches, leagues, cities } = demoData;
+const LEAGUE_TABS = [
+  { id: 'epl', label: 'PREMIER LEAGUE', category: 'English Premier League' },
+  { id: 'laliga', label: 'LA LIGA', category: 'Spanish La Liga' },
+  { id: 'bundesliga', label: 'BUNDESLIGA', category: 'German Bundesliga' },
+  { id: 'seriea', label: 'SERIE A', category: 'Italian Serie A' },
+  { id: 'ligue1', label: 'LIGUE 1', category: 'French Ligue 1' },
+  { id: 'ucl', label: 'CHAMPIONS LEAGUE', category: 'Champions League' },
+  { id: 'f1', label: 'FORMULA 1', category: 'Formula 1' },
+  { id: 'nba', label: 'NBA', category: 'NBA' },
+];
+
+const TREND_TAGS = ['Premier League', 'F1 Las Vegas', 'NBA Finals', 'El Clasico', 'Champions League'];
+
+export default async function Home() {
+  const matches = await getMatches({ has_listing: 'true', per_page: '10' });
+  const { cities } = demoData;
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
@@ -34,6 +48,14 @@ export default function Home() {
             {/* Search Bar */}
             <div className="flex flex-col md:flex-row items-stretch gap-3 mt-6 md:mt-10 w-full max-w-[700px]">
               <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-[12px] px-4 py-3 border border-white/10">
+                <label className="text-[11px] font-semibold text-[rgba(219,234,254,0.6)] tracking-[0.5px] block mb-1">SEARCH</label>
+                <input
+                  type="text"
+                  placeholder="Team, event, or venue..."
+                  className="w-full bg-transparent text-white text-[14px] outline-none placeholder:text-[rgba(219,234,254,0.4)]"
+                />
+              </div>
+              <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-[12px] px-4 py-3 border border-white/10">
                 <label className="text-[11px] font-semibold text-[rgba(219,234,254,0.6)] tracking-[0.5px] block mb-1">LOCATION</label>
                 <select className="w-full bg-transparent text-white text-[14px] outline-none appearance-none cursor-pointer">
                   <option value="" className="text-black">All Locations</option>
@@ -41,6 +63,8 @@ export default function Home() {
                   <option value="manchester" className="text-black">Manchester</option>
                   <option value="barcelona" className="text-black">Barcelona</option>
                   <option value="madrid" className="text-black">Madrid</option>
+                  <option value="paris" className="text-black">Paris</option>
+                  <option value="milan" className="text-black">Milan</option>
                 </select>
               </div>
               <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-[12px] px-4 py-3 border border-white/10">
@@ -48,7 +72,6 @@ export default function Home() {
                 <input
                   type="date"
                   className="w-full bg-transparent text-white text-[14px] outline-none cursor-pointer [color-scheme:dark]"
-                  placeholder="Select Date"
                 />
               </div>
               <button className="bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold text-[14px] px-8 py-3 rounded-[12px] transition-colors active:scale-95">
@@ -56,10 +79,10 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Live Trends */}
-            <div className="flex items-center gap-3 mt-8">
-              <span className="text-[12px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[0.5px]">LIVE TRENDS</span>
-              {['Premier League', 'Spanish La Liga', 'Champions League'].map(t => (
+            {/* Real-Time Trends */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+              <span className="text-[12px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[0.5px]">REAL-TIME TRENDS</span>
+              {TREND_TAGS.map(t => (
                 <span key={t} className="px-3 py-1.5 rounded-full bg-white/10 text-[12px] font-medium text-[#DBEAFE] hover:bg-white/20 cursor-pointer transition-colors">
                   {t}
                 </span>
@@ -77,23 +100,47 @@ export default function Home() {
               <span className="text-[11px] font-semibold text-[#2B7FFF] tracking-[1px]">OFFICIAL</span>
               <span className="text-[11px] font-semibold text-[#9CA3AF] tracking-[1px]">LEAGUES</span>
             </div>
-            <div className="flex items-center gap-6 mb-8">
-              {leagues.map(league => (
+
+            {/* League Tabs - Horizontal Scroll */}
+            <div className="flex items-center gap-4 mb-8 overflow-x-auto pb-2 scrollbar-hide">
+              {LEAGUE_TABS.map(tab => (
                 <Link
-                  key={league.id}
-                  href={`/league/${league.slug}`}
-                  className="text-[15px] font-bold text-[#171717] hover:text-[#2B7FFF] transition-colors pb-2 border-b-2 border-transparent hover:border-[#2B7FFF]"
+                  key={tab.id}
+                  href={`/league/${demoData.leagues.find(l => l.id === tab.id)?.slug || tab.id}`}
+                  className="text-[13px] md:text-[15px] font-bold text-[#171717] hover:text-[#2B7FFF] transition-colors pb-2 border-b-2 border-transparent hover:border-[#2B7FFF] whitespace-nowrap flex-shrink-0"
                 >
-                  {league.name.toUpperCase()}
+                  {tab.label}
                 </Link>
               ))}
             </div>
 
-            {/* Match Schedule Header */}
+            {/* Trending Events */}
             <div className="flex items-center justify-between mb-6">
+              <h2 className="text-[20px] font-bold text-[#171717]">Trending Events</h2>
+              <Link href="/all-tickets" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
+                View All →
+              </Link>
+            </div>
+            <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide">
+              {matches.slice(0, 5).map((m, i) => (
+                <MatchCard
+                  key={m.id}
+                  id={m.id}
+                  homeTeam={m.homeTeam}
+                  awayTeam={m.awayTeam}
+                  datetime={m.datetime}
+                  startingPrice={m.startingPrice}
+                  currency={m.currency}
+                  badge={i < 3 ? 'SELLING FAST' : undefined}
+                />
+              ))}
+            </div>
+
+            {/* Match Schedule */}
+            <div className="flex items-center justify-between mb-6 mt-8">
               <h2 className="text-[20px] font-bold text-[#171717]">Match Schedule</h2>
               <Link href="/all-tickets" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
-                View All Schedule
+                View Full Schedule →
               </Link>
             </div>
 
@@ -129,10 +176,15 @@ export default function Home() {
       {/* Newly Added Tickets */}
       <section className="py-12 md:py-16 px-4">
         <div className="max-w-[1280px] mx-auto">
-          <h2 className="text-[20px] font-bold text-[#171717] mb-6">
-            Newly Added<br />
-            <span className="text-[#2B7FFF]">TICKET</span>
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-[20px] font-bold text-[#171717]">
+              Newly Added<br />
+              <span className="text-[#2B7FFF]">TICKET</span>
+            </h2>
+            <Link href="/all-tickets" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
+              View All →
+            </Link>
+          </div>
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {matches.map(m => (
               <MatchCard
@@ -178,7 +230,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Reviews */}
+      {/* Customer Reviews */}
       <section className="py-12 md:py-24 px-4 border-t border-[#F5F5F5]">
         <div className="max-w-[1280px] mx-auto">
           <h2 className="text-[24px] font-bold text-[#171717] text-center mb-10">Customer Reviews</h2>

@@ -7,12 +7,11 @@ interface MatchCardProps {
   datetime: string;
   startingPrice: number;
   currency: string;
+  badge?: string;
 }
 
-export default function MatchCard({ id, homeTeam, awayTeam, datetime, startingPrice, currency }: MatchCardProps) {
+export default function MatchCard({ id, homeTeam, awayTeam, datetime, startingPrice, badge }: MatchCardProps) {
   const date = new Date(datetime);
-  const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  const day = date.getDate();
 
   return (
     <Link href={`/event/${id}`} className="block min-w-[260px] max-w-[300px] flex-shrink-0">
@@ -20,9 +19,17 @@ export default function MatchCard({ id, homeTeam, awayTeam, datetime, startingPr
         {/* Top blue bar */}
         <div className="bg-[#0F172A] px-4 py-2 flex items-center justify-between">
           <span className="text-[11px] font-semibold text-[#DBEAFE] tracking-[0.5px]">TICKET</span>
-          <span className="text-[11px] font-medium text-[#94A3B8]">
-            {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
-          </span>
+          <div className="flex items-center gap-2">
+            {badge && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#EF4444]/20 text-[10px] font-semibold text-[#FCA5A5]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#EF4444] animate-pulse" />
+                {badge}
+              </span>
+            )}
+            <span className="text-[11px] font-medium text-[#94A3B8]">
+              {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+            </span>
+          </div>
         </div>
         {/* Content */}
         <div className="p-5">

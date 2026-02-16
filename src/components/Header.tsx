@@ -4,13 +4,11 @@ import { useState } from 'react';
 
 export default function Header({ transparent = false }: { transparent?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [user] = useState<{ name: string } | null>(null); // TODO: auth
 
   const navLinks = [
     { href: '/all-tickets', label: 'All Tickets' },
-    { href: '/leagues', label: 'Leagues' },
     { href: '/cities', label: 'Cities' },
-    { href: '/about', label: 'About' },
+    { href: '/about', label: 'About Us' },
   ];
 
   return (
@@ -35,21 +33,18 @@ export default function Header({ transparent = false }: { transparent?: boolean 
             </Link>
           ))}
           <div className="w-[1px] h-8 bg-[rgba(255,255,255,0.2)] mx-2" />
-          {user ? (
-            <Link href="/mypage" className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/10 text-white">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-[14px] font-semibold">
-                {user.name[0]}
-              </div>
-              <span className="text-[14px] max-w-[120px] truncate">{user.name}</span>
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors"
-            >
-              Login
-            </Link>
-          )}
+          <Link
+            href="/login"
+            className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/sell"
+            className="ml-2 px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors"
+          >
+            Sell Tickets
+          </Link>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -85,7 +80,14 @@ export default function Header({ transparent = false }: { transparent?: boolean 
             className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white"
             onClick={() => setMobileOpen(false)}
           >
-            Login
+            Sign In
+          </Link>
+          <Link
+            href="/sell"
+            className="block mx-4 mt-2 px-4 py-3 text-center text-[16px] font-semibold text-white bg-[#2B7FFF] rounded-[8px]"
+            onClick={() => setMobileOpen(false)}
+          >
+            Sell Tickets
           </Link>
         </div>
       )}
