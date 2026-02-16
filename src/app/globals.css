@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #F5F7FA;
+  --white: #FFFFFF;
+  --text: #171717;
+  --text-muted: #6B7280;
+  --accent: #2B7FFF;
+  --accent-hover: #1D6AE5;
+  --navy: #0F172A;
+  --navy-gradient: linear-gradient(135deg, #0F172A 0%, #1E3A5F 50%, #0F172A 100%);
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-xs: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hero gradient background like enttix.com */
+.hero-bg {
+  background: var(--navy-gradient);
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 30% 50%, rgba(43,127,255,0.15) 0%, transparent 70%),
+              radial-gradient(ellipse at 70% 50%, rgba(43,127,255,0.1) 0%, transparent 70%);
+}
+
+/* Smooth transitions */
+a, button { transition: all 0.2s ease; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Match schedule table-like layout */
+.match-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 200px 120px;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.match-row:hover { background: #F8FAFC; }
+
+@media (max-width: 768px) {
+  .match-row {
+    grid-template-columns: 50px 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+}
+
+/* Ticket card in event detail */
+.ticket-card {
+  display: grid;
+  grid-template-columns: 80px 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  transition: all 0.2s;
+}
+.ticket-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
