@@ -181,7 +181,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
   const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Dates';
 
   return (
-    <div ref={containerRef} className={`relative w-full ${fullWidth ? '' : 'max-w-[580px]'}`}>
+    <div ref={containerRef} className={`relative w-full z-[60] ${fullWidth ? '' : 'max-w-[580px]'}`}>
       {/* Search Bar Pill */}
       <div className={`bg-white rounded-full shadow-xl border border-[#E0E7EF] flex items-center transition-all duration-300 ${expanded ? 'ring-2 ring-[#2B7FFF]/20 border-[#2B7FFF]/30' : ''} ${compact ? 'px-1.5 py-1.5' : 'px-2 py-2'}`}>
         <div className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${expanded ? 'flex-1 min-w-0' : 'flex-shrink-0'} ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`} onClick={!expanded ? handleExpand : undefined}>
@@ -231,7 +231,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* Suggestions Dropdown */}
       {showDropdown && expanded && !loading && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-xl border border-[#E5E7EB] py-2 z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-2xl border border-[#E5E7EB] py-2 z-[100] overflow-hidden">
           {query.trim() && (
             <div className="px-3 py-1">
               <button onClick={() => handleSuggestionClick(query)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left">
