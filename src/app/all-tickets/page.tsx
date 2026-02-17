@@ -144,7 +144,7 @@ function AllTicketsContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="hero-bg pb-16">
+      <div className="hero-bg pb-28">
         <Header transparent />
         <div className="max-w-[1280px] mx-auto px-4 pt-8">
           <div className="flex items-center gap-2 mb-2">
