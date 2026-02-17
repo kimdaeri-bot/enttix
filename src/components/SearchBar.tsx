@@ -80,9 +80,9 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
   const handleSearch = async () => {
     if (!query.trim() || loading) return;
 
-    // Route to planner if detected
+    // Planner queries also go to all-tickets with planner flag
     if (isPlannerQuery(query)) {
-      router.push(`/planner?q=${encodeURIComponent(query.trim())}`);
+      router.push(`/all-tickets?planner=1&q=${encodeURIComponent(query.trim())}`);
       return;
     }
 
@@ -112,9 +112,9 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
     setQuery(suggestion);
     setShowDropdown(false);
 
-    // Route to planner if detected
+    // Planner queries go to all-tickets with planner flag
     if (isPlannerQuery(suggestion)) {
-      router.push(`/planner?q=${encodeURIComponent(suggestion)}`);
+      router.push(`/all-tickets?planner=1&q=${encodeURIComponent(suggestion)}`);
       return;
     }
 
