@@ -54,6 +54,30 @@ const typeConfig: Record<string, { icon: string; label: string; color: string; b
   transport: { icon: '🚇', label: 'Transport', color: '#6B7280', bg: '#F3F4F6' },
 };
 
+// Google Calendar URL builder
+function buildCalendarUrl(title: string, date: string, time: string, desc: string, location: string, durationMin = 60): string {
+  const dt = date.replace(/-/g, '') + 'T' + time.replace(':', '') + '00';
+  const h = Math.floor(durationMin / 60);
+  const m = durationMin % 60;
+  const endH = parseInt(time.split(':')[0]) + h;
+  const endM = (parseInt(time.split(':')[1]) + m) % 60;
+  const endDt = date.replace(/-/g, '') + 'T' + String(endH).padStart(2, '0') + String(endM).padStart(2, '0') + '00';
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${dt}/${endDt}&details=${encodeURIComponent(desc)}&location=${encodeURIComponent(location)}`;
+}
+
+// Build Google Calendar URL for entire day
+function buildDayCalendarUrl(day: PlannerDay, city: string): string {
+  const items = day.items.map(i => `${i.time} ${(typeConfig[i.type] || typeConfig.attraction).icon} ${i.name} - ${i.desc}`).join('\n');
+  const dt = day.date.replace(/-/g, '') + 'T090000';
+  const endDt = day.date.replace(/-/g, '') + 'T230000';
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${city} Day ${day.day}: ${day.title}`)}&dates=${dt}/${endDt}&details=${encodeURIComponent(items)}&location=${encodeURIComponent(city)}`;
+}
+
+// Google Maps search URL
+function buildMapsUrl(name: string, city: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + city)}`;
+}
+
 export default function SearchBar({ compact = false, fullWidth = false, inline = false }: { compact?: boolean; fullWidth?: boolean; inline?: boolean }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(true);
@@ -269,10 +293,20 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                     {/* Day header */}
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-[#0F172A] flex items-center justify-center text-white font-bold text-[11px]">D{day.day}</div>
-                      <div>
+                      <div className="flex-1">
                         <h4 className="text-[#0F172A] font-bold text-[14px] leading-tight">{day.title}</h4>
                         <p className="text-[#94A3B8] text-[11px]">{day.date}</p>
                       </div>
+                      {/* Add whole day to Google Calendar */}
+                      <a
+                        href={buildDayCalendarUrl(day, plannerResult.city)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[10px] font-semibold text-[#475569] transition-colors"
+                        title="Add day to Google Calendar"
+                      >
+                        📅 캘린더
+                      </a>
                     </div>
 
                     {/* Timeline items */}
@@ -295,7 +329,13 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                                   </div>
                                   <h5 className="text-[#0F172A] font-semibold text-[13px] leading-snug">{item.name}</h5>
                                   <p className="text-[#64748B] text-[11px]">{item.desc}</p>
-                                  {item.venue && <p className="text-[#94A3B8] text-[10px] mt-0.5">📍 {item.venue}</p>}
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {item.venue && <span className="text-[#94A3B8] text-[10px]">📍 {item.venue}</span>}
+                                    <a href={buildMapsUrl(item.name, plannerResult.city)} target="_blank" rel="noopener noreferrer"
+                                      className="text-[10px] text-[#2B7FFF] hover:underline font-medium">🗺️ 지도</a>
+                                    <a href={buildCalendarUrl(item.name, day.date, item.time, item.desc, item.venue || plannerResult.city)} target="_blank" rel="noopener noreferrer"
+                                      className="text-[10px] text-[#2B7FFF] hover:underline font-medium">📅 캘린더</a>
+                                  </div>
                                 </div>
 
                                 {/* Booking button */}
