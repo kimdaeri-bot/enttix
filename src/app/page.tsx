@@ -110,20 +110,20 @@ export default async function Home() {
             </div>
 
             {/* League Circle Icons */}
-            <div className="flex items-center justify-center gap-6 md:gap-8 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex items-center justify-center gap-8 md:gap-12 overflow-x-auto pb-4 scrollbar-hide">
               {LEAGUE_TABS.map(tab => (
                 <Link
                   key={tab.id}
                   href={`/league/${demoData.leagues.find(l => l.id === tab.id)?.slug || tab.id}`}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
+                  className="flex flex-col items-center gap-3 flex-shrink-0 group"
                 >
                   <div
-                    className="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white text-[11px] md:text-[12px] font-bold tracking-[0.5px] shadow-md group-hover:scale-110 transition-transform"
+                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center text-white text-[16px] font-bold tracking-[0.5px] shadow-lg group-hover:scale-110 transition-transform"
                     style={{ backgroundColor: tab.color }}
                   >
                     {tab.abbr}
                   </div>
-                  <span className="text-[10px] font-semibold text-[#6B7280] text-center leading-[12px] max-w-[70px]">
+                  <span className="text-[11px] font-semibold text-[#6B7280] text-center leading-[14px] max-w-[90px] tracking-[0.5px]">
                     {tab.label}
                   </span>
                 </Link>
