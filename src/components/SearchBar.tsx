@@ -11,11 +11,29 @@ const AI_SUGGESTIONS = [
   'La Liga matches in March',
 ];
 
+const PLANNER_SUGGESTIONS = [
+  '런던 3박4일 여행 일정 짜줘',
+  'Plan a 3-day trip to Barcelona',
+  '파리 5박6일 여행 계획',
+  '4 days in Manchester with football',
+];
+
 const CATEGORIES = [
   'All Categories',
   'Football', 'Formula 1', 'NBA', 'Tennis', 'Golf', 'Rugby',
   'Pop', 'Rock', 'Hip-hop', 'Classical', 'Electronic',
 ];
+
+// Detect if query is a travel planning request
+function isPlannerQuery(q: string): boolean {
+  const lower = q.toLowerCase();
+  const plannerKeywords = [
+    'plan', 'planner', 'itinerary', 'trip', 'travel',
+    '일정', '여행', '계획', '짜줘', '짜주', '박', '코스',
+    'days in', 'day trip', 'weekend in', 'getaway',
+  ];
+  return plannerKeywords.some(k => lower.includes(k));
+}
 
 export default function SearchBar({ compact = false, fullWidth = false }: { compact?: boolean; fullWidth?: boolean }) {
   const router = useRouter();
@@ -27,9 +45,17 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [date, setDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [mode, setMode] = useState<'search' | 'planner'>('search');
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
+
+  // Auto-detect planner mode from query
+  useEffect(() => {
+    if (query.trim()) {
+      setMode(isPlannerQuery(query) ? 'planner' : 'search');
+    }
+  }, [query]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -53,6 +79,13 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
 
   const handleSearch = async () => {
     if (!query.trim() || loading) return;
+
+    // Route to planner if detected
+    if (isPlannerQuery(query)) {
+      router.push(`/planner?q=${encodeURIComponent(query.trim())}`);
+      return;
+    }
+
     setLoading(true);
     setShowDropdown(false);
     try {
@@ -69,7 +102,6 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
         router.push(`/all-tickets?ai=1&q=${encodeURIComponent(query.trim())}`);
       }
     } catch {
-      // fallback to regular search
       router.push(`/all-tickets?q=${encodeURIComponent(query.trim())}`);
     } finally {
       setLoading(false);
@@ -79,7 +111,13 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     setShowDropdown(false);
-    // Auto search
+
+    // Route to planner if detected
+    if (isPlannerQuery(suggestion)) {
+      router.push(`/planner?q=${encodeURIComponent(suggestion)}`);
+      return;
+    }
+
     setTimeout(() => {
       setLoading(true);
       fetch('/api/ai-search', {
@@ -228,17 +266,28 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
       {/* AI Suggestions Dropdown */}
       {showDropdown && expanded && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-xl border border-[#E5E7EB] py-2 z-50 overflow-hidden">
-          {/* Location/keyword suggestions */}
+          {/* Mode indicator when typing */}
           {query.trim() && (
             <div className="px-3 py-1">
               <button
                 onClick={() => handleSuggestionClick(query)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"
               >
-                <span className="text-[#9CA3AF]">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-                </span>
-                <span className="text-[14px] text-[#171717] font-medium">{query}</span>
+                {mode === 'planner' ? (
+                  <span className="flex items-center gap-1.5 text-[#2B7FFF]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                  </span>
+                ) : (
+                  <span className="text-[#9CA3AF]">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                  </span>
+                )}
+                <span className="text-[14px] text-[#171717] font-medium flex-1">{query}</span>
+                {mode === 'planner' && (
+                  <span className="text-[11px] font-semibold text-[#2B7FFF] bg-[#EFF6FF] px-2 py-0.5 rounded-full">
+                    ✈️ Trip Planner
+                  </span>
+                )}
               </button>
             </div>
           )}
@@ -248,14 +297,37 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
 
           {/* AI suggestions */}
           <div className="px-3 py-1">
-            {(!query.trim() ? AI_SUGGESTIONS : filtered.slice(0, 4)).map((suggestion, i) => (
+            <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">
+              ✨ AI Search
+            </p>
+            {(!query.trim() ? AI_SUGGESTIONS : filtered.slice(0, 3)).map((suggestion, i) => (
               <button
-                key={i}
+                key={`ai-${i}`}
                 onClick={() => handleSuggestionClick(suggestion)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]">
                   <path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.6"/>
+                </svg>
+                <span className="text-[14px] text-[#4B5563]">{suggestion}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Planner suggestions */}
+          <div className="h-px bg-[#E5E7EB] mx-3 my-1" />
+          <div className="px-3 py-1">
+            <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">
+              ✈️ Trip Planner
+            </p>
+            {PLANNER_SUGGESTIONS.slice(0, query.trim() ? 2 : 4).map((suggestion, i) => (
+              <button
+                key={`pl-${i}`}
+                onClick={() => handleSuggestionClick(suggestion)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#2B7FFF]">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor" opacity="0.6"/>
                 </svg>
                 <span className="text-[14px] text-[#4B5563]">{suggestion}</span>
               </button>
