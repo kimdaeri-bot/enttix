@@ -144,31 +144,31 @@ function AllTicketsContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="hero-bg pb-28">
+      <div className={`hero-bg ${isAI ? 'pb-16' : 'pb-28'}`}>
         <Header transparent />
-        <div className="max-w-[1280px] mx-auto px-4 pt-8">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[1px]">OFFICIAL TICKET PARTNER</span>
-          </div>
-          <h1 className="text-[32px] md:text-[42px] font-extrabold text-white leading-tight">
-            {isAI && queryFilter ? queryFilter : queryFilter ? `Results for "${queryFilter}"` : 'All Tickets'}
-          </h1>
+        {!isAI && (
+          <div className="max-w-[1280px] mx-auto px-4 pt-8">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[1px]">OFFICIAL TICKET PARTNER</span>
+            </div>
+            <h1 className="text-[32px] md:text-[42px] font-extrabold text-white leading-tight">
+              {queryFilter ? `Results for "${queryFilter}"` : 'All Tickets'}
+            </h1>
 
-          {!isAI && (
             <p className="text-[15px] text-[rgba(219,234,254,0.6)] mt-2 max-w-[500px]">
               {cityFilter ? `Events in ${cityFilter}` : 'Browse all available events across leagues and cities'}
               {dateFilter ? ` on ${dateFilter}` : ''}
             </p>
-          )}
 
-          {activeFilters.length > 0 && !isAI && (
-            <div className="flex gap-2 mt-3">
-              {cityFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">📍 {cityFilter}</span>}
-              {dateFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">📅 {dateFilter}</span>}
-              {queryFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">🔍 {queryFilter}</span>}
-            </div>
-          )}
-        </div>
+            {activeFilters.length > 0 && (
+              <div className="flex gap-2 mt-3">
+                {cityFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">📍 {cityFilter}</span>}
+                {dateFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">📅 {dateFilter}</span>}
+                {queryFilter && <span className="px-3 py-1 rounded-full bg-white/15 text-[12px] text-white/80">🔍 {queryFilter}</span>}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="max-w-[1280px] mx-auto px-4 -mt-8">
