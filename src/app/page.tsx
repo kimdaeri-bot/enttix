@@ -8,14 +8,14 @@ import { getMatches, demoData } from '@/lib/api';
 import SearchBar from '@/components/SearchBar';
 
 const LEAGUE_TABS = [
-  { id: 'epl', label: 'PREMIER LEAGUE', abbr: 'PL', color: '#3D195B', logo: 'https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg' },
-  { id: 'laliga', label: 'LA LIGA', abbr: 'LL', color: '#EE8707', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/54/LaLiga_EA_Sports_2023_Vertical_Logo.svg' },
-  { id: 'bundesliga', label: 'BUNDESLIGA', abbr: 'BL', color: '#D20515', logo: 'https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg' },
-  { id: 'seriea', label: 'SERIE A', abbr: 'SA', color: '#024494', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Serie_A_logo_2022.svg' },
-  { id: 'ligue1', label: 'LIGUE 1', abbr: 'L1', color: '#DFF201', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ligue1.svg' },
-  { id: 'ucl', label: 'CHAMPIONS LEAGUE', abbr: 'CL', color: '#00003C', logo: 'https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2024.svg' },
-  { id: 'f1', label: 'FORMULA 1', abbr: 'F1', color: '#E10600', logo: 'https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg' },
-  { id: 'nba', label: 'NBA', abbr: 'NBA', color: '#1D428A', logo: 'https://upload.wikimedia.org/wikipedia/en/0/03/National_Basketball_Association_logo.svg' },
+  { id: 'epl', label: 'PREMIER\nLEAGUE', img: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=200&h=200&fit=crop' },
+  { id: 'laliga', label: 'LA LIGA', img: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=200&h=200&fit=crop' },
+  { id: 'bundesliga', label: 'BUNDESLIGA', img: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=200&fit=crop' },
+  { id: 'seriea', label: 'SERIE A', img: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=200&h=200&fit=crop' },
+  { id: 'ligue1', label: 'LIGUE 1', img: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=200&h=200&fit=crop' },
+  { id: 'ucl', label: 'CHAMPIONS\nLEAGUE', img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=200&h=200&fit=crop' },
+  { id: 'f1', label: 'FORMULA 1', img: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=200&h=200&fit=crop' },
+  { id: 'nba', label: 'NBA', img: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&h=200&fit=crop' },
 ];
 
 const TREND_TAGS = ['Premier League', 'F1 Las Vegas', 'NBA Finals', 'El Clasico', 'Champions League'];
@@ -101,12 +101,12 @@ export default async function Home() {
       </div>
 
       {/* Official Leagues Section */}
-      <div className="bg-white">
+      <div className="bg-gradient-to-b from-[#a8c8f0] via-[#7baae0] to-[#4a8ad4]">
         <section className="py-10 md:py-16 px-4 md:px-[55.5px]">
           <div className="max-w-[1280px] mx-auto">
             <div className="text-center mb-8">
-              <span className="text-[12px] font-bold text-[#EF4444] tracking-[1.5px]">OFFICIAL</span>{' '}
-              <span className="text-[12px] font-bold text-[#171717] tracking-[1.5px]">LEAGUES</span>
+              <span className="text-[12px] font-bold text-white tracking-[1.5px]">OFFICIAL</span>{' '}
+              <span className="text-[12px] font-bold text-white tracking-[1.5px]">LEAGUES</span>
             </div>
 
             {/* League Circle Icons */}
@@ -115,19 +115,16 @@ export default async function Home() {
                 <Link
                   key={tab.id}
                   href={`/league/${demoData.leagues.find(l => l.id === tab.id)?.slug || tab.id}`}
-                  className="flex flex-col items-center gap-3 flex-shrink-0 group"
+                  className="flex flex-col items-center flex-shrink-0 group"
                 >
-                  <div
-                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform overflow-hidden relative bg-white"
-                  >
-
-                    <span className="text-[#6B7280] text-[16px] font-bold absolute">{tab.abbr}</span>
+                  <div className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] rounded-full overflow-hidden relative shadow-lg group-hover:scale-110 transition-transform">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={tab.logo} alt={tab.label} className="w-[52px] h-[52px] object-contain relative z-10" />
+                    <img src={tab.img} alt={tab.label.replace('\n', ' ')} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/45" />
+                    <span className="absolute inset-0 flex items-center justify-center text-white text-[11px] md:text-[13px] font-bold tracking-[1px] text-center leading-[16px] whitespace-pre-line px-2">
+                      {tab.label}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-[#6B7280] text-center leading-[14px] max-w-[90px] tracking-[0.5px]">
-                    {tab.label}
-                  </span>
                 </Link>
               ))}
             </div>
