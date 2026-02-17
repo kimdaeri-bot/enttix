@@ -221,6 +221,59 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
         </button>
       </div>
 
+      {/* Mobile filter chips */}
+      <div className="flex md:hidden gap-2 mt-2 px-1">
+        <div className="relative">
+          <button
+            onClick={() => { setShowCatDropdown(false); setShowDatePicker(!showDatePicker); setShowDropdown(false); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E7EF] bg-white text-[12px] font-medium text-[#64748B] hover:border-[#2B7FFF]/30 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span className={date ? 'text-[#171717]' : ''}>{dateLabel}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          {showDatePicker && (
+            <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-[#E5E7EB] p-3 z-50">
+              <input
+                type="date"
+                value={date}
+                onChange={e => { setDate(e.target.value); setShowDatePicker(false); }}
+                className="text-[14px] text-[#171717] outline-none"
+                autoFocus
+              />
+              {date && (
+                <button onClick={() => { setDate(''); setShowDatePicker(false); }} className="block mt-1 text-[12px] text-[#EF4444] hover:underline">Clear</button>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            onClick={() => { setShowDatePicker(false); setShowCatDropdown(!showCatDropdown); setShowDropdown(false); }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E7EF] bg-white text-[12px] font-medium text-[#64748B] hover:border-[#2B7FFF]/30 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h10M4 18h6"/></svg>
+            <span className={category !== 'All Categories' ? 'text-[#171717]' : ''}>{category === 'All Categories' ? 'Category' : category}</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          {showCatDropdown && (
+            <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-xl border border-[#E5E7EB] py-1 min-w-[180px] z-50 max-h-[280px] overflow-y-auto">
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  onClick={() => { setCategory(cat); setShowCatDropdown(false); }}
+                  className={`w-full text-left px-4 py-2.5 text-[13px] hover:bg-[#F1F5F9] transition-colors ${
+                    category === cat ? 'text-[#2B7FFF] font-semibold bg-[#EFF6FF]' : 'text-[#374151]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* AI Suggestions Dropdown */}
       {showDropdown && expanded && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-xl border border-[#E5E7EB] py-2 z-50 overflow-hidden">
