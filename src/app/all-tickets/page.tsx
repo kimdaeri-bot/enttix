@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MatchCard from '@/components/MatchCard';
 import MatchRow from '@/components/MatchRow';
-import { AskAIButton } from '@/components/AskAIModal';
+import SearchBar from '@/components/SearchBar';
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Match } from '@/types';
@@ -187,7 +187,7 @@ function AllTicketsContent() {
               </span>
             )}
           </div>
-          <AskAIButton variant="filter" />
+          <SearchBar compact />
         </div>
 
         {loading ? (

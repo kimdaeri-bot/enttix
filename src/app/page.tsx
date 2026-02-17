@@ -6,7 +6,6 @@ import MatchRow from '@/components/MatchRow';
 import Link from 'next/link';
 import { getMatches, demoData } from '@/lib/api';
 import SearchBar from '@/components/SearchBar';
-import { AskAIButton } from '@/components/AskAIModal';
 
 const LEAGUE_TABS = [
   { id: 'epl', label: 'PREMIER LEAGUE', abbr: 'PL', color: '#3D195B' },
@@ -83,14 +82,9 @@ export default async function Home() {
               No hidden fees, 100% authentic guarantee
             </p>
 
-            {/* Search Bar - White pill */}
-            <div className="mt-8 md:mt-10 w-full max-w-[660px]">
+            {/* AI Search Bar */}
+            <div className="mt-8 md:mt-10 w-full flex justify-center">
               <SearchBar />
-            </div>
-
-            {/* Ask AI Button */}
-            <div className="mt-4 flex justify-center">
-              <AskAIButton />
             </div>
 
             {/* Real-Time Trends */}
