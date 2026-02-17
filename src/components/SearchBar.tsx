@@ -19,7 +19,7 @@ const CATEGORIES = [
 
 export default function SearchBar({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -37,7 +37,7 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
         setShowCatDropdown(false);
-        if (!query) setExpanded(false);
+        // keep expanded
       }
     };
     document.addEventListener('mousedown', handler);
