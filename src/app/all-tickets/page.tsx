@@ -144,7 +144,7 @@ function AllTicketsContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className={`hero-bg ${isAI ? 'pb-16' : 'pb-28'}`}>
+      <div className={`hero-bg ${isAI ? 'pb-0' : 'pb-28'}`}>
         <Header transparent />
         {!isAI && (
           <div className="max-w-[1280px] mx-auto px-4 pt-8">
@@ -171,7 +171,7 @@ function AllTicketsContent() {
         )}
       </div>
 
-      <div className="max-w-[1280px] mx-auto px-4 -mt-8">
+      <div className={`max-w-[1280px] mx-auto px-4 ${isAI ? 'mt-0' : '-mt-8'}`}>
         {/* AI Response Card */}
         {isAI && aiSummary && !loading && (
           <div className="mb-6 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm">
