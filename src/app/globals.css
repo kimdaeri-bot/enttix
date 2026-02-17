@@ -35,12 +35,12 @@ body {
 .hero-bg {
   background: var(--navy-gradient);
   position: relative;
-  overflow: hidden;
 }
 .hero-bg::before {
   content: '';
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background: radial-gradient(ellipse at 30% 50%, rgba(43,127,255,0.15) 0%, transparent 70%),
               radial-gradient(ellipse at 70% 50%, rgba(43,127,255,0.1) 0%, transparent 70%);
 }

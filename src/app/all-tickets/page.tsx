@@ -174,7 +174,7 @@ function AllTicketsContent() {
       <div className="max-w-[1280px] mx-auto px-4 -mt-8">
         {/* AI Response Card */}
         {isAI && aiSummary && !loading && (
-          <div className="mb-6 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+          <div className="mb-6 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm">
             <div className="px-5 py-4">
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center flex-shrink-0 mt-0.5">
