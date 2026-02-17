@@ -183,7 +183,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
   return (
     <div ref={containerRef} className={`relative w-full z-[60] ${fullWidth ? '' : 'max-w-[580px]'}`}>
       {/* Search Bar Pill */}
-      <div className={`bg-white rounded-full shadow-xl border border-[#E0E7EF] flex items-center transition-all duration-300 ${expanded ? 'ring-2 ring-[#2B7FFF]/20 border-[#2B7FFF]/30' : ''} ${compact ? 'px-1.5 py-1.5' : 'px-2 py-2'}`}>
+      <div className={`relative z-[110] bg-white rounded-full shadow-xl border border-[#E0E7EF] flex items-center transition-all duration-300 ${expanded ? 'ring-2 ring-[#2B7FFF]/20 border-[#2B7FFF]/30' : ''} ${compact ? 'px-1.5 py-1.5' : 'px-2 py-2'}`}>
         <div className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${expanded ? 'flex-1 min-w-0' : 'flex-shrink-0'} ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`} onClick={!expanded ? handleExpand : undefined}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.8"/></svg>
           {expanded ? (
@@ -264,7 +264,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* ====== INLINE PLANNER RESULT ====== */}
       {inline && plannerResult && !loading && (
-        <div className="mt-4">
+        <div className="mt-4 relative z-[10]">
           {/* Header bar */}
           <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur rounded-t-2xl border border-[#E5E7EB] border-b-0">
             <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* ====== INLINE AI RESULT ====== */}
       {inline && aiResult && !loading && (
-        <div className="mt-4">
+        <div className="mt-4 relative z-[10]">
           <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur rounded-t-2xl border border-[#E5E7EB] border-b-0">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg></div>
