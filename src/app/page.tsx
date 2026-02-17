@@ -118,11 +118,10 @@ export default async function Home() {
                   className="flex flex-col items-center gap-3 flex-shrink-0 group"
                 >
                   <div
-                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform overflow-hidden relative"
-                    style={{ backgroundColor: tab.color }}
+                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform overflow-hidden relative bg-white"
                   >
 
-                    <span className="text-white text-[16px] font-bold absolute">{tab.abbr}</span>
+                    <span className="text-[#6B7280] text-[16px] font-bold absolute">{tab.abbr}</span>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={tab.logo} alt={tab.label} className="w-[52px] h-[52px] object-contain relative z-10" />
                   </div>
