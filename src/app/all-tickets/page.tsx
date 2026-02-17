@@ -66,7 +66,7 @@ function AllTicketsContent() {
             const events = data.events || [];
             const mapped = events.map(feedEventToMatch);
             setMatches(mapped);
-            setAiSummary(data.summary || `${mapped.length}건의 결과를 찾았습니다`);
+            setAiSummary(data.aiMessage || data.summary || `${mapped.length}건의 결과를 찾았습니다`);
             setLoading(false);
             return;
           }
@@ -86,7 +86,7 @@ function AllTicketsContent() {
               const events = data.events || [];
               const mapped = events.map(feedEventToMatch);
               setMatches(mapped);
-              setAiSummary(data.summary || `${mapped.length}건의 결과를 찾았습니다`);
+              setAiSummary(data.aiMessage || data.summary || `${mapped.length}건의 결과를 찾았습니다`);
               setLoading(false);
               return;
             }
@@ -155,9 +155,16 @@ function AllTicketsContent() {
           </h1>
 
           {aiSummary ? (
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-[18px]">✨</span>
-              <p className="text-[16px] text-[rgba(219,234,254,0.9)] font-medium">{aiSummary}</p>
+            <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-[14px] px-5 py-4 max-w-[600px]">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-[#2B7FFF] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-[14px]">✨</span>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[0.5px] mb-1">ENTTIX AI</p>
+                  <p className="text-[15px] text-white leading-[22px]">{aiSummary}</p>
+                </div>
+              </div>
             </div>
           ) : (
             <p className="text-[16px] text-[rgba(219,234,254,0.7)] mt-3 max-w-[500px]">
