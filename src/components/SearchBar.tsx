@@ -452,7 +452,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="text-[#0F172A] font-semibold text-[13px] truncate group-hover:text-[#2B7FFF] transition-colors">{evName}</p>
+                          <p className="text-[#0F172A] font-semibold text-[13px] leading-snug group-hover:text-[#2B7FFF] transition-colors">{evName}</p>
                           <p className="text-[#94A3B8] text-[11px] mt-0.5">{timeStr}{evVenue ? ` · ${evVenue}` : ''}{evCity ? `, ${evCity}` : ''}</p>
                           {evPrice ? (
                             <div className="flex items-center gap-2 mt-1">
