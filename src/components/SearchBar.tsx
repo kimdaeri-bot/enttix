@@ -140,11 +140,11 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
           )}
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-7 bg-[#E5E7EB] flex-shrink-0" />
+        {/* Divider - desktop only */}
+        <div className="hidden md:block w-px h-7 bg-[#E5E7EB] flex-shrink-0" />
 
-        {/* Dates */}
-        <div className="relative flex-shrink-0">
+        {/* Dates - desktop only */}
+        <div className="relative flex-shrink-0 hidden md:block">
           <button
             onClick={() => { setShowCatDropdown(false); setShowDatePicker(!showDatePicker); setShowDropdown(false); }}
             className={`flex items-center gap-1.5 ${compact ? 'px-3 py-1.5' : 'px-4 py-2'} hover:bg-[#F8FAFC] rounded-full transition-colors`}
@@ -171,11 +171,11 @@ export default function SearchBar({ compact = false, fullWidth = false }: { comp
           )}
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-7 bg-[#E5E7EB] flex-shrink-0" />
+        {/* Divider - desktop only */}
+        <div className="hidden md:block w-px h-7 bg-[#E5E7EB] flex-shrink-0" />
 
-        {/* Category */}
-        <div className="relative flex-shrink-0">
+        {/* Category - desktop only */}
+        <div className="relative flex-shrink-0 hidden md:block">
           <button
             onClick={() => { setShowDatePicker(false); setShowCatDropdown(!showCatDropdown); setShowDropdown(false); }}
             className={`flex items-center gap-1.5 ${compact ? 'px-3 py-1.5' : 'px-4 py-2'} hover:bg-[#F8FAFC] rounded-full transition-colors`}
