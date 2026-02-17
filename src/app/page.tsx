@@ -110,7 +110,7 @@ export default async function Home() {
             </div>
 
             {/* League Circle Icons */}
-            <div className="flex items-center justify-center gap-8 md:gap-12 overflow-x-auto pb-4 scrollbar-hide">
+            <div className="flex items-center justify-start md:justify-center gap-6 md:gap-10 overflow-x-auto pb-4 px-4 scrollbar-hide">
               {LEAGUE_TABS.map(tab => (
                 <Link
                   key={tab.id}
