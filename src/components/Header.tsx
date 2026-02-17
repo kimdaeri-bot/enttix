@@ -96,6 +96,9 @@ export default function Header({ transparent = false }: { transparent?: boolean 
           <Link href="/cities" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
             Cities
           </Link>
+          <Link href="/planner" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1">
+            ✨ Planner
+          </Link>
 
           <div className="w-[1px] h-8 bg-[rgba(255,255,255,0.2)] mx-2" />
 
@@ -150,6 +153,7 @@ export default function Header({ transparent = false }: { transparent?: boolean 
           </div>
           <Link href="/all-tickets" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>All Tickets</Link>
           <Link href="/cities" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Cities</Link>
+          <Link href="/planner" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           <Link href="/cart" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
             Cart {cartBadge > 0 && `(${cartBadge})`}
           </Link>
