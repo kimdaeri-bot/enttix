@@ -6,13 +6,14 @@ const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY!;
 
 interface PlannerItem {
   time: string;
-  type: 'attraction' | 'food' | 'event';
+  type: 'attraction' | 'food' | 'event' | 'cafe' | 'dessert' | 'shopping' | 'transport';
   name: string;
   desc: string;
   event_id?: number | null;
   price?: number | null;
   event_date?: string | null;
   venue?: string | null;
+  bookable?: boolean;
 }
 
 interface PlannerDay {
@@ -49,12 +50,12 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: `You are a travel planner. Given a user request, generate a JSON travel itinerary.
+            content: `You are an expert travel planner. Generate a detailed, realistic JSON itinerary.
 The user said: "${query}"
 
-Today's date is 2026-02-17. If the user doesn't specify dates, pick reasonable upcoming dates.
+Today's date is 2026-02-17. If dates aren't specified, pick reasonable upcoming dates.
 
-Return ONLY valid JSON (no markdown, no explanation) in this exact format:
+Return ONLY valid JSON (no markdown):
 {
   "city": "London",
   "country": "UK",
@@ -64,22 +65,35 @@ Return ONLY valid JSON (no markdown, no explanation) in this exact format:
       "date": "2026-02-28",
       "title": "Arrival & South Bank",
       "items": [
-        { "time": "10:00", "type": "attraction", "name": "Tower Bridge", "desc": "Iconic bridge with glass walkway" },
-        { "time": "13:00", "type": "food", "name": "Borough Market", "desc": "Famous food market" },
-        { "time": "20:00", "type": "event", "name": "Arsenal vs Chelsea", "desc": "Premier League match", "event_id": null }
+        { "time": "09:00", "type": "cafe", "name": "Monmouth Coffee", "desc": "Borough Market 인근 유명 커피숍", "bookable": false },
+        { "time": "10:00", "type": "attraction", "name": "Tower Bridge", "desc": "유리 보행로가 있는 상징적인 다리", "bookable": true },
+        { "time": "12:30", "type": "food", "name": "Padella", "desc": "수제 파스타 맛집, 웨이팅 필수", "bookable": false },
+        { "time": "14:00", "type": "attraction", "name": "Tate Modern", "desc": "세계적인 현대미술관, 무료 입장", "bookable": false },
+        { "time": "15:30", "type": "dessert", "name": "Kova Patisserie", "desc": "말차 수플레 팬케이크 유명", "bookable": false },
+        { "time": "18:00", "type": "food", "name": "Dishoom", "desc": "봄베이 스타일 인도 레스토랑, 예약 추천", "bookable": true },
+        { "time": "20:00", "type": "event", "name": "Arsenal vs Chelsea", "desc": "프리미어 리그 경기", "event_id": null, "bookable": true }
       ]
     }
   ]
 }
 
+Item types: "attraction", "food", "cafe", "dessert", "event", "shopping", "transport"
+- bookable: true if reservation/ticket is needed or recommended, false if walk-in or free
+
 Rules:
-- Each day should have 3-5 items mixing attractions, food, and events
-- Include at least 1 event per day (sports match, concert, theater, etc.) that might realistically exist
-- For events, use real venue/team names for that city
-- Dates in YYYY-MM-DD format
-- Times in HH:MM format
-- Keep descriptions concise (under 60 chars)
-- Respond in the same language as the user's input`,
+- 6-9 items per day for a DETAILED realistic schedule
+- Morning: breakfast spot or cafe
+- Lunch: local restaurant recommendation with specific dish or specialty
+- Afternoon: attraction + dessert/cafe break
+- Dinner: restaurant with cuisine style noted
+- Evening: event (sports, theater, concert) when available
+- Use REAL, SPECIFIC restaurant/cafe names that actually exist in that city
+- Include specific dish recommendations in desc when possible
+- For events, use real venue/team/artist names
+- Dates: YYYY-MM-DD, Times: HH:MM
+- Descriptions under 60 chars
+- Respond in the same language as user input
+- Mix walking-friendly locations within same area each day`,
           },
         ],
       }),
