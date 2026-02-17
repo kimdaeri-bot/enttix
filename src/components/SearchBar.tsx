@@ -231,7 +231,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* Suggestions Dropdown */}
       {showDropdown && expanded && !loading && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-2xl border border-[#E5E7EB] py-2 z-[100] overflow-hidden">
+        <div className={`${inline ? 'relative mt-2' : 'absolute top-full left-0 right-0 mt-2'} bg-white rounded-[16px] shadow-2xl border border-[#E5E7EB] py-2 z-[100] overflow-hidden`}>
           {query.trim() && (
             <div className="px-3 py-1">
               <button onClick={() => handleSuggestionClick(query)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left">
