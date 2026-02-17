@@ -8,14 +8,14 @@ import { getMatches, demoData } from '@/lib/api';
 import SearchBar from '@/components/SearchBar';
 
 const LEAGUE_TABS = [
-  { id: 'epl', label: 'PREMIER LEAGUE', abbr: 'PL', color: '#3D195B' },
-  { id: 'laliga', label: 'LA LIGA', abbr: 'LL', color: '#EE8707' },
-  { id: 'bundesliga', label: 'BUNDESLIGA', abbr: 'BL', color: '#D20515' },
-  { id: 'seriea', label: 'SERIE A', abbr: 'SA', color: '#024494' },
-  { id: 'ligue1', label: 'LIGUE 1', abbr: 'L1', color: '#DFF201' },
-  { id: 'ucl', label: 'CHAMPIONS LEAGUE', abbr: 'CL', color: '#00003C' },
-  { id: 'f1', label: 'FORMULA 1', abbr: 'F1', color: '#E10600' },
-  { id: 'nba', label: 'NBA', abbr: 'NBA', color: '#1D428A' },
+  { id: 'epl', label: 'PREMIER LEAGUE', abbr: 'PL', color: '#3D195B', logo: 'https://upload.wikimedia.org/wikipedia/en/f/f2/Premier_League_Logo.svg' },
+  { id: 'laliga', label: 'LA LIGA', abbr: 'LL', color: '#EE8707', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/54/LaLiga_EA_Sports_2023_Vertical_Logo.svg' },
+  { id: 'bundesliga', label: 'BUNDESLIGA', abbr: 'BL', color: '#D20515', logo: 'https://upload.wikimedia.org/wikipedia/en/d/df/Bundesliga_logo_%282017%29.svg' },
+  { id: 'seriea', label: 'SERIE A', abbr: 'SA', color: '#024494', logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e9/Serie_A_logo_2022.svg' },
+  { id: 'ligue1', label: 'LIGUE 1', abbr: 'L1', color: '#DFF201', logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5e/Ligue1.svg' },
+  { id: 'ucl', label: 'CHAMPIONS LEAGUE', abbr: 'CL', color: '#00003C', logo: 'https://upload.wikimedia.org/wikipedia/en/b/bf/UEFA_Champions_League_logo_2024.svg' },
+  { id: 'f1', label: 'FORMULA 1', abbr: 'F1', color: '#E10600', logo: 'https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg' },
+  { id: 'nba', label: 'NBA', abbr: 'NBA', color: '#1D428A', logo: 'https://upload.wikimedia.org/wikipedia/en/0/03/National_Basketball_Association_logo.svg' },
 ];
 
 const TREND_TAGS = ['Premier League', 'F1 Las Vegas', 'NBA Finals', 'El Clasico', 'Champions League'];
@@ -118,10 +118,13 @@ export default async function Home() {
                   className="flex flex-col items-center gap-3 flex-shrink-0 group"
                 >
                   <div
-                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center text-white text-[16px] font-bold tracking-[0.5px] shadow-lg group-hover:scale-110 transition-transform"
+                    className="w-[88px] h-[88px] rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform overflow-hidden relative"
                     style={{ backgroundColor: tab.color }}
                   >
-                    {tab.abbr}
+
+                    <span className="text-white text-[16px] font-bold absolute">{tab.abbr}</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={tab.logo} alt={tab.label} className="w-[52px] h-[52px] object-contain relative z-10" />
                   </div>
                   <span className="text-[11px] font-semibold text-[#6B7280] text-center leading-[14px] max-w-[90px] tracking-[0.5px]">
                     {tab.label}
