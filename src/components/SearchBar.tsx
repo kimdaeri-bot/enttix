@@ -424,16 +424,53 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
             <div className="bg-white/95 backdrop-blur border-x border-[#E5E7EB] shadow-lg px-5 py-4">
               {(aiResult.aiMessage || aiResult.summary) && <p className="text-[14px] text-[#374151] leading-[21px] mb-3">{aiResult.aiMessage || aiResult.summary}</p>}
               {aiResult.events && aiResult.events.length > 0 ? (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {aiResult.events.slice(0, 8).map((ev: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-[#F8FAFC] border border-[#F1F5F9]">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[#0F172A] font-semibold text-[13px] truncate">{ev.name || ev.title}</p>
-                        <p className="text-[#94A3B8] text-[11px]">{ev.datetime || ev.date} · {ev.venue?.name || ev.venue || ''}</p>
-                      </div>
-                      {(ev.min_ticket_price || ev.price) && <span className="text-[#0F172A] font-bold text-[14px]">{ev.currency || '£'}{ev.min_ticket_price || ev.price}</span>}
-                    </div>
-                  ))}
+                <div className="space-y-2 max-h-[450px] overflow-y-auto">
+                  {aiResult.events.slice(0, 10).map((ev: any, i: number) => {
+                    const evId = ev.id || ev.event_id;
+                    const evName = ev.name || ev.title || '';
+                    const evDate = ev.datetime || ev.date || '';
+                    const evVenue = ev.venue?.name || ev.venue || '';
+                    const evCity = ev.venue?.city || '';
+                    const evPrice = ev.min_ticket_price || ev.starting_price || ev.price;
+                    const evCurrency = ev.currency || '£';
+                    const dateObj = evDate ? new Date(evDate) : null;
+                    const dateStr = dateObj ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }) : '';
+                    const timeStr = dateObj ? dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+
+                    return (
+                      <a
+                        key={i}
+                        href={evId ? `/event/${evId}` : '#'}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-white border border-[#E5E7EB] hover:border-[#2B7FFF]/40 hover:shadow-md transition-all cursor-pointer group"
+                      >
+                        {/* Date badge */}
+                        <div className="flex-shrink-0 w-[52px] h-[52px] rounded-xl bg-[#0F172A] flex flex-col items-center justify-center text-white">
+                          <span className="text-[10px] font-bold uppercase leading-none">{dateStr.split(',')[0]}</span>
+                          <span className="text-[18px] font-extrabold leading-tight">{dateObj ? dateObj.getDate() : ''}</span>
+                          <span className="text-[9px] opacity-60 leading-none">{dateObj ? dateObj.toLocaleDateString('en-US', { month: 'short' }) : ''}</span>
+                        </div>
+
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#0F172A] font-semibold text-[13px] truncate group-hover:text-[#2B7FFF] transition-colors">{evName}</p>
+                          <p className="text-[#94A3B8] text-[11px] mt-0.5">{timeStr}{evVenue ? ` · ${evVenue}` : ''}{evCity ? `, ${evCity}` : ''}</p>
+                          {evPrice ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[#2B7FFF] font-bold text-[13px]">From {evCurrency}{evPrice}</span>
+                              <span className="text-[9px] text-[#10B981] bg-[#ECFDF5] px-1.5 py-0.5 rounded font-semibold">AVAILABLE</span>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-[#94A3B8] mt-1 inline-block">Price TBD</span>
+                          )}
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F1F5F9] group-hover:bg-[#2B7FFF] flex items-center justify-center transition-colors">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#94A3B8] group-hover:text-white transition-colors"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </div>
+                      </a>
+                    );
+                  })}
                 </div>
               ) : (<p className="text-[#94A3B8] text-[13px]">No matching events found</p>)}
             </div>
