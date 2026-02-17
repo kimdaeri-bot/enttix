@@ -190,10 +190,12 @@ function AllTicketsContent() {
           </div>
         )}
 
-        {/* Search bar */}
-        <div className="mb-6">
-          <SearchBar compact />
-        </div>
+        {/* Search bar - only show when not AI mode */}
+        {!isAI && (
+          <div className="mb-6">
+            <SearchBar compact />
+          </div>
+        )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
