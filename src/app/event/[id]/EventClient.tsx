@@ -56,9 +56,7 @@ export default function EventClient({ id }: { id: string }) {
   useEffect(() => {
     async function loadData() {
       try {
-        const feedRes = await fetch(`https://sandbox-pf.tixstock.com/v1/feed?event_id=${id}`, {
-          headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
-        });
+        const feedRes = await fetch(`/api/tixstock/feed?event_id=${id}`);
         if (feedRes.ok) {
           const feedData = await feedRes.json();
           const events = feedData.data || [];
@@ -76,10 +74,7 @@ export default function EventClient({ id }: { id: string }) {
           }
         }
 
-        const tickRes = await fetch(`https://sandbox-pf.tixstock.com/v1/tickets/feed?event_id=${id}&lighter_response=1&per_page=500`, {
-          headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
-          cache: 'no-store',
-        });
+        const tickRes = await fetch(`/api/tixstock/tickets?event_id=${id}`);
         if (tickRes.ok) {
           const tickData = await tickRes.json();
           const listings = tickData.data || [];
@@ -133,9 +128,9 @@ export default function EventClient({ id }: { id: string }) {
     const qty = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
     setHoldingId(ticket.id);
     try {
-      const res = await fetch('https://sandbox-pf.tixstock.com/v1/tickets/hold', {
+      const res = await fetch('/api/tixstock/hold', {
         method: 'POST',
-        headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ listing_id: ticket.id, quantity: qty }),
       });
       let holdId: string | undefined;

@@ -86,10 +86,7 @@ export default function CategoryPage({ slug, displayName, categoryType }: Catego
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(
-          `https://sandbox-pf.tixstock.com/v1/feed?category_name=${encodeURIComponent(displayName)}`,
-          { headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' } }
-        );
+        const res = await fetch(`/api/tixstock/feed?category_name=${encodeURIComponent(displayName)}`);
         if (res.ok) {
           const data = await res.json();
           const items = data.data || [];

@@ -1,13 +1,5 @@
-// Tixstock Sandbox API client
+// Tixstock API client (proxied through internal API routes)
 import { Match } from '@/types';
-
-const BASE_URL = 'https://sandbox-pf.tixstock.com/v1';
-const BEARER_TOKEN = 'ac1f6d1f4c3ba067b8d13f2419';
-
-const headers = () => ({
-  'Authorization': `Bearer ${BEARER_TOKEN}`,
-  'Content-Type': 'application/json',
-});
 
 // Convert Tixstock feed event to our Match type
 function feedEventToMatch(event: Record<string, unknown>): Match {
@@ -69,28 +61,57 @@ function feedEventToMatch(event: Record<string, unknown>): Match {
   };
 }
 
+// Helper: build absolute URL for server-side calls (SSR needs full URL)
+function apiUrl(path: string): string {
+  if (typeof window !== 'undefined') return path; // client-side: relative OK
+  const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  return `${base}${path}`;
+}
+
+// Server-side direct fetch (used by SSR functions like getMatches)
+// This bypasses the API route and calls Tixstock directly on the server
+async function serverFetch(path: string, init?: RequestInit): Promise<Response> {
+  const BASE_URL = process.env.TIXSTOCK_BASE_URL || 'https://sandbox-pf.tixstock.com/v1';
+  const TOKEN = process.env.TIXSTOCK_TOKEN || '';
+  return fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json', ...(init?.headers || {}) },
+  });
+}
+
 export const tixstockApi = {
   // Get events feed
   async getFeed(params: Record<string, string> = {}): Promise<{ data: Record<string, unknown>[]; meta?: Record<string, unknown> }> {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${BASE_URL}/feed?${query}`, { headers: headers(), next: { revalidate: 300 } });
+    // Use server-side direct fetch for SSR, client proxy for browser
+    if (typeof window === 'undefined') {
+      const res = await serverFetch(`/feed?${query}`, { next: { revalidate: 300 } } as RequestInit);
+      if (!res.ok) throw new Error(`Feed error: ${res.status}`);
+      return res.json();
+    }
+    const res = await fetch(`/api/tixstock/feed?${query}`);
     if (!res.ok) throw new Error(`Feed error: ${res.status}`);
     return res.json();
   },
 
   // Get tickets for an event
   async getTickets(eventId: string, params: Record<string, string> = {}) {
-    const query = new URLSearchParams({ event_id: eventId, lighter_response: '1', per_page: '500', ...params }).toString();
-    const res = await fetch(`${BASE_URL}/tickets/feed?${query}`, { headers: headers(), cache: 'no-store' });
+    const query = new URLSearchParams({ event_id: eventId, ...params }).toString();
+    if (typeof window === 'undefined') {
+      const res = await serverFetch(`/tickets/feed?${query}&lighter_response=1&per_page=500`, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Tickets error: ${res.status}`);
+      return res.json();
+    }
+    const res = await fetch(`/api/tixstock/tickets?${query}`);
     if (!res.ok) throw new Error(`Tickets error: ${res.status}`);
     return res.json();
   },
 
   // Hold tickets
   async holdTickets(listingId: string, quantity: number) {
-    const res = await fetch(`${BASE_URL}/tickets/hold`, {
+    const res = await fetch(apiUrl('/api/tixstock/hold'), {
       method: 'POST',
-      headers: headers(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ listing_id: listingId, quantity }),
     });
     if (!res.ok) throw new Error(`Hold error: ${res.status}`);
@@ -99,9 +120,9 @@ export const tixstockApi = {
 
   // Release held tickets
   async releaseTickets(holdId: string) {
-    const res = await fetch(`${BASE_URL}/tickets/release`, {
+    const res = await fetch(apiUrl('/api/tixstock/release'), {
       method: 'POST',
-      headers: headers(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ hold_id: holdId }),
     });
     if (!res.ok) throw new Error(`Release error: ${res.status}`);
@@ -110,10 +131,10 @@ export const tixstockApi = {
 
   // Add order
   async addOrder(holdId: string, quantity: number, orderData: Record<string, unknown>) {
-    const res = await fetch(`${BASE_URL}/orders/add/${holdId}/${quantity}`, {
+    const res = await fetch(apiUrl('/api/tixstock/order'), {
       method: 'POST',
-      headers: headers(),
-      body: JSON.stringify(orderData),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ holdId, quantity, orderData }),
     });
     if (!res.ok) throw new Error(`Order error: ${res.status}`);
     return res.json();
@@ -121,7 +142,12 @@ export const tixstockApi = {
 
   // Get categories
   async getCategories() {
-    const res = await fetch(`${BASE_URL}/categories`, { headers: headers(), next: { revalidate: 3600 } });
+    if (typeof window === 'undefined') {
+      const res = await serverFetch('/categories', { next: { revalidate: 3600 } } as RequestInit);
+      if (!res.ok) throw new Error(`Categories error: ${res.status}`);
+      return res.json();
+    }
+    const res = await fetch('/api/tixstock/categories');
     if (!res.ok) throw new Error(`Categories error: ${res.status}`);
     return res.json();
   },

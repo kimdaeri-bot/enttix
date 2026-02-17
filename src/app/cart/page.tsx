@@ -26,9 +26,9 @@ export default function CartPage() {
     setReleasing(listingId);
     if (holdId) {
       try {
-        await fetch('https://sandbox-pf.tixstock.com/v1/tickets/release', {
+        await fetch('/api/tixstock/release', {
           method: 'POST',
-          headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ hold_id: holdId }),
         });
       } catch {}
