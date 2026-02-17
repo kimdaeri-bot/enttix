@@ -188,6 +188,11 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.8"/></svg>
           {expanded ? (
             <input ref={inputRef} type="text" value={query} onChange={e => { setQuery(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)} onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }} placeholder="Search events with AI..." className="flex-1 text-[15px] text-[#171717] outline-none bg-transparent placeholder:text-[#94A3B8] min-w-0" disabled={loading} />
+            {query && !loading && (
+              <button onClick={() => { setQuery(''); setPlannerResult(null); setAiResult(null); setShowDropdown(false); inputRef.current?.focus(); }} className="flex-shrink-0 w-5 h-5 rounded-full bg-[#E2E8F0] hover:bg-[#CBD5E1] flex items-center justify-center transition-colors mr-1">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            )}
           ) : (
             <span className={`${compact ? 'text-[13px]' : 'text-[15px]'} font-medium text-[#64748B]`}>Search</span>
           )}
@@ -239,12 +244,12 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
           {query.trim() && <div className="h-px bg-[#E5E7EB] mx-3 my-1" />}
           <div className="px-3 py-1">
             <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">✨ AI Search</p>
-            {(!query.trim() ? AI_SUGGESTIONS : filtered.slice(0, 3)).map((s, i) => (<button key={`ai-${i}`} onClick={() => handleSuggestionClick(s)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.6"/></svg><span className="text-[14px] text-[#4B5563]">{s}</span></button>))}
+            {(!query.trim() ? AI_SUGGESTIONS : filtered.slice(0, 3)).map((s, i) => (<button key={`ai-${i}`} onClick={() => { setQuery(s); setShowDropdown(false); inputRef.current?.focus(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.6"/></svg><span className="text-[14px] text-[#4B5563]">{s}</span></button>))}
           </div>
           <div className="h-px bg-[#E5E7EB] mx-3 my-1" />
           <div className="px-3 py-1">
             <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">✈️ Trip Planner</p>
-            {PLANNER_SUGGESTIONS.slice(0, query.trim() ? 2 : 4).map((s, i) => (<button key={`pl-${i}`} onClick={() => handleSuggestionClick(s)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#2B7FFF]"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor" opacity="0.6"/></svg><span className="text-[14px] text-[#4B5563]">{s}</span></button>))}
+            {PLANNER_SUGGESTIONS.slice(0, query.trim() ? 2 : 4).map((s, i) => (<button key={`pl-${i}`} onClick={() => { setQuery(s); setShowDropdown(false); inputRef.current?.focus(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#2B7FFF]"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="currentColor" opacity="0.6"/></svg><span className="text-[14px] text-[#4B5563]">{s}</span></button>))}
           </div>
         </div>
       )}
