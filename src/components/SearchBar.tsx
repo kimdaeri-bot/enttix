@@ -107,7 +107,7 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
     : 'Dates';
 
   return (
-    <div ref={containerRef} className={`relative w-full ${compact ? 'max-w-[580px]' : 'max-w-[660px]'}`}>
+    <div ref={containerRef} className="relative w-full">
       {/* Search Bar Pill */}
       <div className={`bg-white rounded-full shadow-xl border border-[#E0E7EF] flex items-center transition-all duration-300 ${
         expanded ? 'ring-2 ring-[#2B7FFF]/20 border-[#2B7FFF]/30' : ''
