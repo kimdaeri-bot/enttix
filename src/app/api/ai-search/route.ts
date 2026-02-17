@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Call Claude Haiku to parse the query
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-3-haiku-20240307',
       max_tokens: 512,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: query }],
