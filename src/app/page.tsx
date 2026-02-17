@@ -101,12 +101,12 @@ export default async function Home() {
       </div>
 
       {/* Official Leagues Section */}
-      <div className="bg-gradient-to-b from-[#a8c8f0] via-[#7baae0] to-[#4a8ad4]">
+      <div className="bg-white">
         <section className="py-10 md:py-16 px-4 md:px-[55.5px]">
           <div className="max-w-[1280px] mx-auto">
             <div className="text-center mb-8">
-              <span className="text-[12px] font-bold text-white tracking-[1.5px]">OFFICIAL</span>{' '}
-              <span className="text-[12px] font-bold text-white tracking-[1.5px]">LEAGUES</span>
+              <span className="text-[12px] font-bold text-[#EF4444] tracking-[1.5px]">OFFICIAL</span>{' '}
+              <span className="text-[12px] font-bold text-[#171717] tracking-[1.5px]">LEAGUES</span>
             </div>
 
             {/* League Circle Icons */}
