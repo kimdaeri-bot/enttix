@@ -84,7 +84,7 @@ export default async function Home() {
 
             {/* AI Search Bar */}
             <div className="mt-8 md:mt-10 w-full flex justify-center">
-              <SearchBar />
+              <SearchBar inline />
             </div>
 
             {/* Real-Time Trends */}
