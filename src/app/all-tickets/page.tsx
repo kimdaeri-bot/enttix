@@ -172,22 +172,20 @@ function AllTicketsContent() {
       </div>
 
       <div className={`max-w-[1280px] mx-auto px-4 ${isAI ? 'mt-0' : '-mt-8'}`}>
-        {/* AI mode: full-width search bar + answer card tight */}
+        {/* AI mode: search bar + answer card as one unit */}
         {isAI && (
-          <div className="mb-6">
-            <SearchBar compact fullWidth />
+          <div className="mb-6 border border-[#E0E7EF] rounded-2xl shadow-xl overflow-hidden">
+            <SearchBar compact fullWidth flatBottom={!!(aiSummary && !loading)} />
             {aiSummary && !loading && (
-              <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm mt-3">
-                <div className="px-5 py-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-[#6366F1] mb-1">Enttix AI</p>
-                      <p className="text-[14px] text-[#374151] leading-[21px]">{aiSummary}</p>
-                      <p className="text-[12px] text-[#9CA3AF] mt-2">{matches.length} events found</p>
-                    </div>
+              <div className="bg-white px-5 py-4 border-t border-[#F3F4F6]">
+                <div className="flex items-start gap-3">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-[#6366F1] mb-1">Enttix AI</p>
+                    <p className="text-[14px] text-[#374151] leading-[21px]">{aiSummary}</p>
+                    <p className="text-[12px] text-[#9CA3AF] mt-2">{matches.length} events found</p>
                   </div>
                 </div>
               </div>
