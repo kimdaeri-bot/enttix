@@ -144,9 +144,13 @@ function AllTicketsContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className={`hero-bg ${isAI ? 'pb-0' : 'pb-28'}`}>
+      <div className={`hero-bg ${isAI ? 'pb-10' : 'pb-28'}`}>
         <Header transparent />
-        {!isAI && (
+        {isAI ? (
+          <div className="max-w-[900px] mx-auto px-4 pt-6">
+            <SearchBar compact />
+          </div>
+        ) : (
           <div className="max-w-[1280px] mx-auto px-4 pt-8">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[1px]">OFFICIAL TICKET PARTNER</span>
@@ -172,34 +176,30 @@ function AllTicketsContent() {
       </div>
 
       <div className={`max-w-[1280px] mx-auto px-4 ${isAI ? 'mt-0' : '-mt-8'}`}>
-        {/* Search bar + AI Response combined */}
-        <div className="mb-6">
-          {isAI ? (
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm">
-              {/* Search bar inside card */}
-              <div className="px-4 pt-4">
-                <SearchBar compact />
-              </div>
-              {/* AI answer */}
-              {aiSummary && !loading && (
-                <div className="px-5 py-4 border-t border-[#F3F4F6] mt-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-semibold text-[#6366F1] mb-1">Enttix AI</p>
-                      <p className="text-[14px] text-[#374151] leading-[21px]">{aiSummary}</p>
-                      <p className="text-[12px] text-[#9CA3AF] mt-2">{matches.length} events found</p>
-                    </div>
-                  </div>
+        {/* AI Response Card */}
+        {isAI && aiSummary && !loading && (
+          <div className="mb-6 bg-white rounded-2xl border border-[#E5E7EB] shadow-sm">
+            <div className="px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg>
                 </div>
-              )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-semibold text-[#6366F1] mb-1">Enttix AI</p>
+                  <p className="text-[14px] text-[#374151] leading-[21px]">{aiSummary}</p>
+                  <p className="text-[12px] text-[#9CA3AF] mt-2">{matches.length} events found</p>
+                </div>
+              </div>
             </div>
-          ) : (
+          </div>
+        )}
+
+        {/* Search bar - non-AI mode */}
+        {!isAI && (
+          <div className="mb-6">
             <SearchBar compact />
-          )}
-        </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
