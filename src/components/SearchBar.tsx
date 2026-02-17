@@ -17,7 +17,7 @@ const CATEGORIES = [
   'Pop', 'Rock', 'Hip-hop', 'Classical', 'Electronic',
 ];
 
-export default function SearchBar({ compact = false }: { compact?: boolean }) {
+export default function SearchBar({ compact = false, fullWidth = false }: { compact?: boolean; fullWidth?: boolean }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(true);
   const [query, setQuery] = useState('');
@@ -107,7 +107,7 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
     : 'Dates';
 
   return (
-    <div ref={containerRef} className="relative w-full">
+    <div ref={containerRef} className={`relative w-full ${fullWidth ? '' : 'max-w-[580px]'}`}>
       {/* Search Bar Pill */}
       <div className={`bg-white rounded-full shadow-xl border border-[#E0E7EF] flex items-center transition-all duration-300 ${
         expanded ? 'ring-2 ring-[#2B7FFF]/20 border-[#2B7FFF]/30' : ''
