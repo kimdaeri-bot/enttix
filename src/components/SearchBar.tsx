@@ -40,7 +40,8 @@ interface PlannerItem {
 }
 interface PlannerDay { day: number; date: string; title: string; items: PlannerItem[]; }
 interface PlannerResult { city: string; country: string; days: PlannerDay[]; }
-interface AISearchResult { aiMessage?: string; summary?: string; events?: any[]; }
+interface LTDEventResult { EventId: number; Name: string; TagLine?: string; MainImageUrl?: string; EventMinimumPrice?: number; RunningTime?: string; EventType?: number; }
+interface AISearchResult { aiMessage?: string; summary?: string; events?: any[]; ltdEvents?: LTDEventResult[]; isMusicalQuery?: boolean; }
 
 const typeConfig: Record<string, { icon: string; label: string; color: string; bg: string }> = {
   attraction: { icon: '🏛️', label: 'Attraction', color: '#6366F1', bg: '#EEF2FF' },
@@ -519,7 +520,39 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                     );
                   })}
                 </div>
-              ) : (<p className="text-[#94A3B8] text-[13px]">No matching events found</p>)}
+              ) : (!aiResult.isMusicalQuery && <p className="text-[#94A3B8] text-[13px]">No matching events found</p>)}
+
+              {/* LTD Musical results */}
+              {aiResult.isMusicalQuery && aiResult.ltdEvents && aiResult.ltdEvents.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[11px] font-bold text-[#7C3AED] uppercase tracking-wider mb-2">🎭 London West End Shows</p>
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto">
+                    {aiResult.ltdEvents.map((ev, i) => (
+                      <a key={i} href={`/musical/event/${ev.EventId}`}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-[#FAF5FF] border border-[#E9D5FF] hover:border-[#7C3AED]/50 hover:shadow-md transition-all cursor-pointer group">
+                        <div className="flex-shrink-0 w-[44px] h-[44px] rounded-lg overflow-hidden bg-[#1E293B]">
+                          {ev.MainImageUrl
+                            ? <img src={ev.MainImageUrl} alt={ev.Name} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full flex items-center justify-center text-2xl">🎭</div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#0F172A] font-semibold text-[13px] leading-snug group-hover:text-[#7C3AED] transition-colors truncate">{ev.Name}</p>
+                          <p className="text-[#94A3B8] text-[11px] mt-0.5">London West End{ev.RunningTime ? ` · ${ev.RunningTime}` : ''}</p>
+                          {ev.EventMinimumPrice ? (
+                            <span className="text-[#7C3AED] font-bold text-[12px]">From £{ev.EventMinimumPrice}</span>
+                          ) : null}
+                        </div>
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#F3E8FF] group-hover:bg-[#7C3AED] flex items-center justify-center transition-colors">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#7C3AED] group-hover:text-white transition-colors"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {aiResult.isMusicalQuery && (!aiResult.ltdEvents || aiResult.ltdEvents.length === 0) && (!aiResult.events || aiResult.events.length === 0) && (
+                <p className="text-[#94A3B8] text-[13px]">No matching shows found</p>
+              )}
             </div>
           </div>
           <button onClick={() => setResultCollapsed(!resultCollapsed)} className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-white/95 backdrop-blur rounded-b-2xl border border-[#E5E7EB] border-t-0 hover:bg-[#F8FAFC] transition-colors">
