@@ -132,12 +132,15 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
   }, [activeDay, plannerResult]);
 
   // Touch swipe for day switching
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchMove = (e: React.TouchEvent) => { touchEndX.current = e.touches[0].clientX; };
-  const handleTouchEnd = () => {
-    const diff = touchStartX.current - touchEndX.current;
+  const swipeStartX = useRef(0);
+  const swipeEndX = useRef(0);
+  const isDragging = useRef(false);
+  const handleSwipeStart = (x: number) => { swipeStartX.current = x; swipeEndX.current = x; isDragging.current = true; };
+  const handleSwipeMove = (x: number) => { if (isDragging.current) swipeEndX.current = x; };
+  const handleSwipeEnd = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const diff = swipeStartX.current - swipeEndX.current;
     if (Math.abs(diff) > 50 && plannerResult) {
       if (diff > 0 && activeDay < plannerResult.days.length) setActiveDay(activeDay + 1);
       if (diff < 0 && activeDay > 1) setActiveDay(activeDay - 1);
@@ -331,7 +334,15 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
               </div>
 
               {/* Swipeable day cards */}
-              <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+              <div
+                onTouchStart={e => handleSwipeStart(e.touches[0].clientX)}
+                onTouchMove={e => handleSwipeMove(e.touches[0].clientX)}
+                onTouchEnd={handleSwipeEnd}
+                onMouseDown={e => { e.preventDefault(); handleSwipeStart(e.clientX); }}
+                onMouseMove={e => handleSwipeMove(e.clientX)}
+                onMouseUp={handleSwipeEnd}
+                onMouseLeave={handleSwipeEnd}
+                style={{ cursor: 'grab', userSelect: 'none' }}>
                 {plannerResult.days.filter(day => activeDay === 0 || activeDay === day.day).map(day => (
                   <div key={day.day} className="px-5 pb-4">
                     {/* Day header */}
