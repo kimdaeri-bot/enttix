@@ -187,12 +187,14 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
         <div className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${expanded ? 'flex-1 min-w-0' : 'flex-shrink-0'} ${compact ? 'px-3 py-1.5' : 'px-4 py-2'}`} onClick={!expanded ? handleExpand : undefined}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.8"/></svg>
           {expanded ? (
+            <>
             <input ref={inputRef} type="text" value={query} onChange={e => { setQuery(e.target.value); setShowDropdown(true); }} onFocus={() => setShowDropdown(true)} onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }} placeholder="Search events with AI..." className="flex-1 text-[15px] text-[#171717] outline-none bg-transparent placeholder:text-[#94A3B8] min-w-0" disabled={loading} />
             {query && !loading && (
               <button onClick={() => { setQuery(''); setPlannerResult(null); setAiResult(null); setShowDropdown(false); inputRef.current?.focus(); }} className="flex-shrink-0 w-5 h-5 rounded-full bg-[#E2E8F0] hover:bg-[#CBD5E1] flex items-center justify-center transition-colors mr-1">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             )}
+            </>
           ) : (
             <span className={`${compact ? 'text-[13px]' : 'text-[15px]'} font-medium text-[#64748B]`}>Search</span>
           )}
@@ -231,10 +233,10 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* Suggestions Dropdown */}
       {showDropdown && expanded && !loading && (
-        <div className={`${inline ? 'relative mt-2' : 'absolute top-full left-0 right-0 mt-2'} bg-white rounded-[16px] shadow-2xl border border-[#E5E7EB] py-2 z-[100] overflow-hidden`}>
+        <div className={`absolute top-full left-0 right-0 mt-2 bg-white rounded-[16px] shadow-2xl border border-[#E5E7EB] py-2 z-[100] overflow-hidden`}>
           {query.trim() && (
             <div className="px-3 py-1">
-              <button onClick={() => handleSuggestionClick(query)} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left">
+              <button onClick={() => { setQuery(query); setShowDropdown(false); inputRef.current?.focus(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left">
                 {mode === 'planner' ? (<span className="text-[#2B7FFF]"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></span>) : (<span className="text-[#9CA3AF]"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></span>)}
                 <span className="text-[14px] text-[#171717] font-medium flex-1">{query}</span>
                 {mode === 'planner' && <span className="text-[11px] font-semibold text-[#2B7FFF] bg-[#EFF6FF] px-2 py-0.5 rounded-full">✈️ Trip Planner</span>}
