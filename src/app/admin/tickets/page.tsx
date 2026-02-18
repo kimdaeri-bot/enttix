@@ -53,7 +53,7 @@ export default function TicketsPage() {
     <div className="p-6 md:p-8">
       <h1 className="text-[24px] font-bold text-white mb-6">Tickets</h1>
 
-      <div className="bg-[#1E293B] rounded-xl border border-[#334155] overflow-hidden">
+      <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" /></div>
         ) : tickets.length === 0 ? (
@@ -64,7 +64,7 @@ export default function TicketsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead><tr className="border-b border-[#334155]">
+              <thead><tr className="border-b border-[#E5E7EB]">
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Ticket</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Order</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Customer</th>
@@ -74,14 +74,14 @@ export default function TicketsPage() {
               </tr></thead>
               <tbody>
                 {tickets.map(ticket => (
-                  <tr key={ticket.id} className="border-b border-[#334155]/50 hover:bg-[#334155]/30 transition-colors">
+                  <tr key={ticket.id} className="border-b border-[#E5E7EB]/50 hover:bg-[#F8FAFC] transition-colors">
                     <td className="px-4 py-3 text-[12px] text-[#7C3AED] font-mono font-semibold">{ticket.ticket_number}</td>
                     <td className="px-4 py-3 text-[12px] text-[#2B7FFF] font-mono">{ticket.orders?.order_number}</td>
                     <td className="px-4 py-3">
-                      <p className="text-[12px] text-white">{ticket.orders?.customer_name}</p>
+                      <p className="text-[12px] text-[#0F172A]">{ticket.orders?.customer_name}</p>
                       <p className="text-[10px] text-[#64748B]">{ticket.orders?.customer_email}</p>
                     </td>
-                    <td className="px-4 py-3 text-[12px] text-[#CBD5E1] max-w-[180px] truncate">{ticket.orders?.event_name}</td>
+                    <td className="px-4 py-3 text-[12px] text-[#374151] max-w-[180px] truncate">{ticket.orders?.event_name}</td>
                     <td className="px-4 py-3 text-[12px] text-[#94A3B8]">{ticket.seat_info || '-'}</td>
                     <td className="px-4 py-3">
                       <select
