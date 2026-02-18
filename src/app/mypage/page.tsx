@@ -22,6 +22,7 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeDay, setActiveDay] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -64,12 +65,33 @@ export default function MyPage() {
       <div className="hero-bg">
         <Header transparent />
       </div>
-      <div className="max-w-[800px] mx-auto px-4 -mt-16 relative z-10 pb-16">
+      <div className="max-w-[800px] mx-auto px-4 pt-8 relative z-10 pb-16">
         <div className="bg-white rounded-[20px] p-6 md:p-8 shadow-lg border border-[#E5E7EB]">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-[24px] font-bold text-[#171717]">My Trips</h1>
             <p className="text-[13px] text-[#94A3B8]">{trips.length} saved</p>
           </div>
+
+          {/* Search Bar */}
+          {!selectedTrip && trips.length > 0 && (
+            <div className="mb-5">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input
+                  type="text"
+                  placeholder="저장된 일정 검색..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] text-[13px] text-[#0F172A] placeholder-[#94A3B8] focus:outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 transition-all"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#64748B]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <div className="flex justify-center py-12">
@@ -145,7 +167,11 @@ export default function MyPage() {
           ) : (
             /* List View */
             <div className="space-y-3">
-              {trips.map(trip => (
+              {trips.filter(t => {
+                if (!searchQuery.trim()) return true;
+                const q = searchQuery.toLowerCase();
+                return t.city?.toLowerCase().includes(q) || t.country?.toLowerCase().includes(q) || t.query?.toLowerCase().includes(q);
+              }).map(trip => (
                 <div key={trip.id} className="flex items-center gap-4 p-4 rounded-xl border border-[#E5E7EB] hover:border-[#2B7FFF]/30 hover:shadow-md transition-all cursor-pointer group"
                   onClick={() => { setSelectedTrip(trip); setActiveDay(1); }}>
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center text-white text-[18px]">
