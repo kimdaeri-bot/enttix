@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
 
     if (action === 'submit') {
       // Step 3: Submit order → get payment URL
-      const { basketId, affiliateId } = await req.json();
+      const { basketId, affiliateId, leadCustomer } = await req.json();
       const body: Record<string, unknown> = {};
       if (affiliateId) body.AffiliateId = affiliateId;
+      if (leadCustomer) body.leadCustomer = leadCustomer;
 
       const res = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}/SubmitOrder`, {
         method: 'POST',

@@ -63,7 +63,11 @@ function formatDate(iso: string) {
 }
 function formatTime(iso: string) {
   const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 function formatMonthYear(y: number, m: number) {
   return new Date(y, m, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
@@ -94,12 +98,19 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   const [relatedEvents, setRelatedEvents] = useState<RelatedEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* Calendar */
+  /* Calendar (right panel) */
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 'YYYY-MM-DD'
   const [selectedPerf, setSelectedPerf] = useState<Performance | null>(null);
+
+  /* Calendar bottom sheet */
+  const [showCalSheet, setShowCalSheet] = useState(false);
+  const [sheetYear, setSheetYear] = useState(today.getFullYear());
+  const [sheetMonth, setSheetMonth] = useState(today.getMonth());
+  const [sheetDate, setSheetDate] = useState<string | null>(null);
+  const [sheetPerf, setSheetPerf] = useState<Performance | null>(null);
 
   /* Reviews */
   const [reviews, setReviews] = useState<{ConsumerName?: string; Stars?: number; CreatedAt?: string; Content?: string}[]>([]);
@@ -122,6 +133,8 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
           const first = new Date(up[0].PerformanceDate);
           setCalYear(first.getFullYear());
           setCalMonth(first.getMonth());
+          setSheetYear(first.getFullYear());
+          setSheetMonth(first.getMonth());
         }
       })
       .finally(() => setLoading(false));
@@ -158,6 +171,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   }, {});
 
   const calendarWeeks = buildCalendarGrid(calYear, calMonth);
+  const sheetCalendarWeeks = buildCalendarGrid(sheetYear, sheetMonth);
 
   /* Navigate calendar months — clamp to range of available performances */
   const minMonth = performances.length > 0
@@ -170,6 +184,9 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   const canPrevMonth = calYear > minMonth.getFullYear() || (calYear === minMonth.getFullYear() && calMonth > minMonth.getMonth());
   const canNextMonth = calYear < maxMonth.getFullYear() || (calYear === maxMonth.getFullYear() && calMonth < maxMonth.getMonth());
 
+  const canSheetPrevMonth = sheetYear > minMonth.getFullYear() || (sheetYear === minMonth.getFullYear() && sheetMonth > minMonth.getMonth());
+  const canSheetNextMonth = sheetYear < maxMonth.getFullYear() || (sheetYear === maxMonth.getFullYear() && sheetMonth < maxMonth.getMonth());
+
   function prevMonth() {
     if (!canPrevMonth) return;
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
@@ -181,6 +198,17 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     else setCalMonth(m => m + 1);
   }
 
+  function sheetPrevMonth() {
+    if (!canSheetPrevMonth) return;
+    if (sheetMonth === 0) { setSheetYear(y => y - 1); setSheetMonth(11); }
+    else setSheetMonth(m => m - 1);
+  }
+  function sheetNextMonth() {
+    if (!canSheetNextMonth) return;
+    if (sheetMonth === 11) { setSheetYear(y => y + 1); setSheetMonth(0); }
+    else setSheetMonth(m => m + 1);
+  }
+
   function selectDate(day: number) {
     const key = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     if (!perfDateSet.has(key)) return;
@@ -188,11 +216,28 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     setSelectedPerf(null);
   }
 
+  function selectSheetDate(day: number) {
+    const key = `${sheetYear}-${String(sheetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (!perfDateSet.has(key)) return;
+    setSheetDate(key);
+    setSheetPerf(null);
+  }
+
   /* Times for selected date */
   const timesForDate: Performance[] = selectedDate ? (perfsByDate[selectedDate] || []) : [];
+  const sheetTimesForDate: Performance[] = sheetDate ? (perfsByDate[sheetDate] || []) : [];
 
   function selectTime(perf: Performance) {
     setSelectedPerf(perf);
+  }
+
+  /* Dot color helper */
+  function getDotColor(perfs: Performance[]): string | null {
+    if (perfs.length === 0) return null;
+    const maxAvail = Math.max(...perfs.map(p => p.TotalAvailableTickesCount));
+    if (maxAvail > 30) return '#10B981'; // green
+    if (maxAvail > 0) return '#F59E0B'; // yellow
+    return '#94A3B8'; // gray = sold out
   }
 
   /* ─── Render states ─── */
@@ -217,9 +262,10 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
 
   const youtubeUrl = event.MultimediaContent?.find(m => m.Type === 0)?.Url;
   const DAYS_HEADER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const venueName = event.VenueName || event.Venue?.Name || '';
 
   return (
-    <main className="min-h-screen bg-[#F5F7FA]">
+    <main className="min-h-screen bg-[#F5F7FA] pb-24">
 
       {/* ══════════════════════════════════
           HERO
@@ -588,20 +634,20 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <p className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-2">Select Time</p>
                       <div className="grid grid-cols-2 gap-2">
                         {timesForDate.map(perf => {
-                          const isSelected = selectedPerf?.PerformanceId === perf.PerformanceId;
+                          const isSel = selectedPerf?.PerformanceId === perf.PerformanceId;
                           return (
                             <button
                               key={perf.PerformanceId}
                               onClick={() => selectTime(perf)}
                               className={`py-2.5 px-3 rounded-xl text-[13px] font-semibold transition-all text-left ${
-                                isSelected
+                                isSel
                                   ? 'bg-[#2B7FFF] text-white shadow-md shadow-[#2B7FFF]/25'
                                   : 'bg-[#F8FAFC] text-[#374151] hover:bg-[#EFF6FF] hover:text-[#2B7FFF] border border-[#E2E8F0] hover:border-[#2B7FFF]/40'
                               }`}
                             >
                               <div>{formatTime(perf.PerformanceDate)}</div>
                               {perf.MinimumTicketPrice > 0 && (
-                                <div className={`text-[11px] ${isSelected ? 'text-[#BFDBFE]' : 'text-[#94A3B8]'}`}>
+                                <div className={`text-[11px] ${isSel ? 'text-[#BFDBFE]' : 'text-[#94A3B8]'}`}>
                                   From £{perf.MinimumTicketPrice}
                                 </div>
                               )}
@@ -618,7 +664,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <button
                         onClick={() => {
                           if (selectedPerf) {
-                            router.push(`/musical/book/${selectedPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event?.Name || '')}&price=${selectedPerf.MinimumTicketPrice}`);
+                            router.push(`/musical/book/${selectedPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event?.Name || '')}&price=${selectedPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}`);
                           } else if (timesForDate.length === 1) {
                             selectTime(timesForDate[0]);
                           }
@@ -709,6 +755,225 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
       )}
 
       <Footer />
+
+      {/* ══════════════════════════════════
+          BOTTOM STICKY BAR
+      ══════════════════════════════════ */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#E2E8F0] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-[1200px] mx-auto px-4 py-3 flex items-center gap-3">
+          {/* Poster thumbnail */}
+          <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#E2E8F0]">
+            {event.MainImageUrl
+              ? <img src={event.MainImageUrl} alt={event.Name} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-lg">🎭</div>
+            }
+          </div>
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold text-[#0F172A] truncate">{event.Name}</p>
+            <p className="text-[11px] text-[#64748B] truncate">{venueName}</p>
+          </div>
+          {/* Price */}
+          {event.EventMinimumPrice > 0 && (
+            <div className="text-right flex-shrink-0 hidden sm:block">
+              <p className="text-[11px] text-[#94A3B8]">Tickets from</p>
+              <p className="text-[14px] font-bold text-[#2B7FFF]">£{event.EventMinimumPrice}</p>
+            </div>
+          )}
+          {/* CTA Button */}
+          <button
+            onClick={() => setShowCalSheet(true)}
+            className="flex-shrink-0 px-5 py-2.5 bg-[#2B7FFF] text-white text-[14px] font-bold rounded-xl hover:bg-[#1D6AE5] active:scale-[0.97] transition-all shadow-md shadow-[#2B7FFF]/25 flex items-center gap-1.5"
+          >
+            날짜 선택
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════
+          CALENDAR BOTTOM SHEET
+      ══════════════════════════════════ */}
+      {showCalSheet && (
+        <div className="fixed inset-0 z-[100] flex flex-col justify-end">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCalSheet(false)}
+          />
+          {/* Sheet */}
+          <div className="relative bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto animate-[slideUp_0.3s_ease-out]"
+            style={{ animation: 'slideUp 0.3s ease-out' }}>
+            <style>{`
+              @keyframes slideUp {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+              }
+            `}</style>
+
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-[#E2E8F0]" />
+            </div>
+
+            {/* Header */}
+            <div className="px-5 py-3 border-b border-[#F1F5F9] flex items-center justify-between">
+              <div>
+                <h2 className="text-[16px] font-bold text-[#0F172A]">티켓 예약 정보</h2>
+                <p className="text-[12px] text-[#64748B] mt-0.5 truncate max-w-[260px]">{event.Name}</p>
+              </div>
+              <button
+                onClick={() => setShowCalSheet(false)}
+                className="w-8 h-8 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[#64748B] hover:bg-[#E2E8F0] transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* Calendar body */}
+            {performances.length === 0 ? (
+              <div className="px-5 py-16 text-center">
+                <div className="text-4xl mb-2">😔</div>
+                <p className="text-[#94A3B8] text-sm">예약 가능한 공연이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="px-4 pb-6">
+                {/* Month nav */}
+                <div className="flex items-center justify-between py-3">
+                  <button
+                    onClick={sheetPrevMonth}
+                    disabled={!canSheetPrevMonth}
+                    className={`p-2 rounded-lg transition-colors ${canSheetPrevMonth ? 'text-[#2B7FFF] hover:bg-[#EFF6FF]' : 'text-[#D1D5DB] cursor-not-allowed'}`}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <span className="text-[15px] font-bold text-[#0F172A]">{formatMonthYear(sheetYear, sheetMonth)}</span>
+                  <button
+                    onClick={sheetNextMonth}
+                    disabled={!canSheetNextMonth}
+                    className={`p-2 rounded-lg transition-colors ${canSheetNextMonth ? 'text-[#2B7FFF] hover:bg-[#EFF6FF]' : 'text-[#D1D5DB] cursor-not-allowed'}`}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
+
+                {/* Day headers */}
+                <div className="grid grid-cols-7 mb-1">
+                  {['MON','TUE','WED','THU','FRI','SAT','SUN'].map(d => (
+                    <div key={d} className="text-center text-[10px] font-bold text-[#94A3B8] py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Date grid */}
+                <div className="space-y-1">
+                  {sheetCalendarWeeks.map((week, wi) => (
+                    <div key={wi} className="grid grid-cols-7 gap-1">
+                      {week.map((day, di) => {
+                        if (day === null) return <div key={di} />;
+                        const key = `${sheetYear}-${String(sheetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const dayPerfs = perfsByDate[key] || [];
+                        const hasPerf = perfDateSet.has(key);
+                        const isSelected = sheetDate === key;
+                        const isToday = day === today.getDate() && sheetMonth === today.getMonth() && sheetYear === today.getFullYear();
+                        const dotColor = getDotColor(dayPerfs);
+                        return (
+                          <button
+                            key={di}
+                            onClick={() => hasPerf && selectSheetDate(day)}
+                            className={`relative flex flex-col items-center justify-center py-1.5 rounded-xl text-[14px] font-medium transition-all ${
+                              isSelected
+                                ? 'bg-[#2B7FFF] text-white font-bold shadow-md shadow-[#2B7FFF]/30'
+                                : hasPerf
+                                  ? 'text-[#0F172A] hover:bg-[#EFF6FF] hover:text-[#2B7FFF] cursor-pointer'
+                                  : 'text-[#CBD5E1] cursor-not-allowed'
+                            } ${isToday && !isSelected ? 'border border-[#2B7FFF]' : ''}`}
+                          >
+                            <span>{day}</span>
+                            {dotColor && !isSelected && (
+                              <span className="w-1.5 h-1.5 rounded-full mt-0.5" style={{ backgroundColor: dotColor }} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 mt-3 px-1">
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981]" /> 여유
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
+                    <span className="w-2 h-2 rounded-full bg-[#F59E0B]" /> 잔여석 적음
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#64748B]">
+                    <span className="w-2 h-2 rounded-full bg-[#94A3B8]" /> 매진
+                  </div>
+                </div>
+
+                {/* Time slots for selected date */}
+                {sheetDate && sheetTimesForDate.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-3">시간 선택</p>
+                    <div className="space-y-2">
+                      {sheetTimesForDate.map(perf => {
+                        const isSel = sheetPerf?.PerformanceId === perf.PerformanceId;
+                        return (
+                          <button
+                            key={perf.PerformanceId}
+                            onClick={() => setSheetPerf(perf)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+                              isSel
+                                ? 'border-[#2B7FFF] bg-[#EFF6FF]'
+                                : 'border-[#E2E8F0] hover:border-[#2B7FFF]/40 hover:bg-[#F8FAFC]'
+                            }`}
+                          >
+                            <span className={`text-[15px] font-bold ${isSel ? 'text-[#2B7FFF]' : 'text-[#0F172A]'}`}>
+                              {formatTime(perf.PerformanceDate)}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              {perf.MinimumTicketPrice > 0 && (
+                                <span className={`text-[13px] font-semibold ${isSel ? 'text-[#2B7FFF]' : 'text-[#64748B]'}`}>
+                                  From £{perf.MinimumTicketPrice}
+                                </span>
+                              )}
+                              <span className={`text-[12px] font-semibold px-3 py-1 rounded-lg ${
+                                isSel ? 'bg-[#2B7FFF] text-white' : 'bg-[#F1F5F9] text-[#374151]'
+                              }`}>
+                                선택 {isSel ? '✓' : '→'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bottom action button */}
+                <div className="mt-5">
+                  <button
+                    disabled={!sheetPerf}
+                    onClick={() => {
+                      if (!sheetPerf) return;
+                      setShowCalSheet(false);
+                      router.push(`/musical/book/${sheetPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event.Name)}&price=${sheetPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}&date=${encodeURIComponent(sheetPerf.PerformanceDate)}`);
+                    }}
+                    className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all ${
+                      sheetPerf
+                        ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
+                        : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+                    }`}
+                  >
+                    {sheetPerf ? '🎟️ 예매하기' : '시간을 선택하세요'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   );
 }
