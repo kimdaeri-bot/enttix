@@ -819,7 +819,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                 { icon: '✓', text: '티켓 수수료 없음', sub: 'No booking fees' },
                 { icon: '🔒', text: '안심 결제', sub: 'Secure checkout' },
                 { icon: '📧', text: '즉시 이메일 발송', sub: 'Instant e-ticket' },
-                { icon: '↩️', text: '공연 취소 시 전액 환불', sub: 'Full refund if cancelled' },
+                { icon: '⚠️', text: '환불 및 변경 불가', sub: 'No refunds or exchanges' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#F0FDF4] flex items-center justify-center text-[14px] flex-shrink-0">
