@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 const sportsItems = [
   'Football', 'Tennis', 'Golf', 'Rugby', 'Cricket', 'Formula 1', 'MotoGP',
@@ -38,7 +39,9 @@ function DropdownMenu({ items, basePath, onClose }: { items: string[]; basePath:
 export default function Header({ transparent = false }: { transparent?: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { user, signOut } = useAuth();
   let cartBadge = 0;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -115,9 +118,26 @@ export default function Header({ transparent = false }: { transparent?: boolean 
             )}
           </Link>
 
-          <Link href="/login" className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors">
-            Sign In
-          </Link>
+          {user ? (
+            <div className="relative">
+              <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/10 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-[#2B7FFF] flex items-center justify-center text-white text-[12px] font-bold">
+                  {(user.email?.[0] || 'U').toUpperCase()}
+                </div>
+              </button>
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#E5E7EB] py-2 min-w-[180px] z-50">
+                  <p className="px-4 py-2 text-[12px] text-[#94A3B8] truncate">{user.email}</p>
+                  <Link href="/mypage" className="block px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9]" onClick={() => setShowUserMenu(false)}>My Trips</Link>
+                  <button onClick={() => { signOut(); setShowUserMenu(false); }} className="w-full text-left px-4 py-2.5 text-[13px] text-[#EF4444] hover:bg-[#FEF2F2]">Sign Out</button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link href="/login" className="px-5 py-2.5 rounded-full text-[14px] font-semibold text-[#DBEAFE] hover:text-white transition-colors">
+              Sign In
+            </Link>
+          )}
           <Link href="/sell" className="ml-2 px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors">
             Sell Tickets
           </Link>
@@ -157,7 +177,14 @@ export default function Header({ transparent = false }: { transparent?: boolean 
           <Link href="/cart" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
             Cart {cartBadge > 0 && `(${cartBadge})`}
           </Link>
-          <Link href="/login" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Sign In</Link>
+          {user ? (
+            <>
+              <Link href="/mypage" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>My Trips</Link>
+              <button onClick={() => { signOut(); setMobileOpen(false); }} className="block w-full text-left px-4 py-3 text-[16px] font-semibold text-[#EF4444]">Sign Out</button>
+            </>
+          ) : (
+            <Link href="/login" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Sign In</Link>
+          )}
           <Link href="/sell" className="block mx-4 mt-2 px-4 py-3 text-center text-[16px] font-semibold text-white bg-[#2B7FFF] rounded-[8px]" onClick={() => setMobileOpen(false)}>Sell Tickets</Link>
         </div>
       )}

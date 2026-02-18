@@ -1,6 +1,8 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 function isPlannerQuery(q: string): boolean {
   const lower = q.toLowerCase();
@@ -80,7 +82,9 @@ function buildMapsUrl(name: string, city: string): string {
 
 export default function SearchBar({ compact = false, fullWidth = false, inline = false }: { compact?: boolean; fullWidth?: boolean; inline?: boolean }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -137,6 +141,21 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
       if (diff > 0 && activeDay < plannerResult.days.length) setActiveDay(activeDay + 1);
       if (diff < 0 && activeDay > 1) setActiveDay(activeDay - 1);
     }
+  };
+
+  const handleSaveTrip = async () => {
+    if (!user) { router.push('/login'); return; }
+    if (!plannerResult || saveStatus === 'saving' || saveStatus === 'saved') return;
+    setSaveStatus('saving');
+    const { error } = await supabase.from('saved_trips').insert({
+      user_id: user.id,
+      query: query,
+      city: plannerResult.city,
+      country: plannerResult.country,
+      days_json: plannerResult.days,
+    });
+    setSaveStatus(error ? 'idle' : 'saved');
+    if (error) alert('저장 실패: ' + error.message);
   };
 
   const handleExpand = () => {
@@ -289,7 +308,12 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
               <span className="text-[14px] font-bold text-[#0F172A]">📍 {plannerResult.city}, {plannerResult.country}</span>
               <span className="text-[12px] text-[#94A3B8]">{plannerResult.days.length} days</span>
             </div>
-            <button onClick={() => { setPlannerResult(null); setAiResult(null); }} className="text-[11px] text-[#94A3B8] hover:text-[#EF4444] transition-colors">✕ Close</button>
+            <div className="flex items-center gap-2">
+              <button onClick={handleSaveTrip} className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors ${saveStatus === 'saved' ? 'bg-[#ECFDF5] text-[#10B981]' : 'bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE]'}`}>
+                {saveStatus === 'saving' ? '저장 중...' : saveStatus === 'saved' ? '✓ 저장됨' : '💾 일정 저장'}
+              </button>
+              <button onClick={() => { setPlannerResult(null); setAiResult(null); setSaveStatus('idle'); }} className="text-[11px] text-[#94A3B8] hover:text-[#EF4444] transition-colors">✕ Close</button>
+            </div>
           </div>
 
           {/* Collapsible content */}
