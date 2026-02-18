@@ -78,18 +78,25 @@ Return ONLY valid JSON:
 "summary" = 1-line description in user's language. Empty fields as "" or null. Dates as YYYY-MM-DD.`;
 }
 
-const RECOMMEND_PROMPT = `You are Enttix AI, a sharp ticket search assistant.
+const RECOMMEND_PROMPT = `You are Enttix AI, a ticket availability assistant. Answer ONLY about the specific event/match the user asked about.
 
-RULES:
-- MAX 2 sentences. No more.
-- Match user's language (Korean query → Korean response, English → English)
-- Mention specific event names + dates + prices when available
-- No emoji, no greetings, no filler ("안녕하세요", "좋은 선택", "I'd be happy to")
-- If results exist: highlight the best 1-2 options with date and starting price
-- If no results: suggest what to search instead (broader city, different date, related category)
-- Sound knowledgeable and direct, like a concierge who knows the market
+FORMAT:
+- Match user's language (Korean → Korean, English → English)
+- No emoji, no greetings, no filler
+- Facts only. Be direct like a booking agent.
 
-NEVER include JSON, technical details, or apologies.`;
+WHEN RESULTS EXIST, answer these in order (skip if data unavailable):
+1. 예약 가능 여부 (Available / Sold out)
+2. 정확한 일정 (날짜, 시간, 요일)
+3. 장소 (경기장/공연장, 도시)
+4. 가격대 (최저가 ~ 범위)
+5. 좌석/티켓 종류 (있으면)
+
+Keep it under 4 lines. No recommendations for other events. No suggestions for alternatives unless user asked. Do NOT list multiple events — focus on the ONE the user asked about. If multiple dates exist for the same matchup, list only the closest upcoming one.
+
+WHEN NO RESULTS: Say it's not currently available. Suggest checking back later or broadening the search. 1 sentence max.
+
+NEVER include JSON, technical details, marketing copy, or apologies.`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -215,34 +222,42 @@ export async function POST(req: NextRequest) {
     });
 
     // Step 3: Generate AI recommendation
-    const eventSummaries = events.slice(0, 8).map((e: Record<string, unknown>) => {
+    // For ticket queries: show only the most relevant events (top 3 closest match)
+    const topEvents = events.slice(0, 5);
+    const eventSummaries = topEvents.map((e: Record<string, unknown>) => {
       const venue = e.venue as Record<string, unknown> || {};
-      const price = e.min_ticket_price ? `from ${e.currency || 'USD'} ${e.min_ticket_price}` : 'price TBD';
-      return `- ${e.name} | ${e.datetime} | ${venue.city || ''}, ${venue.country || ''} | ${price}`;
+      const price = e.min_ticket_price ? `${e.currency || 'GBP'} ${e.min_ticket_price}` : 'price TBD';
+      const dt = e.datetime ? new Date(e.datetime as string) : null;
+      const dateStr = dt ? dt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+      const timeStr = dt ? dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+      return `- ${e.name} | ${dateStr} ${timeStr} | ${venue.name || ''}, ${venue.city || ''} | from ${price} | available: yes`;
     }).join('\n');
 
     const recommendMsg = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 200,
+      max_tokens: 300,
       system: RECOMMEND_PROMPT,
       messages: [{
         role: 'user',
-        content: `Query: "${query}"
-${events.length} events found:
-${eventSummaries || '(No results)'}
+        content: `User asked: "${query}"
+${events.length} total events found. Top matches:
+${eventSummaries || '(No matching events found)'}
 
-Respond:`,
+Answer about the specific event the user asked about:`,
       }],
     });
 
     const aiMessage = recommendMsg.content[0].type === 'text' ? recommendMsg.content[0].text : '';
 
+    // Return only the most relevant events (max 10, closest matches)
+    const relevantEvents = events.slice(0, 10);
+
     return NextResponse.json({
       filters,
       summary: filters.summary || '',
       aiMessage,
-      events,
-      total: events.length,
+      events: relevantEvents,
+      total: relevantEvents.length,
     });
   } catch (e) {
     console.error('AI search error:', e);
