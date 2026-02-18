@@ -95,3 +95,8 @@ a, button { transition: all 0.2s ease; }
   border-color: var(--accent);
   box-shadow: var(--shadow-md);
 }
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translate(-50%, -20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

@@ -85,6 +85,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(true);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [showSaveToast, setShowSaveToast] = useState(false);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -154,8 +155,8 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
       country: plannerResult.country,
       days_json: plannerResult.days,
     });
-    setSaveStatus(error ? 'idle' : 'saved');
-    if (error) alert('저장 실패: ' + error.message);
+    if (error) { setSaveStatus('idle'); alert('저장 실패: ' + error.message); }
+    else { setSaveStatus('saved'); setShowSaveToast(true); setTimeout(() => setShowSaveToast(false), 3000); }
   };
 
   const handleExpand = () => {
@@ -523,6 +524,24 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
             <span className="text-[12px] font-semibold text-[#64748B]">{resultCollapsed ? '펼치기' : '접기'}</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" className={`transition-transform ${resultCollapsed ? 'rotate-180' : ''}`}><path d="M18 15l-6-6-6 6"/></svg>
           </button>
+        </div>
+      )}
+
+      {/* Save Toast */}
+      {showSaveToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-[fadeInDown_0.3s_ease-out]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#E5E7EB] px-6 py-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[#ECFDF5] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div>
+              <p className="text-[14px] font-semibold text-[#0F172A]">저장 완료!</p>
+              <p className="text-[12px] text-[#64748B]">My Trips에 일정이 저장되었습니다</p>
+            </div>
+            <button onClick={() => router.push('/mypage')} className="ml-3 px-3 py-1.5 bg-[#2B7FFF] text-white text-[11px] font-semibold rounded-lg hover:bg-[#1D6AE5] transition-colors">
+              보러가기
+            </button>
+          </div>
         </div>
       )}
     </div>
