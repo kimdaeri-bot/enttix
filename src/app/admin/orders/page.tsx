@@ -19,12 +19,14 @@ interface Order {
   currency: string;
   status: string;
   payment_method: string;
+  api_source: string;
   notes: string;
   created_at: string;
   updated_at: string;
 }
 
 const STATUSES = ['pending', 'confirmed', 'paid', 'ticketed', 'cancelled', 'refunded'];
+const API_SOURCES = ['manual', 'tixstock', 'stubhub', 'viagogo', 'seatgeek', 'other'];
 
 const statusColors: Record<string, string> = {
   pending: 'bg-[#FEF3C7] text-[#92400E]',
@@ -39,6 +41,7 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [apiFilter, setApiFilter] = useState('all');
   const [selected, setSelected] = useState<Order | null>(null);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -46,7 +49,7 @@ export default function OrdersPage() {
   const [form, setForm] = useState({
     customer_name: '', customer_email: '', customer_phone: '',
     event_name: '', event_date: '', venue: '', city: '',
-    quantity: 1, unit_price: 0, currency: 'GBP', notes: '',
+    quantity: 1, unit_price: 0, currency: 'GBP', api_source: 'manual', notes: '',
   });
 
   useEffect(() => { loadOrders(); }, []);
@@ -94,12 +97,13 @@ export default function OrdersPage() {
       unit_price: form.unit_price,
       total_price: total,
       currency: form.currency,
+      api_source: form.api_source,
       status: 'pending',
       notes: form.notes,
     });
     if (error) { alert('Error: ' + error.message); return; }
     setShowCreate(false);
-    setForm({ customer_name: '', customer_email: '', customer_phone: '', event_name: '', event_date: '', venue: '', city: '', quantity: 1, unit_price: 0, currency: 'GBP', notes: '' });
+    setForm({ customer_name: '', customer_email: '', customer_phone: '', event_name: '', event_date: '', venue: '', city: '', quantity: 1, unit_price: 0, currency: 'GBP', api_source: 'manual', notes: '' });
     loadOrders();
   };
 
@@ -110,7 +114,7 @@ export default function OrdersPage() {
     if (selected?.id === id) setSelected(null);
   };
 
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+  const filtered = orders.filter(o => (filter === 'all' || o.status === filter) && (apiFilter === 'all' || o.api_source === apiFilter));
 
   return (
     <div className="p-6 md:p-8">
@@ -121,12 +125,22 @@ export default function OrdersPage() {
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
+      {/* Status Filters */}
+      <div className="flex gap-2 mb-3 overflow-x-auto scrollbar-hide">
         {['all', ...STATUSES].map(s => (
           <button key={s} onClick={() => setFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${filter === s ? 'bg-[#2B7FFF] text-white' : 'bg-[#F1F5F9] text-[#94A3B8] hover:text-white'}`}>
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${filter === s ? 'bg-[#2B7FFF] text-white' : 'bg-[#F1F5F9] text-[#94A3B8] hover:text-[#0F172A]'}`}>
             {s === 'all' ? `All (${orders.length})` : `${s} (${orders.filter(o => o.status === s).length})`}
+          </button>
+        ))}
+      </div>
+      {/* API Source Filters */}
+      <div className="flex gap-2 mb-5 overflow-x-auto scrollbar-hide">
+        <span className="text-[11px] text-[#94A3B8] font-semibold self-center mr-1">API:</span>
+        {['all', ...API_SOURCES].map(s => (
+          <button key={s} onClick={() => setApiFilter(s)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${apiFilter === s ? 'bg-[#1E3A8A] text-white' : 'bg-[#F1F5F9] text-[#94A3B8] hover:text-[#0F172A]'}`}>
+            {s === 'all' ? 'All' : s}
           </button>
         ))}
       </div>
@@ -146,6 +160,7 @@ export default function OrdersPage() {
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Event</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Qty</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Total</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">API</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Status</th>
                 <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#94A3B8] uppercase">Actions</th>
               </tr></thead>
@@ -160,6 +175,9 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 text-[12px] text-[#374151] max-w-[180px] truncate">{order.event_name}</td>
                     <td className="px-4 py-3 text-[12px] text-[#0F172A]">{order.quantity}</td>
                     <td className="px-4 py-3 text-[12px] text-[#0F172A] font-semibold">{order.currency} {Number(order.total_price).toLocaleString()}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 rounded-full text-[10px] font-semibold bg-[#F1F5F9] text-[#475569] capitalize">{order.api_source || 'manual'}</span>
+                    </td>
                     <td className="px-4 py-3">
                       <select
                         value={order.status}
@@ -212,6 +230,7 @@ export default function OrdersPage() {
                 <div><p className="text-[11px] text-[#94A3B8]">Unit Price</p><p className="text-[16px] text-[#0F172A] font-bold">{selected.currency} {Number(selected.unit_price).toLocaleString()}</p></div>
                 <div><p className="text-[11px] text-[#94A3B8]">Total</p><p className="text-[16px] text-[#10B981] font-bold">{selected.currency} {Number(selected.total_price).toLocaleString()}</p></div>
               </div>
+              <div><p className="text-[11px] text-[#94A3B8] uppercase mb-1">API Source</p><span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#F1F5F9] text-[#475569] capitalize">{selected.api_source || 'manual'}</span></div>
               {selected.notes && <div><p className="text-[11px] text-[#94A3B8] uppercase mb-1">Notes</p><p className="text-[13px] text-[#374151]">{selected.notes}</p></div>}
               <div className="flex gap-2 pt-2">
                 {STATUSES.map(s => (
@@ -273,6 +292,13 @@ export default function OrdersPage() {
                     <option value="GBP">GBP</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="KRW">KRW</option>
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="text-[11px] text-[#94A3B8] uppercase block mb-1">API Source</label>
+                <select value={form.api_source} onChange={e => setForm({ ...form, api_source: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-[#F5F7FA] border border-[#E5E7EB] rounded-lg text-[13px] text-[#0F172A] outline-none focus:border-[#1E3A8A]">
+                  {API_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
               <div>
                 <label className="text-[11px] text-[#94A3B8] uppercase block mb-1">Notes</label>
