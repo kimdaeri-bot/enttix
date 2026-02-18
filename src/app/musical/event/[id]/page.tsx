@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect, use, useCallback } from 'react';
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -53,7 +54,7 @@ interface RelatedEvent {
   TagLine: string;
 }
 
-type Tab = 'about' | 'schedule' | 'seating' | 'gallery' | 'reviews';
+type Tab = 'about' | 'schedule' | 'gallery' | 'reviews';
 
 /* ─── Helpers ─── */
 function formatDate(iso: string) {
@@ -85,6 +86,7 @@ function buildCalendarGrid(year: number, month: number): (number | null)[][] {
 /* ─── Page ─── */
 export default function MusicalEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
 
   /* Data */
   const [event, setEvent] = useState<LTDEvent | null>(null);
@@ -99,17 +101,8 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   const [selectedDate, setSelectedDate] = useState<string | null>(null); // 'YYYY-MM-DD'
   const [selectedPerf, setSelectedPerf] = useState<Performance | null>(null);
 
-  /* Ticket selection */
-  const [areas, setAreas] = useState<Area[]>([]);
-  const [areasLoading, setAreasLoading] = useState(false);
-  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
-  const [selectedPrice, setSelectedPrice] = useState<number>(0);
-  const [qty, setQty] = useState(2);
-  const [showAreaPanel, setShowAreaPanel] = useState(false);
-
-  /* Booking */
-  const [booking, setBooking] = useState(false);
-  const [bookingError, setBookingError] = useState('');
+  /* Reviews */
+  const [reviews, setReviews] = useState<{ConsumerName?: string; Stars?: number; CreatedAt?: string; Content?: string}[]>([]);
 
   /* Tabs */
   const [activeTab, setActiveTab] = useState<Tab>('about');
@@ -140,6 +133,11 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
         const shuffled = all.filter(e => String(e.EventId) !== id).sort(() => Math.random() - 0.5);
         setRelatedEvents(shuffled.slice(0, 4));
       })
+      .catch(() => {});
+
+    fetch(`/api/ltd/event/${id}/reviews`)
+      .then(r => r.json())
+      .then(d => setReviews(d.reviews || []))
       .catch(() => {});
   }, [id]);
 
@@ -188,68 +186,13 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     if (!perfDateSet.has(key)) return;
     setSelectedDate(key);
     setSelectedPerf(null);
-    setAreas([]);
-    setSelectedArea(null);
-    setSelectedPrice(0);
-    setShowAreaPanel(false);
-    setBookingError('');
   }
 
   /* Times for selected date */
   const timesForDate: Performance[] = selectedDate ? (perfsByDate[selectedDate] || []) : [];
 
-  /* Load areas when perf selected */
-  const loadAreas = useCallback(async (perf: Performance) => {
-    setAreasLoading(true);
-    setAreas([]);
-    setSelectedArea(null);
-    setSelectedPrice(0);
-    try {
-      const r = await fetch(`/api/ltd/performance/${perf.PerformanceId}/areas`);
-      const d = await r.json();
-      setAreas(d.areas || []);
-    } finally {
-      setAreasLoading(false);
-    }
-  }, []);
-
   function selectTime(perf: Performance) {
     setSelectedPerf(perf);
-    setShowAreaPanel(true);
-    setBookingError('');
-    loadAreas(perf);
-  }
-
-  /* Booking */
-  async function handleBook() {
-    if (!selectedPerf || !selectedArea || !selectedPrice) return;
-    setBooking(true);
-    setBookingError('');
-    try {
-      const b1 = await fetch('/api/ltd/basket?action=create', { method: 'POST' });
-      const { basketId, error: e1 } = await b1.json();
-      if (!basketId) throw new Error(e1 || '바스켓 생성 실패');
-
-      const b2 = await fetch('/api/ltd/basket?action=add-tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId, performanceId: selectedPerf.PerformanceId, areaId: selectedArea.AreaId, seatsCount: qty, price: selectedPrice }),
-      });
-      const { error: e2 } = await b2.json();
-      if (e2) throw new Error(e2);
-
-      const b3 = await fetch('/api/ltd/basket?action=submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId, affiliateId: '775854e9-b102-48d9-99bc-4b288a67b538' }),
-      });
-      const { paymentUrl, error: e3 } = await b3.json();
-      if (e3) throw new Error(e3);
-      window.location.href = paymentUrl;
-    } catch (err: unknown) {
-      setBookingError(err instanceof Error ? err.message : String(err));
-      setBooking(false);
-    }
   }
 
   /* ─── Render states ─── */
@@ -273,7 +216,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   );
 
   const youtubeUrl = event.MultimediaContent?.find(m => m.Type === 0)?.Url;
-  const totalAmount = selectedPrice * qty;
   const DAYS_HEADER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
@@ -370,7 +312,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
             {/* ── Tabs ── */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               <div className="flex border-b border-[#E2E8F0]">
-                {(['about', 'schedule', 'seating', 'gallery', 'reviews'] as Tab[]).map(tab => (
+                {(['about', 'schedule', 'gallery', 'reviews'] as Tab[]).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -382,7 +324,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                   >
                     {tab === 'about' && 'About'}
                     {tab === 'schedule' && 'Schedule'}
-                    {tab === 'seating' && 'Seating Plan'}
                     {tab === 'gallery' && 'Gallery'}
                     {tab === 'reviews' && 'Reviews'}
                   </button>
@@ -507,57 +448,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                 </div>
               )}
 
-              {/* Tab: Seating Plan */}
-              {activeTab === 'seating' && (
-                <div className="p-6">
-                  {event.VenueSeatingPlanUrl ? (
-                    <div className="space-y-4">
-                      {/* Venue info */}
-                      <div className="flex flex-wrap items-center gap-3">
-                        {event.VenueName && (
-                          <div className="flex items-center gap-2 bg-[#F1F5F9] px-3 py-1.5 rounded-full">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                            <span className="text-[13px] font-semibold text-[#374151]">{event.VenueName}</span>
-                          </div>
-                        )}
-                        {event.VenueAddress && (
-                          <span className="text-[12px] text-[#94A3B8]">{event.VenueAddress}</span>
-                        )}
-                        {event.VenueNearestTube && (
-                          <span className="flex items-center gap-1 text-[12px] text-[#64748B] bg-[#F8FAFC] px-2 py-1 rounded-full border border-[#E2E8F0]">
-                            🚇 {event.VenueNearestTube}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Seating plan image */}
-                      <div className="relative rounded-2xl overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC] cursor-zoom-in group"
-                        onClick={() => window.open(event.VenueSeatingPlanUrl!, '_blank')}>
-                        <img
-                          src={event.VenueSeatingPlanUrl}
-                          alt={`${event.VenueName || event.Name} 좌석 배치도`}
-                          className="w-full h-auto object-contain max-h-[600px] group-hover:opacity-95 transition-opacity"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                        {/* Zoom hint */}
-                        <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
-                          Full Size
-                        </div>
-                      </div>
-
-                      <p className="text-[11px] text-[#94A3B8] text-center">Click image to view full size · Actual seating may vary per performance</p>
-                    </div>
-                  ) : (
-                    <div className="text-center py-14">
-                      <div className="text-5xl mb-3">🗺️</div>
-                      <p className="text-[#64748B] font-semibold mb-1">Seating Plan Unavailable</p>
-                      <p className="text-[#94A3B8] text-[13px]">No seating plan available for this venue.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Tab: Gallery */}
               {activeTab === 'gallery' && (
                 <div className="p-6">
@@ -584,156 +474,36 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
 
               {/* Tab: Reviews */}
               {activeTab === 'reviews' && (
-                <div className="p-6 text-center py-16">
-                  <div className="text-5xl mb-3">⭐</div>
-                  <p className="text-[#64748B] font-semibold mb-1">Reviews Coming Soon</p>
-                  <p className="text-[#94A3B8] text-sm">We'll be adding reviews soon.</p>
+                <div className="p-6">
+                  {reviews.length === 0 ? (
+                    <div className="text-center py-14">
+                      <div className="text-5xl mb-3">⭐</div>
+                      <p className="text-[#64748B] font-semibold mb-1">No reviews yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reviews.map((r, i) => (
+                        <div key={i} className="bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0]">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-0.5">
+                                {Array.from({length: 5}).map((_, si) => (
+                                  <svg key={si} width="14" height="14" viewBox="0 0 24 24" fill={si < (r.Stars || 5) ? '#F59E0B' : '#E2E8F0'}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                                ))}
+                              </div>
+                            </div>
+                            <span className="text-[11px] text-[#94A3B8]">{r.ConsumerName || 'Anonymous'}</span>
+                          </div>
+                          {r.Content && <p className="text-[13px] text-[#374151] leading-relaxed">{r.Content}</p>}
+                          {r.CreatedAt && <p className="text-[11px] text-[#94A3B8] mt-2">{new Date(r.CreatedAt).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Area selection panel (appears after Find Tickets) */}
-            {showAreaPanel && selectedPerf && (
-              <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
-                <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
-                  <div>
-                    <h2 className="text-[16px] font-bold text-[#0F172A]">Select Seats</h2>
-                    <p className="text-[12px] text-[#94A3B8] mt-0.5">
-                      {formatDate(selectedPerf.PerformanceDate)} · {formatTime(selectedPerf.PerformanceDate)}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => { setShowAreaPanel(false); setSelectedArea(null); setSelectedPrice(0); }}
-                    className="text-[#94A3B8] hover:text-[#374151] p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                  </button>
-                </div>
-
-                {areasLoading ? (
-                  <div className="flex flex-col items-center py-12 gap-3">
-                    <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                    <p className="text-[#94A3B8] text-sm">Loading seat areas...</p>
-                  </div>
-                ) : areas.length === 0 ? (
-                  <div className="text-center py-10 text-[#94A3B8] text-sm">Unable to load seat information.</div>
-                ) : (
-                  <div className="p-5 space-y-3">
-                    {/* Best Available option */}
-                    <div className="rounded-xl border-2 border-dashed border-[#E2E8F0] p-4 flex items-center gap-3 hover:border-[#2B7FFF]/40 hover:bg-[#F8FAFC] transition-colors cursor-pointer group">
-                      <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center text-[#2B7FFF] group-hover:bg-[#2B7FFF] group-hover:text-white transition-colors">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-bold text-[#0F172A]">Best Available</p>
-                        <p className="text-[11px] text-[#94A3B8]">Best seat auto-assigned</p>
-                      </div>
-                    </div>
-
-                    {/* Area cards */}
-                    {areas.map(area => {
-                      const prices = area.Prices || [];
-                      return prices.map((pr, pi) => {
-                        const isSelected = selectedArea?.AreaId === area.AreaId && selectedPrice === pr.Price;
-                        return (
-                          <button
-                            key={`${area.AreaId}-${pi}`}
-                            onClick={() => { setSelectedArea(area); setSelectedPrice(pr.Price); }}
-                            className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left ${
-                              isSelected
-                                ? 'border-[#2B7FFF] bg-[#EFF6FF] shadow-sm'
-                                : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50 hover:bg-[#F8FAFC]'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                                isSelected ? 'border-[#2B7FFF] bg-[#2B7FFF]' : 'border-[#CBD5E1]'
-                              }`}>
-                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                              </div>
-                              <div>
-                                <p className="text-[14px] font-semibold text-[#0F172A]">{area.AreaName}</p>
-                                <p className="text-[11px] text-[#94A3B8]">Face value £{pr.FaceValue}</p>
-                                {pr.AvailableSeatsCount > 0 && (
-                                  <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount} seats left</p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-[20px] font-extrabold text-[#2B7FFF]">£{pr.Price}</p>
-                              <p className="text-[11px] text-[#94A3B8]">per ticket</p>
-                            </div>
-                          </button>
-                        );
-                      });
-                    })}
-
-                    {/* Quantity + summary + book */}
-                    {selectedArea && selectedPrice > 0 && (
-                      <div className="mt-4 bg-[#F8FAFC] rounded-xl p-4 space-y-4 border border-[#E2E8F0]">
-                        {/* Qty */}
-                        <div className="flex items-center justify-between">
-                          <p className="text-[14px] font-semibold text-[#0F172A]">Tickets</p>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => setQty(Math.max(1, qty - 1))}
-                              className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-[#374151] hover:border-[#2B7FFF] hover:text-[#2B7FFF] text-xl font-bold transition-colors"
-                            >−</button>
-                            <span className="text-[18px] font-bold text-[#0F172A] w-8 text-center">{qty}</span>
-                            <button
-                              onClick={() => setQty(Math.min(10, qty + 1))}
-                              className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-[#374151] hover:border-[#2B7FFF] hover:text-[#2B7FFF] text-xl font-bold transition-colors"
-                            >+</button>
-                          </div>
-                        </div>
-
-                        {/* Summary */}
-                        <div className="border-t border-[#E2E8F0] pt-3 space-y-1.5">
-                          <div className="flex justify-between text-[13px]">
-                            <span className="text-[#64748B]">{selectedArea.AreaName} × {qty}매</span>
-                            <span className="font-semibold text-[#374151]">£{(selectedPrice * qty).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between text-[12px] text-[#94A3B8]">
-                            <span>Per ticket</span>
-                            <span>£{selectedPrice}</span>
-                          </div>
-                          <div className="flex justify-between pt-2 border-t border-[#E2E8F0]">
-                            <span className="text-[15px] font-bold text-[#0F172A]">Total</span>
-                            <span className="text-[20px] font-extrabold text-[#2B7FFF]">£{totalAmount.toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        {bookingError && (
-                          <p className="text-[#EF4444] text-[12px] bg-[#FEF2F2] border border-[#FECACA] p-3 rounded-lg">{bookingError}</p>
-                        )}
-
-                        <button
-                          onClick={handleBook}
-                          disabled={booking}
-                          className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all ${
-                            booking
-                              ? 'bg-[#94A3B8] text-white cursor-not-allowed'
-                              : 'bg-[#10B981] text-white hover:bg-[#059669] active:scale-[0.98] shadow-lg shadow-[#10B981]/25'
-                          }`}
-                        >
-                          {booking ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.25"/>
-                                <path d="M21 12a9 9 0 00-9-9"/>
-                              </svg>
-                              Redirecting to payment...
-                            </span>
-                          ) : '🎫 Book Now'}
-                        </button>
-
-                        <p className="text-[11px] text-[#94A3B8] text-center">🔒 Secure payment by London Theatre Direct · No booking fees</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* ── RIGHT COLUMN (35%) — Sticky booking panel ── */}
@@ -848,8 +618,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <button
                         onClick={() => {
                           if (selectedPerf) {
-                            setShowAreaPanel(true);
-                            if (areas.length === 0 && !areasLoading) loadAreas(selectedPerf);
+                            router.push(`/musical/book/${selectedPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event?.Name || '')}&price=${selectedPerf.MinimumTicketPrice}`);
                           } else if (timesForDate.length === 1) {
                             selectTime(timesForDate[0]);
                           }
