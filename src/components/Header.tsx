@@ -194,7 +194,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
     </header>
     {!hideSearch && (
       <div className="bg-[#F5F7FA] pt-6 pb-2 px-4 relative z-40">
-        <div className="max-w-[900px] mx-auto">
+        <div className="max-w-[1280px] mx-auto flex justify-center">
           <SearchBar inline />
         </div>
       </div>
