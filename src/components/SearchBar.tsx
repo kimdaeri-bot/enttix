@@ -322,6 +322,10 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                     Day {day.day}
                   </button>
                 ))}
+                <button onClick={() => setActiveDay(activeDay === 0 ? 1 : 0)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
+                  {activeDay === 0 ? '📋 접기' : '📋 일정 한번에 보기'}
+                </button>
               </div>
 
               {/* Swipeable day cards */}

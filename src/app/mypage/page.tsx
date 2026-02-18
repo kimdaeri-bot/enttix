@@ -154,6 +154,10 @@ export default function MyPage() {
                     Day {day.day}
                   </button>
                 ))}
+                <button onClick={() => setActiveDay(activeDay === 0 ? 1 : 0)}
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
+                  {activeDay === 0 ? '📋 접기' : '📋 일정 한번에 보기'}
+                </button>
               </div>
 
               {/* Swipeable day content */}
@@ -162,7 +166,7 @@ export default function MyPage() {
                 onTouchMove={e => handleSwipeMove(e.touches[0].clientX)}
                 onTouchEnd={handleSwipeEnd}
                 style={{ userSelect: 'none' }}>
-                {selectedTrip.days_json.filter((d: any) => d.day === activeDay).map((day: any) => (
+                {selectedTrip.days_json.filter((d: any) => activeDay === 0 || d.day === activeDay).map((day: any) => (
                   <div key={day.day}>
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-[#0F172A] flex items-center justify-center text-white font-bold text-[11px]">D{day.day}</div>
@@ -217,7 +221,7 @@ export default function MyPage() {
                     </div>
 
                     {/* Swipe indicator dots */}
-                    {selectedTrip.days_json.length > 1 && (
+                    {selectedTrip.days_json.length > 1 && activeDay !== 0 && (
                       <div className="flex items-center justify-center mt-3 gap-1.5">
                         {selectedTrip.days_json.map((_: any, i: number) => (
                           <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i + 1 === activeDay ? 'bg-[#2B7FFF] w-4' : 'bg-[#D1D5DB]'}`} />
@@ -229,7 +233,7 @@ export default function MyPage() {
               </div>
 
               {/* Prev / Next navigation */}
-              {selectedTrip.days_json.length > 1 && (
+              {selectedTrip.days_json.length > 1 && activeDay !== 0 && (
                 <div className="flex items-center justify-between mt-3">
                   <button onClick={() => setActiveDay(Math.max(1, activeDay - 1))} disabled={activeDay <= 1}
                     className={`flex items-center gap-1 text-[12px] font-semibold transition-colors ${activeDay <= 1 ? 'text-[#D1D5DB] cursor-not-allowed' : 'text-[#2B7FFF] hover:text-[#1D6AE5]'}`}>
