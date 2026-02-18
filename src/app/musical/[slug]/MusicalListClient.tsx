@@ -152,8 +152,8 @@ export default function MusicalListClient({
                   href={`/musical/event/${ev.EventId}`}
                   className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all flex flex-col"
                 >
-                  {/* Poster image — portrait ratio */}
-                  <div className="relative w-full overflow-hidden bg-[#1E293B]" style={{ aspectRatio: '2/3' }}>
+                  {/* Image — 4:3 ratio */}
+                  <div className="relative w-full overflow-hidden bg-[#1E293B]" style={{ aspectRatio: '4/3' }}>
                     {ev.MainImageUrl ? (
                       <img
                         src={ev.MainImageUrl}
