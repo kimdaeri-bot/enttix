@@ -37,6 +37,10 @@ interface LTDEvent {
   StartDate: string;
   EndDate: string;
   Venue?: { Name: string; City: string };
+  VenueSeatingPlanUrl?: string;
+  VenueName?: string;
+  VenueAddress?: string;
+  VenueNearestTube?: string;
   Images: { Url: string }[];
   MultimediaContent: { Type: number; Url: string }[];
   Cast: { Name: string; Description: string }[];
@@ -49,7 +53,7 @@ interface RelatedEvent {
   TagLine: string;
 }
 
-type Tab = 'about' | 'schedule' | 'gallery' | 'reviews';
+type Tab = 'about' | 'schedule' | 'seating' | 'gallery' | 'reviews';
 
 /* ─── Helpers ─── */
 function formatDate(iso: string) {
@@ -366,7 +370,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
             {/* ── Tabs ── */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               <div className="flex border-b border-[#E2E8F0]">
-                {(['about', 'schedule', 'gallery', 'reviews'] as Tab[]).map(tab => (
+                {(['about', 'schedule', 'seating', 'gallery', 'reviews'] as Tab[]).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -378,6 +382,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                   >
                     {tab === 'about' && '공연 소개'}
                     {tab === 'schedule' && '공연 일정'}
+                    {tab === 'seating' && '좌석 배치도'}
                     {tab === 'gallery' && '갤러리'}
                     {tab === 'reviews' && '리뷰'}
                   </button>
@@ -497,6 +502,57 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                           })}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab: Seating Plan */}
+              {activeTab === 'seating' && (
+                <div className="p-6">
+                  {event.VenueSeatingPlanUrl ? (
+                    <div className="space-y-4">
+                      {/* Venue info */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {event.VenueName && (
+                          <div className="flex items-center gap-2 bg-[#F1F5F9] px-3 py-1.5 rounded-full">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span className="text-[13px] font-semibold text-[#374151]">{event.VenueName}</span>
+                          </div>
+                        )}
+                        {event.VenueAddress && (
+                          <span className="text-[12px] text-[#94A3B8]">{event.VenueAddress}</span>
+                        )}
+                        {event.VenueNearestTube && (
+                          <span className="flex items-center gap-1 text-[12px] text-[#64748B] bg-[#F8FAFC] px-2 py-1 rounded-full border border-[#E2E8F0]">
+                            🚇 {event.VenueNearestTube}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Seating plan image */}
+                      <div className="relative rounded-2xl overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC] cursor-zoom-in group"
+                        onClick={() => window.open(event.VenueSeatingPlanUrl!, '_blank')}>
+                        <img
+                          src={event.VenueSeatingPlanUrl}
+                          alt={`${event.VenueName || event.Name} 좌석 배치도`}
+                          className="w-full h-auto object-contain max-h-[600px] group-hover:opacity-95 transition-opacity"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        {/* Zoom hint */}
+                        <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
+                          크게 보기
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-[#94A3B8] text-center">이미지를 클릭하면 크게 볼 수 있습니다 · 실제 좌석 배치는 공연마다 다를 수 있습니다</p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-14">
+                      <div className="text-5xl mb-3">🗺️</div>
+                      <p className="text-[#64748B] font-semibold mb-1">좌석 배치도 준비 중</p>
+                      <p className="text-[#94A3B8] text-[13px]">해당 공연장의 배치도 정보가 없습니다.</p>
                     </div>
                   )}
                 </div>
