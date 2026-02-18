@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 const TIXSTOCK_BASE_URL = process.env.TIXSTOCK_BASE_URL!;
 const TIXSTOCK_TOKEN = process.env.TIXSTOCK_TOKEN!;
@@ -223,44 +226,50 @@ function parseQuery(query: string): {
 }
 
 // ============================================================
-// Template-based AI message (NO AI call)
+// AI-powered conversational response (Haiku, 1 call)
 // ============================================================
-function buildAiMessage(query: string, events: Record<string, unknown>[]): string {
-  const isKorean = /[가-힣]/.test(query);
+const TICKET_PROMPT = `You are an Enttix ticket assistant. A user asked about a specific event or match.
 
-  if (events.length === 0) {
-    return isKorean
-      ? '현재 해당 조건에 맞는 이벤트가 없습니다. 날짜 범위를 넓히거나 다른 키워드로 검색해보세요.'
-      : 'No events found for this search. Try broadening your dates or keywords.';
-  }
+RULES:
+- Reply in the same language as the user (Korean → Korean, English → English)
+- Conversational but fact-focused — like a knowledgeable friend who knows tickets
+- NO greetings, NO filler ("안녕하세요", "좋은 선택이에요", "I'd be happy to")
+- NO marketing language, NO apologies
+- Stick ONLY to what the user asked. Do NOT suggest other events/dates/alternatives
+- If multiple events found for same match, focus on the CLOSEST upcoming one
 
-  const top = events[0] as Record<string, unknown>;
-  const venue = top.venue as Record<string, unknown> || {};
-  const price = top.min_ticket_price;
-  const currency = (top.currency as string) || 'GBP';
-  const dt = top.datetime ? new Date(top.datetime as string) : null;
+ANSWER FORMAT (in order, skip if data missing):
+1. Availability (yes/no, how many listings)
+2. Exact schedule (date, day of week, time)
+3. Venue + city
+4. Price range (lowest available)
+5. Ticket types if notable (e.g. seated/standing/VIP)
 
-  if (isKorean) {
-    const datePart = dt
-      ? `${dt.getFullYear()}년 ${dt.getMonth() + 1}월 ${dt.getDate()}일 ${['일', '월', '화', '수', '목', '금', '토'][dt.getDay()]}요일 ${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}`
-      : '';
-    const lines: string[] = [];
-    lines.push(`✅ 예약 가능 | ${events.length}개 이벤트 발견`);
-    if (datePart) lines.push(`📅 ${datePart}`);
-    if (venue.name) lines.push(`📍 ${venue.name}${venue.city ? `, ${venue.city}` : ''}`);
-    if (price) lines.push(`💰 ${currency} ${price}부터`);
-    return lines.join('\n');
-  } else {
-    const datePart = dt
-      ? dt.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-      : '';
-    const lines: string[] = [];
-    lines.push(`✅ Available | ${events.length} event${events.length > 1 ? 's' : ''} found`);
-    if (datePart) lines.push(`📅 ${datePart}`);
-    if (venue.name) lines.push(`📍 ${venue.name}${venue.city ? `, ${venue.city}` : ''}`);
-    if (price) lines.push(`💰 From ${currency} ${price}`);
-    return lines.join('\n');
-  }
+Max 4-5 lines. Natural sentences, not bullet points. No JSON.
+
+WHEN NO RESULTS: One sentence — not available now, try broadening search. Nothing more.`;
+
+async function buildAiMessage(query: string, events: Record<string, unknown>[]): Promise<string> {
+  const topEvents = events.slice(0, 3);
+  const eventData = topEvents.map(e => {
+    const v = e.venue as Record<string, unknown> || {};
+    const dt = e.datetime ? new Date(e.datetime as string) : null;
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const dateStr = dt ? `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} (${days[dt.getDay()]}) ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}` : '';
+    return `• ${e.name} | ${dateStr} | ${v.name || ''}, ${v.city || ''} | from ${e.currency || 'GBP'} ${e.min_ticket_price || 'TBD'}`;
+  }).join('\n');
+
+  const msg = await anthropic.messages.create({
+    model: 'claude-3-haiku-20240307',
+    max_tokens: 250,
+    system: TICKET_PROMPT,
+    messages: [{
+      role: 'user',
+      content: `User asked: "${query}"\n\n${events.length === 0 ? 'No events found.' : `${events.length} event(s) found:\n${eventData}`}`,
+    }],
+  });
+
+  return msg.content[0].type === 'text' ? msg.content[0].text : '';
 }
 
 // ============================================================
@@ -362,9 +371,9 @@ export async function POST(req: NextRequest) {
       return da - db;
     });
 
-    // Step 3: Template-based message (0 AI tokens)
+    // Step 3: AI conversational response (Haiku, 1 call)
     const relevantEvents = events.slice(0, 10);
-    const aiMessage = buildAiMessage(query, relevantEvents);
+    const aiMessage = await buildAiMessage(query, relevantEvents);
 
     return NextResponse.json({
       filters,
