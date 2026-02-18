@@ -17,6 +17,11 @@ const concertItems = [
   'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
 ];
 
+const musicalItems = [
+  'West End', 'Broadway', 'Opera', 'Ballet', 'Comedy', 'Drama',
+  'Family Shows', 'Dance', 'Circus', 'Magic Shows',
+];
+
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -96,6 +101,18 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {openDropdown === 'concerts' && <DropdownMenu items={concertItems} basePath="/concert" onClose={() => setOpenDropdown(null)} />}
           </div>
 
+          {/* Musical dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('musical')} onMouseLeave={handleLeave}>
+            <Link
+              href="/musical/west-end"
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            >
+              뮤지컬
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
+            </Link>
+            {openDropdown === 'musical' && <DropdownMenu items={musicalItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
+          </div>
+
           <Link href="/all-tickets" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
             All Tickets
           </Link>
@@ -170,6 +187,14 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Concerts</p>
             {concertItems.map(item => (
               <Link key={item} href={`/concert/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
+                {item}
+              </Link>
+            ))}
+          </div>
+          <div className="mb-2">
+            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">뮤지컬</p>
+            {musicalItems.map(item => (
+              <Link key={item} href={`/musical/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
                 {item}
               </Link>
             ))}
