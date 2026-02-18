@@ -124,7 +124,7 @@ function PlannerContent() {
 
   return (
     <main className="min-h-screen bg-white">
-      <Header />
+      <Header hideSearch />
 
       {/* Hero — compact, clean */}
       <section className="bg-gradient-to-b from-[#F8FAFC] to-white pt-10 pb-8 px-4">
@@ -421,7 +421,7 @@ export default function PlannerPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-white">
-        <Header />
+        <Header hideSearch />
         <div className="flex items-center justify-center py-20">
           <div className="text-[16px] text-[#94A3B8] animate-pulse">Loading...</div>
         </div>
