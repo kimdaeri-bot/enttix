@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
-    const type = searchParams.get('type') || ''; // 1=Musical, 2=Play, 3=Dance, etc.
+    const type = searchParams.get('type') || ''; // 1=Musical, 2=Play, 3=Dance, 4=Opera, 5=Ballet, 6=Circus
 
     let url = `${LTD_BASE_URL}/Events`;
     if (type) url += `?type=${type}`;
@@ -31,11 +31,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Sort by EventMinimumPrice ascending, then by Name
+    // LTD API returns events in their own popularity/ranking order by default.
+    // We keep that order (most popular first) rather than sorting by price.
+    // Only move events with no price to the end.
     events.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-      const pa = (a.EventMinimumPrice as number) || 999;
-      const pb = (b.EventMinimumPrice as number) || 999;
-      return pa - pb;
+      const pa = (a.EventMinimumPrice as number) || 0;
+      const pb = (b.EventMinimumPrice as number) || 0;
+      // Push zero-price events to the end, otherwise keep LTD default order
+      if (pa === 0 && pb > 0) return 1;
+      if (pb === 0 && pa > 0) return -1;
+      return 0; // stable sort preserves LTD's original ranking
     });
 
     return NextResponse.json({ events, total: events.length });
