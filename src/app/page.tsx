@@ -63,7 +63,7 @@ export default async function Home() {
     <main className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
       <div className="hero-bg min-h-[500px] md:min-h-[700px]">
-        <Header transparent />
+        <Header transparent hideSearch />
         <section className="relative w-full px-4 md:px-0">
           <div className="max-w-[1280px] mx-auto flex flex-col items-center pt-12 md:pt-24 pb-8 md:pb-16">
             {/* Hero Text */}
