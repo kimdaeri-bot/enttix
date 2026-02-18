@@ -60,8 +60,43 @@ export async function GET(req: NextRequest) {
     }
     events = Array.from(nameMap.values());
 
-    // Push zero-price events to the end; otherwise keep LTD default order
+    // ── Featured ranking (top shows pinned in order) ──
+    const FEATURED_ORDER = [
+      'the lion king',
+      'the phantom of the opera',
+      'les misérables',
+      'les miserables',
+      'hamilton',
+      'wicked',
+      'mamma mia!',
+      'mamma mia',
+      'moulin rouge! the musical',
+      'moulin rouge',
+      'the book of mormon',
+      'matilda the musical',
+      'matilda',
+      'back to the future the musical',
+      'back to the future',
+      'mj the musical',
+      'six',
+      'hadestown',
+      'the devil wears prada',
+      'harry potter and the cursed child',
+    ];
+
+    function featuredRank(name: string): number {
+      const lower = name.trim().toLowerCase();
+      for (let i = 0; i < FEATURED_ORDER.length; i++) {
+        if (lower === FEATURED_ORDER[i] || lower.startsWith(FEATURED_ORDER[i])) return i;
+      }
+      return 999;
+    }
+
     events.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
+      const ra = featuredRank((a.Name as string) || '');
+      const rb = featuredRank((b.Name as string) || '');
+      if (ra !== rb) return ra - rb;
+      // Non-featured: push zero-price to end, otherwise keep LTD order
       const pa = (a.EventMinimumPrice as number) || 0;
       const pb = (b.EventMinimumPrice as number) || 0;
       if (pa === 0 && pb > 0) return 1;
