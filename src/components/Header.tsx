@@ -22,6 +22,13 @@ const musicalItems = [
   'Family Shows', 'Dance', 'Circus', 'Magic Shows',
 ];
 
+const attractionItems = [
+  'London', 'Paris', 'Barcelona', 'Rome',
+  'Amsterdam', 'Dubai', 'Singapore', 'Prague',
+  'Madrid', 'Vienna', 'New York', 'Tokyo',
+  'All Destinations',
+];
+
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -113,6 +120,31 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {openDropdown === 'musical' && <DropdownMenu items={musicalItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
           </div>
 
+          {/* Attractions dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('attractions')} onMouseLeave={handleLeave}>
+            <Link
+              href="/attractions"
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            >
+              Attractions
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
+            </Link>
+            {openDropdown === 'attractions' && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-[12px] shadow-xl border border-[#E5E7EB] py-2 min-w-[220px] z-50 grid grid-cols-2 gap-0">
+                {attractionItems.map(item => (
+                  <Link
+                    key={item}
+                    href={item === 'All Destinations' ? '/attractions' : `/attractions/${toSlug(item)}`}
+                    className="px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
+                    onClick={() => setOpenDropdown(null)}
+                  >
+                    {item}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
           <Link href="/all-tickets" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
             All Tickets
           </Link>
@@ -195,6 +227,19 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">뮤지컬</p>
             {musicalItems.map(item => (
               <Link key={item} href={`/musical/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
+                {item}
+              </Link>
+            ))}
+          </div>
+          <div className="mb-2">
+            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Attractions</p>
+            {attractionItems.map(item => (
+              <Link
+                key={item}
+                href={item === 'All Destinations' ? '/attractions' : `/attractions/${toSlug(item)}`}
+                className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white"
+                onClick={() => setMobileOpen(false)}
+              >
                 {item}
               </Link>
             ))}
