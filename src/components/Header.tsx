@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import SearchBar from './SearchBar';
+import dynamic from 'next/dynamic';
+const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
 
 const sportsItems = [
   'Football', 'Tennis', 'Golf', 'Rugby', 'Cricket', 'Formula 1', 'MotoGP',
@@ -192,9 +193,9 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
       )}
     </header>
     {!hideSearch && (
-      <div className="bg-[#0F172A] pb-5 px-4">
-        <div className="max-w-[800px] mx-auto">
-          <SearchBar compact />
+      <div className="bg-[#F5F7FA] pt-6 pb-2 px-4 relative z-40">
+        <div className="max-w-[900px] mx-auto">
+          <SearchBar inline />
         </div>
       </div>
     )}
