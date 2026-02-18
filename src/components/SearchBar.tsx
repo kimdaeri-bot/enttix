@@ -529,7 +529,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* Save Toast */}
       {showSaveToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] animate-[fadeInDown_0.3s_ease-out]">
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[200] animate-[fadeInDown_0.3s_ease-out]">
           <div className="bg-white rounded-2xl shadow-2xl border border-[#E5E7EB] px-6 py-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#ECFDF5] flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
