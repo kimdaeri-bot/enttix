@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -40,8 +41,22 @@ export default function Header({ transparent = false }: { transparent?: boolean 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const router = useRouter();
+  const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const isHome = pathname === '/';
+
+  const handleSearch = () => {
+    const q = searchValue.trim();
+    if (!q) return;
+    router.push(`/all-tickets?q=${encodeURIComponent(q)}`);
+    setSearchOpen(false);
+    setSearchValue('');
+  };
   let cartBadge = 0;
   try {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -103,6 +118,37 @@ export default function Header({ transparent = false }: { transparent?: boolean 
             ✨ Planner
           </Link>
 
+          {/* Search bar (hidden on home page) */}
+          {!isHome && (
+            <>
+              <div className="w-[1px] h-8 bg-[rgba(255,255,255,0.2)] mx-2" />
+              {searchOpen ? (
+                <form onSubmit={e => { e.preventDefault(); handleSearch(); }} className="flex items-center gap-1">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchValue}
+                    onChange={e => setSearchValue(e.target.value)}
+                    onBlur={() => { if (!searchValue) setSearchOpen(false); }}
+                    placeholder="Search events, cities..."
+                    autoFocus
+                    className="w-[180px] px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-[13px] placeholder-white/50 focus:outline-none focus:border-[#2B7FFF] focus:bg-white/15 transition-all"
+                  />
+                  <button type="submit" className="p-1.5 text-[#DBEAFE] hover:text-white transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  </button>
+                  <button type="button" onClick={() => { setSearchOpen(false); setSearchValue(''); }} className="p-1.5 text-[#DBEAFE] hover:text-white transition-colors">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </form>
+              ) : (
+                <button onClick={() => setSearchOpen(true)} className="px-3 py-2.5 text-[#DBEAFE] hover:text-white transition-colors" title="Search">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
+              )}
+            </>
+          )}
+
           <div className="w-[1px] h-8 bg-[rgba(255,255,255,0.2)] mx-2" />
 
           {/* Cart icon */}
@@ -155,6 +201,21 @@ export default function Header({ transparent = false }: { transparent?: boolean 
 
       {mobileOpen && (
         <div className="md:hidden pb-4">
+          {/* Mobile search */}
+          {!isHome && (
+            <form onSubmit={e => { e.preventDefault(); const q = searchValue.trim(); if (q) { router.push(`/all-tickets?q=${encodeURIComponent(q)}`); setMobileOpen(false); setSearchValue(''); } }} className="px-4 mb-3">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input
+                  type="text"
+                  value={searchValue}
+                  onChange={e => setSearchValue(e.target.value)}
+                  placeholder="Search events, cities..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/10 border border-white/20 text-white text-[14px] placeholder-white/50 focus:outline-none focus:border-[#2B7FFF]"
+                />
+              </div>
+            </form>
+          )}
           <div className="mb-2">
             <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Sports</p>
             {sportsItems.map(item => (
