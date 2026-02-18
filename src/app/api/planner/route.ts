@@ -36,6 +36,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'query is required' }, { status: 400 });
     }
 
+    // Estimate days from query to set max_tokens dynamically
+    const daysMatch = query.match(/(\d+)\s*(일|박|days?|day)/i);
+    const estimatedDays = daysMatch ? Math.min(parseInt(daysMatch[1]), 14) : 4;
+    // ~500 tokens per day, minimum 1500
+    const maxTokens = Math.max(1500, Math.min(estimatedDays * 600, 4096));
+
     // Step 1: Generate itinerary via Claude
     const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -46,7 +52,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
-        max_tokens: 4096,
+        max_tokens: maxTokens,
         messages: [
           {
             role: 'user',
