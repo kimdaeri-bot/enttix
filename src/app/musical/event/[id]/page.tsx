@@ -266,8 +266,8 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     <main className="min-h-screen bg-[#F5F7FA]">
       <div className="bg-[#0F172A]"><Header hideSearch /></div>
       <div className="text-center py-32">
-        <p className="text-[#64748B] text-lg mb-4">공연을 찾을 수 없습니다.</p>
-        <Link href="/musical/west-end" className="text-[#2B7FFF] font-semibold hover:underline">← 목록으로</Link>
+        <p className="text-[#64748B] text-lg mb-4">Show not found.</p>
+        <Link href="/musical/west-end" className="text-[#2B7FFF] font-semibold hover:underline">← Back to shows</Link>
       </div>
     </main>
   );
@@ -380,11 +380,11 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                         : 'text-[#64748B] hover:text-[#0F172A] hover:bg-[#F8FAFC]'
                     }`}
                   >
-                    {tab === 'about' && '공연 소개'}
-                    {tab === 'schedule' && '공연 일정'}
-                    {tab === 'seating' && '좌석 배치도'}
-                    {tab === 'gallery' && '갤러리'}
-                    {tab === 'reviews' && '리뷰'}
+                    {tab === 'about' && 'About'}
+                    {tab === 'schedule' && 'Schedule'}
+                    {tab === 'seating' && 'Seating Plan'}
+                    {tab === 'gallery' && 'Gallery'}
+                    {tab === 'reviews' && 'Reviews'}
                   </button>
                 ))}
               </div>
@@ -400,7 +400,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       />
                     </div>
                   ) : (
-                    <p className="text-[#94A3B8] text-sm">공연 소개가 없습니다.</p>
+                    <p className="text-[#94A3B8] text-sm">No description available.</p>
                   )}
 
                   {/* YouTube trailer */}
@@ -410,7 +410,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                         <span className="w-5 h-5 bg-red-600 rounded flex items-center justify-center">
                           <svg width="8" height="10" viewBox="0 0 8 10" fill="white"><path d="M0 0l8 5-8 5z"/></svg>
                         </span>
-                        트레일러
+                        Trailer
                       </h3>
                       <div className="aspect-video rounded-xl overflow-hidden bg-black">
                         <iframe
@@ -426,7 +426,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                   {/* Cast */}
                   {event.Cast && event.Cast.length > 0 && (
                     <div>
-                      <h3 className="text-[15px] font-bold text-[#0F172A] mb-3">🎭 출연진</h3>
+                      <h3 className="text-[15px] font-bold text-[#0F172A] mb-3">🎭 Cast</h3>
                       <div className="flex flex-wrap gap-2">
                         {event.Cast.map((c, i) => (
                           <span key={i} className="px-3 py-1.5 bg-[#F1F5F9] border border-[#E2E8F0] rounded-full text-[13px] text-[#374151] hover:border-[#2B7FFF]/40 hover:text-[#2B7FFF] transition-colors cursor-default">
@@ -440,7 +440,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                   {/* Notice */}
                   {event.ImportantNotice && (
                     <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4">
-                      <p className="text-[#92400E] text-[13px] font-bold mb-1">⚠️ 관람 안내</p>
+                      <p className="text-[#92400E] text-[13px] font-bold mb-1">⚠️ Important Notice</p>
                       <p className="text-[#78350F] text-[13px] leading-relaxed">{event.ImportantNotice}</p>
                     </div>
                   )}
@@ -450,18 +450,18 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* Tab: Schedule */}
               {activeTab === 'schedule' && (
                 <div className="p-6">
-                  <h3 className="text-[15px] font-bold text-[#0F172A] mb-4">전체 공연 일정</h3>
+                  <h3 className="text-[15px] font-bold text-[#0F172A] mb-4">All Performances</h3>
                   {performances.length === 0 ? (
-                    <p className="text-[#94A3B8] text-sm text-center py-8">예약 가능한 공연이 없습니다.</p>
+                    <p className="text-[#94A3B8] text-sm text-center py-8">No performances available.</p>
                   ) : (
                     <div className="overflow-x-auto rounded-xl border border-[#E2E8F0]">
                       <table className="w-full text-[13px]">
                         <thead>
                           <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
-                            <th className="text-left px-4 py-3 text-[#64748B] font-semibold">날짜</th>
-                            <th className="text-left px-4 py-3 text-[#64748B] font-semibold">시간</th>
-                            <th className="text-right px-4 py-3 text-[#64748B] font-semibold">최저가</th>
-                            <th className="text-right px-4 py-3 text-[#64748B] font-semibold">잔여석</th>
+                            <th className="text-left px-4 py-3 text-[#64748B] font-semibold">Date</th>
+                            <th className="text-left px-4 py-3 text-[#64748B] font-semibold">Time</th>
+                            <th className="text-right px-4 py-3 text-[#64748B] font-semibold">From</th>
+                            <th className="text-right px-4 py-3 text-[#64748B] font-semibold">Available</th>
                             <th className="px-4 py-3"></th>
                           </tr>
                         </thead>
@@ -542,17 +542,17 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                         {/* Zoom hint */}
                         <div className="absolute top-3 right-3 bg-black/60 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3M11 8v6M8 11h6"/></svg>
-                          크게 보기
+                          Full Size
                         </div>
                       </div>
 
-                      <p className="text-[11px] text-[#94A3B8] text-center">이미지를 클릭하면 크게 볼 수 있습니다 · 실제 좌석 배치는 공연마다 다를 수 있습니다</p>
+                      <p className="text-[11px] text-[#94A3B8] text-center">Click image to view full size · Actual seating may vary per performance</p>
                     </div>
                   ) : (
                     <div className="text-center py-14">
                       <div className="text-5xl mb-3">🗺️</div>
-                      <p className="text-[#64748B] font-semibold mb-1">좌석 배치도 준비 중</p>
-                      <p className="text-[#94A3B8] text-[13px]">해당 공연장의 배치도 정보가 없습니다.</p>
+                      <p className="text-[#64748B] font-semibold mb-1">Seating Plan Unavailable</p>
+                      <p className="text-[#94A3B8] text-[13px]">No seating plan available for this venue.</p>
                     </div>
                   )}
                 </div>
@@ -586,8 +586,8 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {activeTab === 'reviews' && (
                 <div className="p-6 text-center py-16">
                   <div className="text-5xl mb-3">⭐</div>
-                  <p className="text-[#64748B] font-semibold mb-1">리뷰 기능 준비 중</p>
-                  <p className="text-[#94A3B8] text-sm">곧 업데이트됩니다.</p>
+                  <p className="text-[#64748B] font-semibold mb-1">Reviews Coming Soon</p>
+                  <p className="text-[#94A3B8] text-sm">We'll be adding reviews soon.</p>
                 </div>
               )}
             </div>
@@ -597,7 +597,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
                 <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
                   <div>
-                    <h2 className="text-[16px] font-bold text-[#0F172A]">좌석 구역 선택</h2>
+                    <h2 className="text-[16px] font-bold text-[#0F172A]">Select Seats</h2>
                     <p className="text-[12px] text-[#94A3B8] mt-0.5">
                       {formatDate(selectedPerf.PerformanceDate)} · {formatTime(selectedPerf.PerformanceDate)}
                     </p>
@@ -613,10 +613,10 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                 {areasLoading ? (
                   <div className="flex flex-col items-center py-12 gap-3">
                     <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                    <p className="text-[#94A3B8] text-sm">구역 정보 불러오는 중...</p>
+                    <p className="text-[#94A3B8] text-sm">Loading seat areas...</p>
                   </div>
                 ) : areas.length === 0 ? (
-                  <div className="text-center py-10 text-[#94A3B8] text-sm">좌석 정보를 불러올 수 없습니다.</div>
+                  <div className="text-center py-10 text-[#94A3B8] text-sm">Unable to load seat information.</div>
                 ) : (
                   <div className="p-5 space-y-3">
                     {/* Best Available option */}
@@ -626,7 +626,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       </div>
                       <div>
                         <p className="text-[13px] font-bold text-[#0F172A]">Best Available</p>
-                        <p className="text-[11px] text-[#94A3B8]">자동으로 최적 좌석 배정</p>
+                        <p className="text-[11px] text-[#94A3B8]">Best seat auto-assigned</p>
                       </div>
                     </div>
 
@@ -655,7 +655,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                                 <p className="text-[14px] font-semibold text-[#0F172A]">{area.AreaName}</p>
                                 <p className="text-[11px] text-[#94A3B8]">Face value £{pr.FaceValue}</p>
                                 {pr.AvailableSeatsCount > 0 && (
-                                  <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount}석 남음</p>
+                                  <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount} seats left</p>
                                 )}
                               </div>
                             </div>
@@ -673,7 +673,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <div className="mt-4 bg-[#F8FAFC] rounded-xl p-4 space-y-4 border border-[#E2E8F0]">
                         {/* Qty */}
                         <div className="flex items-center justify-between">
-                          <p className="text-[14px] font-semibold text-[#0F172A]">인원 선택</p>
+                          <p className="text-[14px] font-semibold text-[#0F172A]">Tickets</p>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => setQty(Math.max(1, qty - 1))}
@@ -694,11 +694,11 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                             <span className="font-semibold text-[#374151]">£{(selectedPrice * qty).toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-[12px] text-[#94A3B8]">
-                            <span>티켓당</span>
+                            <span>Per ticket</span>
                             <span>£{selectedPrice}</span>
                           </div>
                           <div className="flex justify-between pt-2 border-t border-[#E2E8F0]">
-                            <span className="text-[15px] font-bold text-[#0F172A]">합계</span>
+                            <span className="text-[15px] font-bold text-[#0F172A]">Total</span>
                             <span className="text-[20px] font-extrabold text-[#2B7FFF]">£{totalAmount.toFixed(2)}</span>
                           </div>
                         </div>
@@ -722,12 +722,12 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                                 <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.25"/>
                                 <path d="M21 12a9 9 0 00-9-9"/>
                               </svg>
-                              결제 페이지로 이동 중...
+                              Redirecting to payment...
                             </span>
-                          ) : '🎫 지금 예약하기'}
+                          ) : '🎫 Book Now'}
                         </button>
 
-                        <p className="text-[11px] text-[#94A3B8] text-center">🔒 London Theatre Direct 보안 결제 · 수수료 없음</p>
+                        <p className="text-[11px] text-[#94A3B8] text-center">🔒 Secure payment by London Theatre Direct · No booking fees</p>
                       </div>
                     )}
                   </div>
@@ -742,14 +742,14 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
             {/* Calendar panel */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#F1F5F9] bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5]">
-                <h2 className="text-white font-bold text-[15px]">날짜 선택</h2>
-                <p className="text-[#BFDBFE] text-[12px] mt-0.5">{performances.length}회 공연 예약 가능</p>
+                <h2 className="text-white font-bold text-[15px]">Select Date</h2>
+                <p className="text-[#BFDBFE] text-[12px] mt-0.5">{performances.length} performances available</p>
               </div>
 
               {performances.length === 0 ? (
                 <div className="px-5 py-10 text-center">
                   <div className="text-4xl mb-2">😔</div>
-                  <p className="text-[#94A3B8] text-sm">현재 예약 가능한 공연이 없습니다.</p>
+                  <p className="text-[#94A3B8] text-sm">No performances available to book.</p>
                 </div>
               ) : (
                 <>
@@ -815,7 +815,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                   {/* Time slots */}
                   {selectedDate && timesForDate.length > 0 && (
                     <div className="border-t border-[#F1F5F9] px-4 py-4">
-                      <p className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-2">공연 시간 선택</p>
+                      <p className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-2">Select Time</p>
                       <div className="grid grid-cols-2 gap-2">
                         {timesForDate.map(perf => {
                           const isSelected = selectedPerf?.PerformanceId === perf.PerformanceId;
@@ -861,7 +861,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                             : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
                         }`}
                       >
-                        {selectedPerf ? '🎟️ Find Tickets' : '시간을 선택해주세요'}
+                        {selectedPerf ? '🎟️ Find Tickets' : 'Choose a time first'}
                       </button>
                     </div>
                   )}
@@ -872,10 +872,10 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
             {/* Trust signals */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-3">
               {[
-                { icon: '✓', text: '티켓 수수료 없음', sub: 'No booking fees' },
-                { icon: '🔒', text: '안심 결제', sub: 'Secure checkout' },
-                { icon: '📧', text: '즉시 이메일 발송', sub: 'Instant e-ticket' },
-                { icon: '⚠️', text: '환불 및 변경 불가', sub: 'No refunds or exchanges' },
+                { icon: '✓', text: 'No booking fees', sub: 'Zero hidden charges' },
+                { icon: '🔒', text: 'Secure checkout', sub: 'London Theatre Direct' },
+                { icon: '📧', text: 'Instant e-ticket', sub: 'Delivered by email' },
+                { icon: '⚠️', text: 'No refunds', sub: 'No refunds or exchanges' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-[#F0FDF4] flex items-center justify-center text-[14px] flex-shrink-0">
@@ -897,7 +897,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
-              다른 공연 보기
+              Browse all shows
             </Link>
           </div>
         </div>
@@ -909,7 +909,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
       {relatedEvents.length > 0 && (
         <div className="border-t border-[#E2E8F0] bg-white py-12">
           <div className="max-w-[1200px] mx-auto px-6">
-            <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-6">다른 공연도 확인해보세요</h2>
+            <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-6">You May Also Like</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {relatedEvents.map(rel => (
                 <Link

@@ -19,7 +19,7 @@ interface LTDEvent {
 }
 
 const EVENT_TYPE_LABELS: Record<number, string> = {
-  1: '뮤지컬', 2: '연극', 3: '댄스', 4: '오페라', 5: '발레', 6: '서커스',
+  1: 'Musical', 2: 'Play', 3: 'Dance', 4: 'Opera', 5: 'Ballet', 6: 'Circus',
 };
 
 const EVENT_TYPE_COLORS: Record<number, string> = {
@@ -29,13 +29,13 @@ const EVENT_TYPE_COLORS: Record<number, string> = {
 
 /* 카테고리 필터 탭 (모든 타입) */
 const FILTER_TABS = [
-  { label: '전체', value: 0 },
-  { label: '뮤지컬', value: 1 },
-  { label: '연극', value: 2 },
-  { label: '댄스', value: 3 },
-  { label: '오페라', value: 4 },
-  { label: '발레', value: 5 },
-  { label: '서커스', value: 6 },
+  { label: 'All', value: 0 },
+  { label: 'Musical', value: 1 },
+  { label: 'Play', value: 2 },
+  { label: 'Dance', value: 3 },
+  { label: 'Opera', value: 4 },
+  { label: 'Ballet', value: 5 },
+  { label: 'Circus', value: 6 },
 ];
 
 export default function MusicalListClient({
@@ -90,7 +90,7 @@ export default function MusicalListClient({
             🎭 {displayName}
           </h1>
           <p className="text-[16px] text-[#DBEAFE] opacity-70">
-            {filtered.length}개 공연 · London Theatre Direct 공식 파트너
+            {filtered.length} shows · Official London Theatre Direct Partner
           </p>
           {/* Search */}
           <div className="mt-6 max-w-[500px]">
@@ -98,7 +98,7 @@ export default function MusicalListClient({
               <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input
                 type="text"
-                placeholder="공연명 검색..."
+                placeholder="Search shows..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#2B7FFF] focus:bg-white/15 transition-all text-[14px]"
@@ -137,13 +137,13 @@ export default function MusicalListClient({
             <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-[#94A3B8]">검색 결과가 없습니다.</div>
+          <div className="text-center py-20 text-[#94A3B8]">No shows found.</div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {filtered.map(ev => {
               const endDate = ev.EndDate ? new Date(ev.EndDate) : null;
               const isEnding = endDate && (endDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
-              const typeLabel = EVENT_TYPE_LABELS[ev.EventType] || '공연';
+              const typeLabel = EVENT_TYPE_LABELS[ev.EventType] || 'Show';
               const typeBg = EVENT_TYPE_COLORS[ev.EventType] || 'bg-[#0F172A]';
 
               return (
@@ -170,7 +170,7 @@ export default function MusicalListClient({
                     <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
                       <span className={`text-[10px] font-bold ${typeBg} text-white px-2 py-0.5 rounded-full`}>{typeLabel}</span>
                       {isEnding && (
-                        <span className="text-[10px] font-bold bg-[#EF4444] text-white px-2 py-0.5 rounded-full">마감임박</span>
+                        <span className="text-[10px] font-bold bg-[#EF4444] text-white px-2 py-0.5 rounded-full">Ending Soon</span>
                       )}
                     </div>
                     {/* Price overlay at bottom */}
