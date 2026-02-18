@@ -1,138 +1,72 @@
 'use client';
 import Header from '@/components/Header';
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext';
-
-// 토스페이먼츠 클라이언트 키 (테스트)
-// 실서비스 전환 시 환경변수로 교체: NEXT_PUBLIC_TOSS_CLIENT_KEY
-const TOSS_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
-
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TossPayments?: any;
-  }
-}
 
 export default function CheckoutPage() {
   const { items, totalPrice, totalItems, clearCart } = useCart();
-  const { user } = useAuth();
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [agreements, setAgreements] = useState({ fee: false, personal: false, thirdParty: false });
+  const [processing, setProcessing] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
-  const [buyerName, setBuyerName] = useState('');
-  const [buyerEmail, setBuyerEmail] = useState('');
-  const [buyerPhone, setBuyerPhone] = useState('');
-  const [widgetReady, setWidgetReady] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-  const [tossLoaded, setTossLoaded] = useState(false);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const widgetRef = useRef<any>(null);
-  const paymentMethodRef = useRef<HTMLDivElement>(null);
-  const agreementRef = useRef<HTMLDivElement>(null);
-
-  // 사용자 정보 자동 채우기
   useEffect(() => {
-    if (user) {
-      setBuyerEmail(user.email || '');
-      setBuyerName(user.user_metadata?.full_name || user.user_metadata?.name || '');
-    }
-  }, [user]);
+    const timer = setInterval(() => setTimeLeft(t => Math.max(0, t - 1)), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // 총 결제금액 (KRW)
-  const totalKRW = Math.round(totalPrice * 1700); // GBP → KRW 환산 (실서비스에서 실시간 환율로 교체)
-  const orderName = items.length > 0
-    ? (items.length === 1 ? items[0].eventName : `${items[0].eventName} 외 ${items.length - 1}건`)
-    : '티켓 구매';
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const allAgreed = agreements.fee && agreements.personal && agreements.thirdParty;
 
-  // 토스페이먼츠 SDK 로드
-  useEffect(() => {
-    if (items.length === 0) return;
-    const script = document.createElement('script');
-    script.src = 'https://js.tosspayments.com/v2/standard';
-    script.onload = () => setTossLoaded(true);
-    script.onerror = () => console.error('Toss SDK 로드 실패');
-    document.head.appendChild(script);
-    return () => { try { document.head.removeChild(script); } catch {} };
-  }, [items.length]);
-
-  // 위젯 초기화 (SDK 로드 & 금액 확정 후)
-  useEffect(() => {
-    if (!tossLoaded || !window.TossPayments || items.length === 0) return;
-    if (!paymentMethodRef.current || !agreementRef.current) return;
-    if (widgetReady) return;
-
-    (async () => {
-      try {
-        const tossPayments = window.TossPayments(TOSS_CLIENT_KEY);
-        const customerKey = user?.id || `GUEST_${Date.now()}`;
-        const widgets = tossPayments.widgets({ customerKey });
-
-        await widgets.setAmount({ currency: 'KRW', value: totalKRW });
-
-        await Promise.all([
-          widgets.renderPaymentMethods({
-            selector: '#toss-payment-methods',
-            variantKey: 'DEFAULT',
-          }),
-          widgets.renderAgreement({
-            selector: '#toss-agreement',
-            variantKey: 'AGREEMENT',
-          }),
-        ]);
-
-        widgetRef.current = widgets;
-        setWidgetReady(true);
-      } catch (err) {
-        console.error('Toss widget init error:', err);
+  const handleCheckout = async () => {
+    setProcessing(true);
+    for (const item of items) {
+      if (item.holdId) {
+        try {
+          await fetch(`https://sandbox-pf.tixstock.com/v1/orders/add/${item.holdId}/${item.quantity}`, {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ac1f6d1f4c3ba067b8d13f2419', 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              buyer_name: 'Demo User', buyer_email: 'test@enttix.com',
+              buyer_phone: '01011112222', shipping_address: 'Demo Address',
+            }),
+          });
+        } catch {}
       }
-    })();
-  }, [tossLoaded, items.length, totalKRW, user, widgetReady]);
-
-  // 결제 요청
-  const handlePayment = async () => {
-    if (!widgetRef.current || loading) return;
-    if (!buyerName || !buyerEmail) {
-      alert('이름과 이메일을 입력해주세요.');
-      return;
     }
-
-    setLoading(true);
-    try {
-      const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-      const origin = window.location.origin;
-
-      await widgetRef.current.requestPayment({
-        orderId,
-        orderName,
-        successUrl: `${origin}/payment/success`,
-        failUrl: `${origin}/payment/fail`,
-        customerEmail: buyerEmail,
-        customerName: buyerName,
-        customerMobilePhone: buyerPhone.replace(/-/g, ''),
-      });
-    } catch (err: unknown) {
-      // 사용자가 결제창 닫으면 여기로 옴 (정상)
-      console.log('Payment cancelled or error:', err);
-    } finally {
-      setLoading(false);
-    }
+    clearCart();
+    setProcessing(false);
+    setCompleted(true);
   };
+
+  if (completed) {
+    return (
+      <main className="min-h-screen bg-[#F5F7FA]">
+        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="max-w-[600px] mx-auto px-4 py-16 text-center">
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-12">
+            <p className="text-[48px] mb-4">🎉</p>
+            <h1 className="text-[28px] font-bold text-[#171717] mb-2">Order Confirmed!</h1>
+            <p className="text-[14px] text-[#6B7280] mb-6">Your tickets have been ordered. You&apos;ll receive a confirmation email shortly.</p>
+            <p className="text-[12px] text-[#F59E0B] italic mb-6">This was a demo transaction. No actual payment was processed.</p>
+            <Link href="/" className="px-6 py-3 rounded-[10px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold text-[14px] transition-colors">
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (items.length === 0) {
     return (
       <main className="min-h-screen bg-[#F5F7FA]">
-        <div className="bg-[#0F172A]"><Header hideSearch /></div>
-        <div className="max-w-[560px] mx-auto px-4 py-20 text-center">
-          <div className="text-5xl mb-4">🛒</div>
-          <h1 className="text-[24px] font-bold text-[#0F172A] mb-3">장바구니가 비어있습니다</h1>
-          <p className="text-[#64748B] text-[14px] mb-6">마음에 드는 티켓을 추가해보세요</p>
-          <Link href="/all-tickets"
-            className="px-6 py-3 rounded-xl bg-[#2B7FFF] text-white font-semibold text-[14px] hover:bg-[#1D6AE5] transition-colors">
-            티켓 둘러보기
-          </Link>
+        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="max-w-[600px] mx-auto px-4 py-16 text-center">
+          <h1 className="text-[24px] font-bold text-[#171717] mb-4">No items in cart</h1>
+          <Link href="/all-tickets" className="text-[#2B7FFF] hover:underline">Browse events</Link>
         </div>
       </main>
     );
@@ -140,158 +74,142 @@ export default function CheckoutPage() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]"><Header hideSearch /></div>
+      <div className="bg-[#0F172A]"><Header /></div>
 
-      <div className="max-w-[1000px] mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/cart" className="flex items-center gap-1.5 text-[#64748B] hover:text-[#0F172A] text-[13px] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            장바구니
-          </Link>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-          <span className="text-[14px] font-semibold text-[#0F172A]">결제</span>
+      <div className="max-w-[900px] mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-[28px] font-bold text-[#171717]">Checkout</h1>
+            <p className="text-[14px] text-[#6B7280]">Complete your purchase</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/cart" className="text-[13px] text-[#6B7280] hover:text-[#171717]">← Back to Cart</Link>
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Timer */}
+        <div className="bg-[#FFF7ED] rounded-[12px] p-4 mb-6 flex items-center gap-3">
+          <span className="text-[24px] font-bold text-[#F59E0B]">{minutes}:{seconds.toString().padStart(2, '0')}</span>
+          <span className="text-[13px] text-[#92400E]">Time remaining to complete payment</span>
+        </div>
 
-          {/* ── LEFT: Payment widget ── */}
-          <div className="flex-1 space-y-5">
-
-            {/* 구매자 정보 */}
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
-              <h2 className="text-[16px] font-bold text-[#0F172A] mb-4">구매자 정보</h2>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[12px] font-semibold text-[#64748B] block mb-1.5">이름 *</label>
-                    <input
-                      type="text" value={buyerName} onChange={e => setBuyerName(e.target.value)}
-                      placeholder="홍길동"
-                      className="w-full px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[12px] font-semibold text-[#64748B] block mb-1.5">연락처</label>
-                    <input
-                      type="tel" value={buyerPhone} onChange={e => setBuyerPhone(e.target.value)}
-                      placeholder="010-0000-0000"
-                      className="w-full px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 transition-all"
-                    />
-                  </div>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Buyer Info */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
+              <h2 className="text-[16px] font-bold text-[#171717] mb-4">Buyer Information</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] block mb-1.5">Name</label>
+                  <input defaultValue="Demo User" className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF]" />
                 </div>
                 <div>
-                  <label className="text-[12px] font-semibold text-[#64748B] block mb-1.5">이메일 * (티켓 수령)</label>
-                  <input
-                    type="email" value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)}
-                    placeholder="ticket@email.com"
-                    className="w-full px-3 py-2.5 rounded-xl border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/10 transition-all"
-                  />
+                  <label className="text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] block mb-1.5">Email</label>
+                  <input defaultValue="test@enttix.com" className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF]" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] block mb-1.5">Phone</label>
+                  <input defaultValue="01011112222" className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF]" />
                 </div>
               </div>
             </div>
 
-            {/* 토스페이먼츠 결제 위젯 */}
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
-              <div className="px-6 pt-5 pb-2">
-                <h2 className="text-[16px] font-bold text-[#0F172A]">결제 수단</h2>
-              </div>
-              {!tossLoaded ? (
-                <div className="flex justify-center items-center py-12">
-                  <div className="w-8 h-8 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+            {/* Shipping Address */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
+              <h2 className="text-[16px] font-bold text-[#171717] mb-4">Shipping Address</h2>
+              <textarea defaultValue="31 Incheon tower-daero 25beon-gil, Yeonsu-gu, Incheon, Republic of Korea" rows={2}
+                className="w-full px-3 py-2.5 rounded-[8px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] resize-none" />
+            </div>
+
+            {/* Payment */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
+              <h2 className="text-[16px] font-bold text-[#171717] mb-4">Payment Method</h2>
+              <div className="flex items-center gap-3 p-3 rounded-[8px] border border-[#2B7FFF] bg-[#EFF6FF]">
+                <div className="w-10 h-7 rounded bg-[#1E40AF] flex items-center justify-center text-white text-[10px] font-bold">VISA</div>
+                <div>
+                  <p className="text-[14px] font-semibold text-[#171717]">**** 4242 Card</p>
+                  <p className="text-[12px] text-[#6B7280]">Expires 12/25</p>
                 </div>
-              ) : (
-                <>
-                  <div id="toss-payment-methods" ref={paymentMethodRef} className="px-2" />
-                  <div id="toss-agreement" ref={agreementRef} className="px-2 pb-4" />
-                </>
-              )}
+              </div>
+              <p className="text-[12px] text-[#F59E0B] mt-3 italic">This is a demo payment. No actual payment will be processed.</p>
+            </div>
+
+            {/* Terms */}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6">
+              <h2 className="text-[16px] font-bold text-[#171717] mb-4">Terms Agreement</h2>
+              <label className="flex items-center gap-3 mb-3 cursor-pointer" onClick={() => setAgreements({ fee: true, personal: true, thirdParty: true })}>
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${allAgreed ? 'bg-[#2B7FFF] border-[#2B7FFF]' : 'border-[#D1D5DB]'}`}>
+                  {allAgreed && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>}
+                </div>
+                <span className="text-[14px] font-semibold text-[#171717]">Agree to All</span>
+              </label>
+              {[
+                { key: 'fee', label: 'Fee Policy Agreement' },
+                { key: 'personal', label: 'Personal Information Collection' },
+                { key: 'thirdParty', label: 'Third Party Information Sharing' },
+              ].map(item => (
+                <label key={item.key} className="flex items-center justify-between py-2 cursor-pointer"
+                  onClick={() => setAgreements(prev => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${agreements[item.key as keyof typeof agreements] ? 'bg-[#2B7FFF] border-[#2B7FFF]' : 'border-[#D1D5DB]'}`}>
+                      {agreements[item.key as keyof typeof agreements] && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>}
+                    </div>
+                    <span className="text-[13px] text-[#374151]">{item.label} <span className="text-[#EF4444]">*</span></span>
+                  </div>
+                  <span className="text-[12px] text-[#2B7FFF] cursor-pointer">View Details</span>
+                </label>
+              ))}
+              {!allAgreed && <p className="text-[12px] text-[#EF4444] mt-2">Please agree to all terms.</p>}
             </div>
           </div>
 
-          {/* ── RIGHT: Order summary ── */}
-          <div className="w-full lg:w-[340px] flex-shrink-0 space-y-4 lg:sticky lg:top-6">
+          {/* Right Column */}
+          <div className="w-full lg:w-[340px] flex-shrink-0">
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 sticky top-4">
+              <h2 className="text-[16px] font-bold text-[#171717] mb-4">Order Summary</h2>
 
-            {/* 주문 상품 */}
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
-              <h2 className="text-[15px] font-bold text-[#0F172A] mb-4">주문 상품 ({totalItems})</h2>
-              <div className="space-y-3 max-h-[220px] overflow-y-auto">
-                {items.map((item, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#0F172A] leading-snug line-clamp-2">{item.eventName}</p>
-                      <p className="text-[11px] text-[#94A3B8] mt-0.5">{item.section}{item.row ? ` · Row ${item.row}` : ''} · {item.quantity}매</p>
-                      <p className="text-[13px] font-bold text-[#2B7FFF] mt-0.5">
-                        {item.currency || '£'}{(item.pricePerTicket * item.quantity).toFixed(2)}
-                      </p>
-                    </div>
+              {items.map(item => (
+                <div key={item.listingId} className="mb-3 pb-3 border-b border-[#F1F5F9] last:border-0">
+                  <p className="text-[13px] font-semibold text-[#171717] truncate">{item.eventName}</p>
+                  <div className="flex justify-between text-[12px] text-[#6B7280] mt-1">
+                    <span>Sec {item.section} • Row {item.row} × {item.quantity}</span>
+                    <span className="font-semibold text-[#171717]">${(item.pricePerTicket * item.quantity).toFixed(2)}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 결제 금액 */}
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
-              <div className="space-y-2.5">
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-[#64748B]">티켓 소계</span>
-                  <span className="font-semibold text-[#374151]">£{totalPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-[#64748B]">수수료</span>
-                  <span className="font-semibold text-[#10B981]">없음</span>
-                </div>
-                <div className="flex justify-between text-[12px] text-[#94A3B8]">
-                  <span>환율 적용 (GBP → KRW)</span>
-                  <span>×1,700</span>
-                </div>
-                <div className="border-t border-[#E5E7EB] pt-2.5 flex justify-between">
-                  <span className="text-[15px] font-bold text-[#0F172A]">합계</span>
-                  <div className="text-right">
-                    <p className="text-[20px] font-extrabold text-[#2B7FFF]">₩{totalKRW.toLocaleString()}</p>
-                    <p className="text-[11px] text-[#94A3B8]">≈ £{totalPrice.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 안심 구매 */}
-            <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-2xl p-4 space-y-2">
-              {[
-                { icon: '✓', text: '수수료 없음' },
-                { icon: '🔒', text: '토스페이먼츠 보안 결제' },
-                { icon: '📧', text: '이메일 티켓 즉시 발송' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-[13px] text-[#166534]">
-                  <span className="font-bold">{item.icon}</span>
-                  <span>{item.text}</span>
                 </div>
               ))}
+
+              <div className="border-t border-[#E5E7EB] mt-2 pt-4">
+                <div className="flex justify-between text-[13px] mb-2">
+                  <span className="text-[#6B7280]">Tickets ({totalItems})</span>
+                  <span className="font-semibold">${totalPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[13px] mb-2">
+                  <span className="text-[#6B7280]">Service Fee</span>
+                  <span className="font-semibold">$0.00</span>
+                </div>
+                <div className="flex justify-between text-[16px] font-bold mt-3 pt-3 border-t border-[#E5E7EB]">
+                  <span>Total</span>
+                  <span>${totalPrice.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCheckout}
+                disabled={!allAgreed || processing}
+                className={`w-full mt-6 py-3.5 rounded-[12px] font-semibold text-[14px] transition-colors ${allAgreed && !processing ? 'bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF] cursor-not-allowed'}`}
+              >
+                {processing ? 'Processing...' : 'Complete Payment'}
+              </button>
+              <p className="text-center text-[11px] text-[#9CA3AF] mt-2">🔒 Secured with SSL encryption</p>
             </div>
 
-            {/* 결제 버튼 */}
-            <button
-              onClick={handlePayment}
-              disabled={!widgetReady || loading || !buyerName || !buyerEmail}
-              className={`w-full py-4 rounded-2xl text-[16px] font-extrabold transition-all ${
-                widgetReady && buyerName && buyerEmail && !loading
-                  ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
-                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
-              }`}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeOpacity="0.25"/>
-                    <path d="M21 12a9 9 0 00-9-9"/>
-                  </svg>
-                  결제 중...
-                </span>
-              ) : !widgetReady ? '결제 준비 중...' : `₩${totalKRW.toLocaleString()} 결제하기`}
-            </button>
-            {!widgetReady && tossLoaded && (
-              <p className="text-[11px] text-[#94A3B8] text-center">결제 모듈 초기화 중...</p>
-            )}
+            <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mt-4">
+              <div className="flex flex-col gap-2 text-[12px] text-[#6B7280]">
+                <span>✅ 100% Buyer Guarantee</span>
+                <span>🔒 Secure Transaction</span>
+                <span>📧 E-Ticket Delivery</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
