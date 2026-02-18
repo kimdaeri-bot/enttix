@@ -31,16 +31,42 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // LTD API returns events in their own popularity/ranking order by default.
-    // We keep that order (most popular first) rather than sorting by price.
-    // Only move events with no price to the end.
+    // ── Deduplicate by name ──
+    // Same show can appear multiple times (different price tiers / booking windows).
+    // Keep the one with: lowest price > latest EndDate > lowest EventId.
+    const nameMap = new Map<string, Record<string, unknown>>();
+    for (const ev of events) {
+      const key = ((ev.Name as string) || '').trim().toLowerCase();
+      const existing = nameMap.get(key);
+      if (!existing) {
+        nameMap.set(key, ev);
+      } else {
+        const priceNew = (ev.EventMinimumPrice as number) || 0;
+        const priceOld = (existing.EventMinimumPrice as number) || 0;
+        const endNew = new Date((ev.EndDate as string) || '').getTime() || 0;
+        const endOld = new Date((existing.EndDate as string) || '').getTime() || 0;
+
+        // Prefer: price > 0 over price = 0
+        if (priceNew > 0 && priceOld === 0) { nameMap.set(key, ev); continue; }
+        if (priceOld > 0 && priceNew === 0) continue;
+
+        // Both have price: keep lower price
+        if (priceNew < priceOld) { nameMap.set(key, ev); continue; }
+        if (priceOld < priceNew) continue;
+
+        // Same price: keep later EndDate
+        if (endNew > endOld) { nameMap.set(key, ev); continue; }
+      }
+    }
+    events = Array.from(nameMap.values());
+
+    // Push zero-price events to the end; otherwise keep LTD default order
     events.sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
       const pa = (a.EventMinimumPrice as number) || 0;
       const pb = (b.EventMinimumPrice as number) || 0;
-      // Push zero-price events to the end, otherwise keep LTD default order
       if (pa === 0 && pb > 0) return 1;
       if (pb === 0 && pa > 0) return -1;
-      return 0; // stable sort preserves LTD's original ranking
+      return 0;
     });
 
     return NextResponse.json({ events, total: events.length });
