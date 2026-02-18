@@ -11,19 +11,15 @@ function isPlannerQuery(q: string): boolean {
 }
 
 const AI_SUGGESTIONS = [
-  'Premier League matches in London this month',
-  '3월 유럽 축구 경기 찾아줘',
-  'Cheap F1 tickets in Europe',
-  '이번 주말 런던 경기',
-  'Arsenal vs Chelsea tickets under $200',
-  'La Liga matches in March',
+  '2026년 10월달에 프랑스 리그1 이강인 선수 경기 찾아줘',
+  'Arsenal vs Chelsea tickets this month',
+  '이번 주말 런던 프리미어리그 경기 가격 알려줘',
 ];
 
 const PLANNER_SUGGESTIONS = [
-  '런던 3박4일 여행 일정 짜줘',
-  'Plan a 3-day trip to Barcelona',
-  '파리 5박6일 여행 계획',
-  '4 days in Manchester with football',
+  '2026년 12월 25일 런던도착해. 런던 6일 일정 짜주고 프리미어리그랑 뮤지컬은 필수로 넣어줘',
+  '이탈리아 유적지와 박물관 위주로 7일 일정 만들어줘',
+  'Plan a 5-day Barcelona trip with La Liga and local food tours',
 ];
 
 const CATEGORIES = [
@@ -281,7 +277,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
           )}
           {query.trim() && <div className="h-px bg-[#E5E7EB] mx-3 my-1" />}
           <div className="px-3 py-1">
-            <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">✨ AI Search</p>
+            <p className="text-[10px] font-semibold text-[#9CA3AF] tracking-[0.5px] uppercase px-3 py-1.5">✨ AI Search <span className="normal-case font-normal text-[#B0B8C4]">— The more detail you give, the better your results!</span></p>
             {(!query.trim() ? AI_SUGGESTIONS : filtered.slice(0, 3)).map((s, i) => (<button key={`ai-${i}`} onClick={() => { setQuery(s); setShowDropdown(false); inputRef.current?.focus(); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#F1F5F9] transition-colors text-left"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0 text-[#7C3AED]"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.6"/></svg><span className="text-[14px] text-[#4B5563]">{s}</span></button>))}
           </div>
           <div className="h-px bg-[#E5E7EB] mx-3 my-1" />
