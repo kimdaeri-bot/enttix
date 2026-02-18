@@ -138,6 +138,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeThird, setAgreeThird] = useState(false);
 
+  /* Basket state */
+  const [basketId, setBasketId] = useState<string | null>(null);
+  const [expirationDate, setExpirationDate] = useState<string | null>(null);
+  const [basketCreating, setBasketCreating] = useState(false);
+  const [basketCreateError, setBasketCreateError] = useState('');
+
   /* Step 3 state */
   const [processing, setProcessing] = useState(false);
   const [processError, setProcessError] = useState('');
@@ -175,27 +181,17 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     setAgreeThird(v);
   }
 
-  /* Step 1 → 2 */
-  function goStep2() {
-    if (!selectedArea || !selectedPrice) return;
-    setStep(2);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  /* Step 2 → 3: Payment */
-  async function handlePay() {
-    if (!agreeFare || !agreePrivacy || !agreeThird) return;
-    if (!firstName || !lastName || !email) return;
-    setStep(3);
-    setProcessing(true);
-    setProcessError('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
+  /* Step 1 → 2: Create basket + add tickets */
+  async function goStep2() {
+    if (!selectedPrice) return;
+    setBasketCreating(true);
+    setBasketCreateError('');
     try {
       /* Create basket */
       const r1 = await fetch('/api/ltd/basket?action=create', { method: 'POST' });
       const d1 = await r1.json();
       if (!d1.basketId) throw new Error(d1.error || '바스켓 생성에 실패했습니다.');
+      setBasketId(d1.basketId);
 
       /* Add tickets */
       const areaId = areasError ? 0 : (selectedArea?.AreaId ?? 0);
@@ -213,27 +209,49 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const d2 = await r2.json();
       if (d2.error) throw new Error(d2.error);
 
-      /* Submit */
-      const leadCustomer = {
-        FirstName: firstName,
-        LastName: lastName,
-        EmailAddress: email,
-        MobilePhoneNumber: `${phone1}${phone2}${phone3}`,
-      };
-      const r3 = await fetch('/api/ltd/basket?action=submit', {
+      /* Extract expiration date from basket response */
+      const expDate = d2.basket?.MinExpirationDate;
+      if (expDate) setExpirationDate(expDate);
+
+      setStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err: unknown) {
+      setBasketCreateError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBasketCreating(false);
+    }
+  }
+
+  /* Step 2 → 3: Submit order (basket already created in goStep2) */
+  async function handlePay() {
+    if (!agreeFare || !agreePrivacy || !agreeThird) return;
+    if (!firstName || !lastName || !email) return;
+    if (!basketId) return;
+    setStep(3);
+    setProcessing(true);
+    setProcessError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const resp = await fetch('/api/ltd/basket?action=submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          basketId: d1.basketId,
+          basketId,
           affiliateId: '775854e9-b102-48d9-99bc-4b288a67b538',
-          leadCustomer,
+          leadCustomer: {
+            firstName,
+            lastName,
+            email,
+            phone: `${phone1}${phone2}${phone3}`,
+          },
         }),
       });
-      const d3 = await r3.json();
-      if (d3.error) throw new Error(d3.error);
-      if (!d3.paymentUrl) throw new Error('결제 URL을 받지 못했습니다.');
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error);
+      if (!data.paymentUrl) throw new Error('결제 URL을 받지 못했습니다.');
 
-      setPaymentUrl(d3.paymentUrl);
+      setPaymentUrl(data.paymentUrl);
       setShowPayModal(true);
     } catch (err: unknown) {
       setProcessError(err instanceof Error ? err.message : String(err));
@@ -244,6 +262,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Expire callback */
   function handleTimerExpire() {
+    setBasketId(null);
+    setExpirationDate(null);
     setStep(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -473,17 +493,29 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           </div>
         </div>
 
+        {/* Basket create error */}
+        {basketCreateError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-3">
+            <p className="text-[13px] text-red-700">{basketCreateError}</p>
+          </div>
+        )}
+
         {/* CTA */}
         <button
           onClick={goStep2}
-          disabled={!selectedPrice}
+          disabled={!selectedPrice || basketCreating}
           className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all mb-3 ${
-            selectedPrice
+            selectedPrice && !basketCreating
               ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
               : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
           }`}
         >
-          {selectedPrice ? '다음 단계 →' : '구역을 선택하세요'}
+          {basketCreating ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 rounded-full border-2 border-[#94A3B8] border-t-transparent animate-spin" />
+              좌석 확보 중...
+            </span>
+          ) : selectedPrice ? '다음 단계 →' : '구역을 선택하세요'}
         </button>
 
         {/* No refund badge */}
@@ -515,7 +547,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         {/* Countdown timer */}
         <div className="mb-4">
-          <CountdownTimer seconds={600} onExpire={handleTimerExpire} />
+          <CountdownTimer
+            seconds={expirationDate
+              ? Math.max(0, Math.floor((new Date(expirationDate).getTime() - Date.now()) / 1000))
+              : 540}
+            onExpire={handleTimerExpire}
+          />
         </div>
 
         {/* Order summary */}

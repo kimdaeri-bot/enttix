@@ -2,12 +2,27 @@
 // 1. POST /api/ltd/basket?action=create           → create basket, return BasketId
 // 2. POST /api/ltd/basket?action=add-tickets      → add tickets to basket
 // 3. POST /api/ltd/basket?action=submit           → submit order, return payment URL
+// GET /api/ltd/basket?basketId={id}               → get basket info (MinExpirationDate)
 
 import { NextRequest, NextResponse } from 'next/server';
 
 const LTD_API_KEY = process.env.LTD_API_KEY!;
 const LTD_BASE_URL = process.env.LTD_BASE_URL!;
 const headers = { 'Api-Key': LTD_API_KEY, 'Content-Type': 'application/json' };
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const basketId = searchParams.get('basketId');
+  if (!basketId) return NextResponse.json({ error: 'basketId required' }, { status: 400 });
+
+  const res = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}`, { headers: { 'Api-Key': LTD_API_KEY } });
+  const data = await res.json();
+  return NextResponse.json({
+    basketId: data.BasketId,
+    expirationDate: data.MinExpirationDate,
+    items: data.Items || [],
+  });
+}
 
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -45,19 +60,35 @@ export async function POST(req: NextRequest) {
 
     if (action === 'submit') {
       // Step 3: Submit order → get payment URL
-      const { basketId, affiliateId, leadCustomer } = await req.json();
-      const body: Record<string, unknown> = {};
-      if (affiliateId) body.AffiliateId = affiliateId;
-      if (leadCustomer) body.leadCustomer = leadCustomer;
+      const { basketId, affiliateId, leadCustomer, successUrl, failureUrl } = await req.json();
+
+      const submitBody: Record<string, unknown> = {
+        AffiliateId: affiliateId || '775854e9-b102-48d9-99bc-4b288a67b538',
+        SuccessReturnUrl: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app'}/musical/payment/success`,
+        FailureReturnUrl: failureUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app'}/musical/payment/fail`,
+      };
+
+      if (leadCustomer) {
+        submitBody.Name = `${leadCustomer.firstName} ${leadCustomer.lastName}`;
+        submitBody.FirstName = leadCustomer.firstName;
+        submitBody.LastName = leadCustomer.lastName;
+        submitBody.Email = leadCustomer.email;
+        submitBody.Phone = leadCustomer.phone;
+      }
 
       const res = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}/SubmitOrder`, {
         method: 'POST',
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify(submitBody),
       });
       const data = await res.json();
       const paymentUrl = data.PaymentUrl || data.Url || data.url;
-      if (!paymentUrl) return NextResponse.json({ error: 'No payment URL returned', raw: data }, { status: 500 });
+      if (!paymentUrl) {
+        return NextResponse.json({
+          error: data.MessageDetail || data.Message || 'Payment redirect failed',
+          raw: data,
+        }, { status: 500 });
+      }
       return NextResponse.json({ paymentUrl });
     }
 
