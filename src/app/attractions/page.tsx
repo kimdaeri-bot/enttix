@@ -35,6 +35,21 @@ const popularCategories = [
   { icon: '🎨', name: 'Art & Culture',   slug: 'art'        },
 ];
 
+const countries = [
+  { flag: '🇪🇸', name: 'Spain',                slug: 'spain',                cities: 3 },
+  { flag: '🇫🇷', name: 'France',               slug: 'france',               cities: 2 },
+  { flag: '🇮🇹', name: 'Italy',                slug: 'italy',                cities: 3 },
+  { flag: '🇬🇧', name: 'United Kingdom',       slug: 'united-kingdom',       cities: 2 },
+  { flag: '🇳🇱', name: 'Netherlands',          slug: 'netherlands',          cities: 1 },
+  { flag: '🇩🇪', name: 'Germany',              slug: 'germany',              cities: 2 },
+  { flag: '🇦🇹', name: 'Austria',              slug: 'austria',              cities: 1 },
+  { flag: '🇨🇿', name: 'Czech Republic',       slug: 'czech-republic',       cities: 1 },
+  { flag: '🇺🇸', name: 'United States',        slug: 'united-states',        cities: 1 },
+  { flag: '🇯🇵', name: 'Japan',                slug: 'japan',                cities: 2 },
+  { flag: '🇸🇬', name: 'Singapore',            slug: 'singapore',            cities: 1 },
+  { flag: '🇦🇪', name: 'United Arab Emirates', slug: 'united-arab-emirates', cities: 1 },
+];
+
 const whyEnttix = [
   {
     icon: '✅',
@@ -295,6 +310,32 @@ export default function AttractionsPage() {
                   <span className="text-[12px] text-white/75">{dest.count}+ Experiences</span>
                 </div>
               </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Browse by Country */}
+      <section id="browse-countries" className="max-w-[1280px] mx-auto px-4 pb-14">
+        <h2 className="text-[26px] font-bold text-[#0F172A] mb-1">Browse by Country</h2>
+        <p className="text-[#64748B] text-[15px] mb-7">Explore experiences across entire countries</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {countries.map(country => (
+            <Link
+              key={country.slug}
+              href={`/attractions/country/${country.slug}`}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[#E5E7EB] bg-white hover:border-[#2B7FFF] hover:bg-[#EFF6FF] hover:shadow-sm transition-all group"
+            >
+              <span className="text-[26px]">{country.flag}</span>
+              <div className="min-w-0">
+                <p className="text-[14px] font-semibold text-[#0F172A] group-hover:text-[#2B7FFF] transition-colors truncate">
+                  {country.name}
+                </p>
+                <p className="text-[11px] text-[#94A3B8]">{country.cities} {country.cities === 1 ? 'city' : 'cities'}</p>
+              </div>
+              <svg className="ml-auto flex-shrink-0 text-[#CBD5E1] group-hover:text-[#2B7FFF] transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
             </Link>
           ))}
         </div>

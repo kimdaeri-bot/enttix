@@ -11,6 +11,7 @@ const headers = {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const city_id = searchParams.get('city_id') || '';
+  const country_id = searchParams.get('country_id') || '';
   const page = searchParams.get('page') || '1';
   const page_size = searchParams.get('page_size') || '24';
   const query = searchParams.get('query') || '';
@@ -21,6 +22,7 @@ export async function GET(req: NextRequest) {
     page,
     page_size,
     ...(city_id && { city_id }),
+    ...(country_id && { country_id }),
     ...(query && { query }),
   });
 
