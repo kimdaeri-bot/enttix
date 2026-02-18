@@ -315,15 +315,17 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
           <div className={`overflow-hidden transition-all duration-400 ease-in-out ${resultCollapsed ? 'max-h-0' : 'max-h-[3000px]'}`}>
             <div className="bg-white/95 backdrop-blur border-x border-[#E5E7EB] shadow-lg">
               {/* Day tabs */}
-              <div className="px-5 pt-2 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+              <div className="px-5 pt-2 pb-1 flex gap-2 overflow-x-auto scrollbar-hide">
                 {plannerResult.days.map(day => (
                   <button key={day.day} onClick={() => setActiveDay(day.day)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${activeDay === day.day ? 'bg-[#0F172A] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
                     Day {day.day}
                   </button>
                 ))}
+              </div>
+              <div className="px-5 pb-3">
                 <button onClick={() => setActiveDay(activeDay === 0 ? 1 : 0)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
+                  className={`text-[12px] font-semibold transition-all px-3 py-1.5 rounded-lg border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
                   {activeDay === 0 ? '📋 접기' : '📋 일정 한번에 보기'}
                 </button>
               </div>

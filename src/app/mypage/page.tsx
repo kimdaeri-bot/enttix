@@ -147,15 +147,17 @@ export default function MyPage() {
               </div>
 
               {/* Day tabs */}
-              <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
+              <div className="flex gap-2 mb-1 overflow-x-auto scrollbar-hide">
                 {selectedTrip.days_json.map((day: any) => (
                   <button key={day.day} onClick={() => setActiveDay(day.day)}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all ${activeDay === day.day ? 'bg-[#0F172A] text-white' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
                     Day {day.day}
                   </button>
                 ))}
+              </div>
+              <div className="mb-4">
                 <button onClick={() => setActiveDay(activeDay === 0 ? 1 : 0)}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
+                  className={`text-[12px] font-semibold transition-all px-3 py-1.5 rounded-lg border ${activeDay === 0 ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]' : 'bg-white text-[#2B7FFF] border-[#2B7FFF] hover:bg-[#EFF6FF]'}`}>
                   {activeDay === 0 ? '📋 접기' : '📋 일정 한번에 보기'}
                 </button>
               </div>
