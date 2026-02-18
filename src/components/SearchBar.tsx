@@ -330,11 +330,10 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                 ))}
               </div>
 
-              {/* Horizontal swipe day cards */}
-              <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-0" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-                {plannerResult.days.map(day => (
-                  <div key={day.day} className="w-full flex-shrink-0 snap-start px-5 pb-4"
-                    style={{ display: (activeDay === 0 || activeDay === day.day) ? 'block' : 'none' }}>
+              {/* Swipeable day cards */}
+              <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+                {plannerResult.days.filter(day => activeDay === 0 || activeDay === day.day).map(day => (
+                  <div key={day.day} className="px-5 pb-4">
                     {/* Day header */}
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-7 h-7 rounded-lg bg-[#0F172A] flex items-center justify-center text-white font-bold text-[11px]">D{day.day}</div>
