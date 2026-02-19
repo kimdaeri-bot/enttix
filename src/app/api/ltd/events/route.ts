@@ -22,6 +22,12 @@ export async function GET(req: NextRequest) {
     const data = await res.json();
     let events = data.Events || [];
 
+    // ── 사장님 지정 삭제 목록 ──
+    const BLOCKED_EVENT_IDS = new Set([
+      5359, // Six - Singalong (Six와 중복)
+    ]);
+    events = events.filter((e: Record<string, unknown>) => !BLOCKED_EVENT_IDS.has(e.EventId as number));
+
     // Filter by search term
     if (search) {
       const q = search.toLowerCase();
