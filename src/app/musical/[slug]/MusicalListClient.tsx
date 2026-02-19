@@ -21,6 +21,34 @@ interface LTDEvent {
   VenueName?: string;
 }
 
+/* ─── TOP 15 RANKING (사장님 큐레이션) ──────────────────────── */
+const TOP_15_NAMES = [
+  'The Lion King',
+  'The Phantom of the Opera',
+  'Les Misérables',
+  'Hamilton',
+  'Wicked',
+  'Mamma Mia!',
+  'Moulin Rouge! The Musical',
+  'The Book of Mormon',
+  'Matilda The Musical',
+  'Back to the Future The Musical',
+  'MJ The Musical',
+  'Six',
+  'Hadestown',
+  'The Devil Wears Prada',
+  'Harry Potter and the Cursed Child',
+];
+
+// 이름 부분 매칭 (대소문자 무시, LTD 이름이 약간 달라도 OK)
+function getTop15Rank(eventName: string): number {
+  const lower = eventName.toLowerCase();
+  const idx = TOP_15_NAMES.findIndex(top =>
+    lower.includes(top.toLowerCase()) || top.toLowerCase().includes(lower.replace(/^(disney's|the new |cameron mackintosh's )/i, ''))
+  );
+  return idx; // -1이면 TOP15 아님
+}
+
 /* ─── CONSTANTS ─────────────────────────────────────────────── */
 const HERO_PHOTO = 'photo-1558618666-fcd25c85cd64'; // West End theatre
 const FALLBACK_PHOTO = 'photo-1513635269975-59663e0ac1ad'; // London
@@ -243,14 +271,38 @@ export default function MusicalListClient({
     switch (sort) {
       case 'price_asc':  return (a.EventMinimumPrice || 0) - (b.EventMinimumPrice || 0);
       case 'price_desc': return (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0);
-      default:           return (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0); // popular = highest price first
+      default: {
+        // popular: TOP15 먼저 (순서대로), 그 다음 나머지 가격 높은 순
+        const rankA = getTop15Rank(a.Name);
+        const rankB = getTop15Rank(b.Name);
+        if (rankA >= 0 && rankB >= 0) return rankA - rankB;     // 둘 다 TOP15 → 랭킹 순
+        if (rankA >= 0) return -1;                               // a만 TOP15 → a 앞
+        if (rankB >= 0) return 1;                                // b만 TOP15 → b 앞
+        return (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0); // 나머지 → 가격 높은 순
+      }
     }
   });
 
-  /* ─── Top 10 (highest price = premium/popular) ─── */
-  const top10 = [...events]
-    .sort((a, b) => (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0))
-    .slice(0, 10);
+  /* ─── Top 10 (TOP_15 기준 상위 10개, 순서 유지) ─── */
+  const top10 = (() => {
+    const ranked: Array<{ ev: LTDEvent; rank: number }> = [];
+    const unranked: LTDEvent[] = [];
+    events.forEach(ev => {
+      const rank = getTop15Rank(ev.Name);
+      if (rank >= 0) ranked.push({ ev, rank });
+      else unranked.push(ev);
+    });
+    ranked.sort((a, b) => a.rank - b.rank);
+    // TOP15 매칭 결과 먼저, 부족하면 가격 높은 순으로 채움
+    const result = ranked.slice(0, 10).map(r => r.ev);
+    if (result.length < 10) {
+      const fill = unranked
+        .sort((a, b) => (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0))
+        .slice(0, 10 - result.length);
+      result.push(...fill);
+    }
+    return result;
+  })();
 
   /* ─── Featured Theatres ─── */
   const theatreMap = new Map<string, number>();
