@@ -54,7 +54,9 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const toggleSection = (name: string) => setMobileExpanded(prev => prev === name ? null : name);
   const { user, signOut } = useAuth();
   let cartBadge = 0;
   try {
@@ -191,7 +193,8 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-xl border border-[#E5E7EB] py-2 min-w-[180px] z-50">
                   <p className="px-4 py-2 text-[12px] text-[#94A3B8] truncate">{user.email}</p>
-                  <Link href="/mypage" className="block px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9]" onClick={() => setShowUserMenu(false)}>My Trips</Link>
+                  <Link href="/mypage?tab=orders" className="block px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9]" onClick={() => setShowUserMenu(false)}>🎫 My Orders</Link>
+                  <Link href="/mypage?tab=trips" className="block px-4 py-2.5 text-[13px] text-[#374151] hover:bg-[#F1F5F9]" onClick={() => setShowUserMenu(false)}>✈️ My Trips</Link>
                   <button onClick={() => { signOut(); setShowUserMenu(false); }} className="w-full text-left px-4 py-2.5 text-[13px] text-[#EF4444] hover:bg-[#FEF2F2]">Sign Out</button>
                 </div>
               )}
@@ -217,66 +220,103 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden pb-4">
-          <div className="mb-2">
-            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Sports</p>
-            {sportsItems.map(item => (
-              <Link key={item} href={`/sport/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
-                {item}
+        <div className="md:hidden pb-6 border-t border-white/10">
+
+          {/* ── 상단: 계정 / 네비 ── */}
+          <div className="px-4 pt-4 pb-3 border-b border-white/10">
+            {user ? (
+              <div className="flex items-center gap-3 mb-3 px-1">
+                <div className="w-9 h-9 rounded-full bg-[#2B7FFF] flex items-center justify-center text-white text-[13px] font-bold flex-shrink-0">
+                  {(user.email?.[0] || 'U').toUpperCase()}
+                </div>
+                <p className="text-[12px] text-[#94A3B8] truncate">{user.email}</p>
+              </div>
+            ) : null}
+            <div className="grid grid-cols-2 gap-2">
+              <Link href="/mypage?tab=orders" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 text-[13px] font-semibold text-[#DBEAFE] hover:bg-white/15 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+                My Orders
               </Link>
-            ))}
+              <Link href="/mypage?tab=trips" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 text-[13px] font-semibold text-[#DBEAFE] hover:bg-white/15 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.1 1.14 2 2 0 012.08 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6z"/></svg>
+                My Trips
+              </Link>
+              <Link href="/planner" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/10 text-[13px] font-semibold text-[#DBEAFE] hover:bg-white/15 transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                ✨ Planner
+              </Link>
+              {user ? (
+                <button onClick={() => { signOut(); setMobileOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#EF4444]/15 text-[13px] font-semibold text-[#FCA5A5] hover:bg-[#EF4444]/25 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                  Sign Out
+                </button>
+              ) : (
+                <Link href="/login" onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-[#2B7FFF]/20 text-[13px] font-semibold text-[#93C5FD] hover:bg-[#2B7FFF]/30 transition-colors">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                  Sign In
+                </Link>
+              )}
+            </div>
           </div>
-          <div className="mb-2">
-            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Concerts</p>
-            {concertItems.map(item => (
-              <Link key={item} href={`/concert/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
-                {item}
-              </Link>
+
+          {/* ── 카테고리 (접기/펼치기) ── */}
+          <div className="mt-2 px-2">
+            {[
+              { key: 'sports', label: '🏆 Sports', emoji: '🏆', items: sportsItems, basePath: '/sport' },
+              { key: 'concerts', label: '🎵 Concerts', emoji: '🎵', items: concertItems, basePath: '/concert' },
+              { key: 'musical', label: '🎭 뮤지컬', emoji: '🎭', items: musicalItems, basePath: '/musical' },
+              { key: 'attractions', label: '🗺️ Attractions', emoji: '🗺️', items: attractionItems, basePath: '/attractions' },
+            ].map(({ key, label, items, basePath }) => (
+              <div key={key} className="border-b border-white/8">
+                <button
+                  onClick={() => toggleSection(key)}
+                  className="w-full flex items-center justify-between px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]"
+                >
+                  <span>{label}</span>
+                  <svg
+                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                    className={`transition-transform duration-200 text-[#64748B] ${mobileExpanded === key ? 'rotate-180' : ''}`}
+                  >
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                {mobileExpanded === key && (
+                  <div className="pb-2 grid grid-cols-2 gap-0">
+                    {items.map(item => (
+                      <Link
+                        key={item}
+                        href={key === 'attractions' && item === 'All Destinations' ? '/attractions' : `${basePath}/${toSlug(item)}`}
+                        className="px-5 py-2 text-[13px] text-[#93C5FD] hover:text-white"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {item}
+                      </Link>
+                    ))}
+                    {key === 'attractions' && (
+                      <Link href="/attractions#browse-countries" className="col-span-2 px-5 py-2 text-[13px] font-semibold text-[#60A5FA]" onClick={() => setMobileOpen(false)}>
+                        🌍 Browse Countries →
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
+
+            {/* 기타 링크 */}
+            <Link href="/all-tickets" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>All Tickets</Link>
+            <Link href="/cities" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>Cities</Link>
           </div>
-          <div className="mb-2">
-            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">뮤지컬</p>
-            {musicalItems.map(item => (
-              <Link key={item} href={`/musical/${toSlug(item)}`} className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
-                {item}
-              </Link>
-            ))}
-          </div>
-          <div className="mb-2">
-            <p className="px-4 py-2 text-[12px] font-bold text-[#94A3B8] uppercase tracking-wider">Attractions</p>
-            {attractionItems.map(item => (
-              <Link
-                key={item}
-                href={item === 'All Destinations' ? '/attractions' : `/attractions/${toSlug(item)}`}
-                className="block px-6 py-2 text-[14px] text-[#DBEAFE] hover:text-white"
-                onClick={() => setMobileOpen(false)}
-              >
-                {item}
-              </Link>
-            ))}
-            <Link
-              href="/attractions#browse-countries"
-              className="block px-6 py-2 text-[14px] font-semibold text-[#60A5FA] hover:text-white"
-              onClick={() => setMobileOpen(false)}
-            >
-              🌍 Browse Countries →
+
+          <div className="px-4 mt-4">
+            <Link href="/sell" className="block px-4 py-3 text-center text-[15px] font-semibold text-white bg-[#2B7FFF] rounded-[10px]" onClick={() => setMobileOpen(false)}>
+              Sell Tickets
             </Link>
           </div>
-          <Link href="/all-tickets" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>All Tickets</Link>
-          <Link href="/cities" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Cities</Link>
-          <Link href="/planner" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
-          <Link href="/cart" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>
-            Cart {cartBadge > 0 && `(${cartBadge})`}
-          </Link>
-          {user ? (
-            <>
-              <Link href="/mypage" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>My Trips</Link>
-              <button onClick={() => { signOut(); setMobileOpen(false); }} className="block w-full text-left px-4 py-3 text-[16px] font-semibold text-[#EF4444]">Sign Out</button>
-            </>
-          ) : (
-            <Link href="/login" className="block px-4 py-3 text-[16px] font-semibold text-[#DBEAFE] hover:text-white" onClick={() => setMobileOpen(false)}>Sign In</Link>
-          )}
-          <Link href="/sell" className="block mx-4 mt-2 px-4 py-3 text-center text-[16px] font-semibold text-white bg-[#2B7FFF] rounded-[8px]" onClick={() => setMobileOpen(false)}>Sell Tickets</Link>
         </div>
       )}
     </header>

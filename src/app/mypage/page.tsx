@@ -1,8 +1,8 @@
 'use client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -31,10 +31,12 @@ interface Order {
   created_at: string;
 }
 
-export default function MyPage() {
+function MyPageInner() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'trips' | 'orders'>('orders');
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<'trips' | 'orders'>(tabParam === 'trips' ? 'trips' : 'orders');
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -415,5 +417,13 @@ export default function MyPage() {
       </div>
       <Footer />
     </main>
+  );
+}
+
+export default function MyPage() {
+  return (
+    <Suspense fallback={null}>
+      <MyPageInner />
+    </Suspense>
   );
 }
