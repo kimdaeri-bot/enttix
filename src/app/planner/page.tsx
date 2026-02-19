@@ -17,6 +17,9 @@ interface PlannerItem {
   event_date?: string | null;
   venue?: string | null;
   bookable?: boolean;
+  attraction_url?: string | null;
+  attraction_price?: number | null;
+  attraction_currency?: string | null;
 }
 
 interface PlannerDay {
@@ -60,6 +63,12 @@ const typeConfig: Record<string, { icon: string; label: string; color: string; b
   transport: { icon: '🚇', label: 'Transport', color: '#64748B', bg: '#F1F5F9' },
   musical: { icon: '🎭', label: 'Musical', color: '#7C3AED', bg: '#F5F3FF' },
 };
+
+function getAttractionIcon(item: PlannerItem): string {
+  const hour = parseInt(item.time.split(':')[0]);
+  if (hour >= 18) return '🌃';
+  return '🏛️';
+}
 
 function PlannerContent() {
   const searchParams = useSearchParams();
@@ -321,6 +330,10 @@ function PlannerContent() {
                   const isMusical = item.type === 'musical';
                   const isMusicalExpanded = expandedMusical === key;
                   const cfg = typeConfig[item.type] || typeConfig.attraction;
+                  const isEveningAttraction =
+                    item.type === 'attraction' && parseInt(item.time.split(':')[0]) >= 18;
+                  const attractionIcon =
+                    item.type === 'attraction' ? getAttractionIcon(item) : cfg.icon;
 
                   return (
                     <div key={idx}>
@@ -333,11 +346,13 @@ function PlannerContent() {
                         className={`rounded-xl p-4 transition-all border ${
                           item.type === 'event'
                             ? 'bg-white border-[#E2E8F0] shadow-sm hover:shadow-md'
+                            : isEveningAttraction
+                            ? 'bg-gradient-to-r from-[#1E1B4B]/5 to-[#312E81]/5 border-[#6366F1]/30 hover:border-[#6366F1]/50'
                             : 'bg-[#FAFBFC] border-[#F1F5F9] hover:border-[#E2E8F0]'
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <span className="text-[20px] mt-0.5">{cfg.icon}</span>
+                          <span className="text-[20px] mt-0.5">{attractionIcon}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-0.5">
                               <span className="text-[#94A3B8] text-[12px] font-mono">{item.time}</span>
@@ -386,6 +401,21 @@ function PlannerContent() {
                                 🎭 Book Musical
                               </Link>
                             )
+                          ) : item.type === 'attraction' && item.attraction_url ? (
+                            <a
+                              href={item.attraction_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE] transition-all whitespace-nowrap"
+                            >
+                              🎟️ {item.attraction_price
+                                ? `From ${item.attraction_currency || '$'}${item.attraction_price}`
+                                : 'Book'}
+                            </a>
+                          ) : item.type === 'attraction' && item.bookable && !item.attraction_url ? (
+                            <span className="flex-shrink-0 px-3 py-2 rounded-lg bg-[#FFF7ED] text-[#EA580C] text-[12px] border border-[#FED7AA]">
+                              💰 Paid
+                            </span>
                           ) : null}
                         </div>
                       </div>

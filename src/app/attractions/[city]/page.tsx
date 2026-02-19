@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/Header';
+import { getAttractionsByCity, type AttractionItem } from '@/lib/attractions-db';
 
 /* ─── CITY MAP ──────────────────────────────────────────────── */
 const CITY_MAP: Record<string, {
@@ -242,6 +243,65 @@ function ProductCard({
   );
 }
 
+/* ─── DB ATTRACTION CARD ─────────────────────────────────────── */
+function DbAttractionCard({ attraction }: { attraction: AttractionItem }) {
+  const fallback = 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=560&h=420&fit=crop';
+  const img = attraction.imageUrl || fallback;
+  const isEvening = attraction.isEvening;
+
+  return (
+    <div className={`group rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col ${isEvening ? 'ring-1 ring-[#6366F1]/20' : ''}`}>
+      {/* Image */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <Image
+          src={img}
+          alt={attraction.name}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          unoptimized
+        />
+        {isEvening && (
+          <span className="absolute top-2 left-2 bg-[#4F46E5] text-white text-[11px] font-bold px-2 py-0.5 rounded">
+            🌃 Night
+          </span>
+        )}
+        {attraction.bestTime && !isEvening && (
+          <span className="absolute top-2 left-2 bg-black/50 text-white text-[11px] px-2 py-0.5 rounded capitalize">
+            {attraction.bestTime}
+          </span>
+        )}
+      </div>
+      {/* Body */}
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="text-[14px] font-semibold text-[#0F172A] line-clamp-2 mb-1 leading-snug flex-1">
+          {attraction.nameKo || attraction.name}
+        </h3>
+        <p className="text-[12px] text-[#64748B] line-clamp-2 mb-2">{attraction.descKo || attraction.desc}</p>
+        {attraction.duration && (
+          <p className="text-[12px] text-[#94A3B8] mb-2">⏱ {attraction.duration}</p>
+        )}
+        <div className="flex items-center justify-between mt-auto">
+          {attraction.price > 0 ? (
+            <p className="text-[15px] font-bold text-[#0F172A]">
+              From {attraction.currency}{attraction.price}
+            </p>
+          ) : (
+            <p className="text-[14px] font-semibold text-[#10B981]">Free</p>
+          )}
+          <a
+            href={attraction.tiqetsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 rounded-lg bg-[#2B7FFF] text-white text-[12px] font-semibold hover:bg-[#1D6AE5] transition-colors whitespace-nowrap"
+          >
+            Book on Tiqets
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── VENUE CARD ─────────────────────────────────────────────── */
 function VenueCard({
   name,
@@ -286,6 +346,7 @@ export default function CityAttractionsPage() {
   const [sort, setSort] = useState<SortKey>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>(null);
+  const [dbAttractions, setDbAttractions] = useState<AttractionItem[]>([]);
 
   const fetchProducts = useCallback(async () => {
     if (!cityInfo) return;
@@ -295,13 +356,21 @@ export default function CityAttractionsPage() {
         `/api/tiqets/city-with-images?city_id=${cityInfo.id}&city_url=${encodeURIComponent(cityInfo.tiqetsSlug)}`
       );
       const data = await res.json();
-      setProducts(data.products || []);
+      const tiqetsProducts = data.products || [];
+      setProducts(tiqetsProducts);
+      // If Tiqets returns no products, load from local DB
+      if (tiqetsProducts.length === 0) {
+        const normalizedSlug = citySlug.replace(/-/g, ' ');
+        setDbAttractions(getAttractionsByCity(normalizedSlug));
+      }
     } catch {
       setProducts([]);
+      const normalizedSlug = citySlug.replace(/-/g, ' ');
+      setDbAttractions(getAttractionsByCity(normalizedSlug));
     } finally {
       setLoading(false);
     }
-  }, [cityInfo]);
+  }, [cityInfo, citySlug]);
 
   useEffect(() => {
     fetchProducts();
@@ -527,6 +596,21 @@ export default function CityAttractionsPage() {
               </div>
             )}
           </>
+        ) : dbAttractions.length > 0 ? (
+          /* ─── DB ATTRACTIONS FALLBACK ───────────────── */
+          <div>
+            <div className="flex items-center gap-2 mb-5">
+              <span className="text-[15px] font-semibold text-[#0F172A]">Handpicked Experiences</span>
+              <span className="px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2B7FFF] text-[11px] font-semibold">
+                {dbAttractions.length} curated
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {dbAttractions.map(a => (
+                <DbAttractionCard key={a.id} attraction={a} />
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="text-center py-20">
             <p className="text-[#94A3B8] text-[18px] mb-3">No experiences found</p>

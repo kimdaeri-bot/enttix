@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { getAttractionsByCity, normalizeCity } from '@/lib/attractions-db';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -425,6 +426,24 @@ export async function POST(req: NextRequest) {
     // Step 3: AI conversational response (Haiku, 1 call)
     const aiMessage = await buildAiMessage(query, events.slice(0, 10), ltdEvents);
 
+    // Step 4: Attractions DB — 도시 검색이면 attractions 포함
+    let attractionResults: Record<string, unknown>[] = [];
+    if (filters.city) {
+      const cityAttractions = getAttractionsByCity(normalizeCity(filters.city));
+      attractionResults = cityAttractions.slice(0, 4).map(a => ({
+        type: 'attraction',
+        id: a.id,
+        title: a.nameKo || a.name,
+        subtitle: `${a.city} · ${a.duration || ''}`,
+        price: a.price,
+        currency: a.currency,
+        url: `/attractions/${a.city.replace(/\s+/g, '-')}`,
+        tiqetsUrl: a.tiqetsUrl,
+        imageUrl: a.imageUrl,
+        isEvening: a.isEvening,
+      }));
+    }
+
     return NextResponse.json({
       filters,
       summary: filters.summary || '',
@@ -435,6 +454,8 @@ export async function POST(req: NextRequest) {
       ltdEvents: ltdEvents.slice(0, 8),
       ltdTotal: ltdEvents.length,
       isMusicalQuery: isLtd,
+      // Attractions DB results
+      attractionResults,
     });
   } catch (e) {
     console.error('AI search error:', e);

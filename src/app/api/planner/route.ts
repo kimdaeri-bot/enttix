@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAttractionsByCity, getEveningAttractions, matchAttraction, normalizeCity } from '@/lib/attractions-db';
 
 const TIXSTOCK_BASE = process.env.TIXSTOCK_BASE_URL!;
 const TIXSTOCK_TOKEN = process.env.TIXSTOCK_TOKEN!;
@@ -15,6 +16,9 @@ interface PlannerItem {
   event_date?: string | null;
   venue?: string | null;
   bookable?: boolean;
+  attraction_url?: string | null;
+  attraction_price?: number | null;
+  attraction_currency?: string | null;
 }
 
 interface PlannerDay {
@@ -104,7 +108,22 @@ Rules:
 - Dates: YYYY-MM-DD, Times: HH:MM
 - Descriptions under 60 chars
 - Respond in the same language as user input
-- Mix walking-friendly locations within same area each day`,
+- Mix walking-friendly locations within same area each day
+
+CRITICAL RULES FOR EVENING:
+- ALWAYS include at least ONE paid evening attraction per trip (type "attraction", time 19:00-21:00)
+- For London: London Eye, Sky Garden, Westminster by Night
+- For Paris: Eiffel Tower at night, Seine River Night Cruise
+- For Rome: Rome by Night walking tour, Trevi Fountain at night
+- For Barcelona: Bunkers del Carmel sunset, Gothic Quarter night tour
+- For New York: Empire State Building night, NYC Night Bus Tour
+- For Dubai: Burj Khalifa At The Top, Desert Safari at sunset
+- For Tokyo: Tokyo Skytree Night View, teamLab Borderless
+- For Amsterdam: Canal Night Cruise
+- For Singapore: Gardens by the Bay light show
+- For Hong Kong: Peak Tram night view
+- These MUST be bookable (bookable: true) and set at 19:30 or 20:00 time slot
+- Mark them with type "attraction" but include the evening nature in description`,
           },
         ],
       }),
@@ -246,6 +265,56 @@ Rules:
           price: unmatched.FromPrice || null,
           bookable: true,
         });
+      }
+    }
+
+    // Step 5: Attractions DB matching & evening auto-add
+    const cityNorm = normalizeCity(plan.city);
+    const eveningAttractions = getEveningAttractions(cityNorm);
+
+    for (const day of plan.days) {
+      for (const item of day.items) {
+        if (item.type !== 'attraction') continue;
+        if (item.event_id || item.musical_event_id) continue;
+
+        const matched = matchAttraction(item.name, cityNorm);
+        if (matched) {
+          item.attraction_url = matched.tiqetsUrl;
+          item.attraction_price = matched.price;
+          item.attraction_currency = matched.currency;
+          if (!item.venue) item.venue = matched.city;
+        }
+      }
+
+      // 야경 어트랙션 자동 추가: 해당 날짜에 evening attraction이 없으면 추가
+      const hasEvening = day.items.some(
+        i =>
+          i.type === 'attraction' &&
+          (i.attraction_url || i.bookable) &&
+          parseInt(i.time.split(':')[0]) >= 18,
+      );
+
+      if (!hasEvening && eveningAttractions.length > 0) {
+        const usedNames = new Set(
+          plan.days.flatMap(d => d.items.map(i => i.name.toLowerCase())),
+        );
+        const available = eveningAttractions.filter(
+          a => !usedNames.has(a.name.toLowerCase()),
+        );
+        if (available.length > 0) {
+          const pick = available[day.day % available.length];
+          day.items.push({
+            time: '20:00',
+            type: 'attraction',
+            name: pick.name,
+            desc: pick.descKo || pick.desc,
+            bookable: true,
+            attraction_url: pick.tiqetsUrl,
+            attraction_price: pick.price,
+            attraction_currency: pick.currency,
+            venue: pick.city,
+          });
+        }
       }
     }
 
