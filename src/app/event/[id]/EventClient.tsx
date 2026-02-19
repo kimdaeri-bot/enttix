@@ -56,7 +56,13 @@ export default function EventClient({ id }: { id: string }) {
   const [selectedMapSection, setSelectedMapSection] = useState<string | null>(null);
   const [holdingId, setHoldingId] = useState<string | null>(null);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [expandedBenefits, setExpandedBenefits] = useState<Set<string>>(new Set());
   const cart = useCart();
+  const toggleBenefits = (id: string) => setExpandedBenefits(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -343,18 +349,38 @@ export default function EventClient({ id }: { id: string }) {
                           <span className="px-2 py-0.5 rounded bg-[#FEF3C7] text-[10px] font-semibold text-[#D97706]">VIP</span>
                         )}
                       </div>
-                      {ticket.benefits.length > 0 && (
-                        <div className="mt-1.5 flex flex-wrap gap-1">
-                          {ticket.benefits.slice(0, 4).map((b: string, i: number) => (
-                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
-                              ✨ {b}
-                            </span>
-                          ))}
-                          {ticket.benefits.length > 4 && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] text-[#16A34A]">+{ticket.benefits.length - 4} more</span>
-                          )}
-                        </div>
-                      )}
+                      {ticket.benefits.length > 0 && (() => {
+                        const isExpanded = expandedBenefits.has(ticket.id);
+                        const shown = isExpanded ? ticket.benefits : ticket.benefits.slice(0, 4);
+                        const remaining = ticket.benefits.length - 4;
+                        return (
+                          <div className="mt-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {shown.map((b: string, i: number) => (
+                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
+                                  ✨ {b}
+                                </span>
+                              ))}
+                              {!isExpanded && remaining > 0 && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
+                                  className="px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF] hover:bg-[#DBEAFE] transition-colors cursor-pointer"
+                                >
+                                  +{remaining} more
+                                </button>
+                              )}
+                              {isExpanded && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
+                                  className="px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[10px] font-semibold text-[#64748B] hover:bg-[#E2E8F0] transition-colors cursor-pointer"
+                                >
+                                  collapse ▲
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
                       {ticket.splitWarning && (
                         <p className="text-[11px] text-[#EF4444] mt-1">⚠️ {ticket.splitWarning}</p>
                       )}
