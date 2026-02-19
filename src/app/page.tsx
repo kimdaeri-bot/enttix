@@ -55,8 +55,25 @@ const REVIEWS = [
 
 const TRENDING_LEAGUES = ['Premier League', 'Formula 1', 'NBA', 'La Liga', 'Champions League'];
 
+// Man City vs Newcastle — Diplat Co 리스팅 (Tixstock 내부 API에서 확인된 실제 데이터)
+const MAN_CITY_MATCH = {
+  id: '01kdmq9xzg3fpwa884q65vpcrs',
+  name: 'Manchester City FC vs Newcastle United FC',
+  homeTeam: 'Manchester City FC',
+  awayTeam: 'Newcastle United FC',
+  datetime: '2026-02-21T15:00:00+0000',
+  venue: { id: 'etihad', name: 'Etihad Stadium', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4831, longitude: -2.2004 },
+  leagueId: 'epl',
+  leagueName: 'English Premier League',
+  startingPrice: 111,
+  currency: 'GBP',
+  ticketsLeft: 4,
+};
+
 export default async function Home() {
-  const matches = await getMatches({ has_listing: 'true', per_page: '10' });
+  const apiMatches = await getMatches({ has_listing: 'true', per_page: '10' });
+  // Man City 맨 앞에 추가, 중복 제거
+  const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
   const { cities } = demoData;
 
   return (
