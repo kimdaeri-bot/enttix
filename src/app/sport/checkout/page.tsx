@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
+import SeatMap from '@/components/SeatMap';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -273,6 +274,19 @@ function CheckoutContent() {
             </span>
           </div>
         </div>
+
+        {/* Seat Location Card */}
+        {section && (
+          <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
+            <h2 className="text-[15px] font-bold text-[#171717] mb-4">Your Seat Location</h2>
+            <SeatMap
+              venueName={venue || 'Venue'}
+              compact={true}
+              highlightSection={section}
+              sections={[{ name: section }]}
+            />
+          </div>
+        )}
 
         {/* Customer Info Form */}
         <form onSubmit={handleConfirmOrder}>

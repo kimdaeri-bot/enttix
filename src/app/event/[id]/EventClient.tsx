@@ -248,18 +248,19 @@ export default function EventClient({ id }: { id: string }) {
   const types = [...new Set(tickets.map(t => t.type))];
 
   // Filter tickets
-  const mapSectionLower = selectedMapSection?.replace(/-/g, ' ') || '';
   const filteredTickets = tickets.filter(t => {
     if (t.maxQty < minQtyFilter) return false;
     if (sectionFilter && t.section !== sectionFilter) return false;
     if (typeFilter && t.type !== typeFilter) return false;
-    if (mapSectionLower && !t.section.toLowerCase().includes(mapSectionLower.split(' ')[0])) return false;
+    if (selectedMapSection && t.section !== selectedMapSection) return false;
     return true;
   });
 
   const seatMapSections = sections.map(s => {
-    const min = Math.min(...tickets.filter(t => t.section === s).map(t => t.price));
-    return { name: s, minPrice: min };
+    const sectionTickets = tickets.filter(t => t.section === s);
+    const min = Math.min(...sectionTickets.map(t => t.price));
+    const count = sectionTickets.reduce((acc, t) => acc + t.maxQty, 0);
+    return { name: s, minPrice: min, count };
   });
 
   return (
