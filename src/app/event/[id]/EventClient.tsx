@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import SeatMap from '@/components/SeatMap';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Match } from '@/types';
 import { useCart } from '@/context/CartContext';
 
@@ -51,7 +52,9 @@ export default function EventClient({ id }: { id: string }) {
   const [typeFilter, setTypeFilter] = useState('');
   const [selectedMapSection, setSelectedMapSection] = useState<string | null>(null);
   const [holdingId, setHoldingId] = useState<string | null>(null);
+  const [buyingId, setBuyingId] = useState<string | null>(null);
   const cart = useCart();
+  const router = useRouter();
 
   useEffect(() => {
     async function loadData() {
@@ -154,6 +157,34 @@ export default function EventClient({ id }: { id: string }) {
       });
     } finally {
       setHoldingId(null);
+    }
+  };
+
+  const handleBuyNow = async (ticket: TicketListing, qty: number) => {
+    setBuyingId(ticket.id);
+    try {
+      const res = await fetch('/api/tixstock/hold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing_id: ticket.id, quantity: qty }),
+      });
+      const data = await res.json();
+      const holdId = data.meta?.hold_id;
+      if (!holdId) {
+        alert('Hold failed. Please try again.');
+        return;
+      }
+      const isGA = ticket.row === 'GA' || ticket.seat === 'GA' || ticket.seat === '';
+      router.push(
+        `/sport/checkout?holdId=${holdId}&listingId=${ticket.id}&quantity=${qty}&price=${ticket.price}` +
+        `&section=${encodeURIComponent(ticket.section)}&row=${encodeURIComponent(ticket.row)}` +
+        `&seat=${encodeURIComponent(ticket.seat)}&eventId=${id}` +
+        `&eventName=${encodeURIComponent(match?.name || '')}&general_admission=${isGA}`
+      );
+    } catch {
+      alert('Hold failed. Please try again.');
+    } finally {
+      setBuyingId(null);
     }
   };
 
@@ -328,13 +359,25 @@ export default function EventClient({ id }: { id: string }) {
                           className="w-8 h-8 rounded-[6px] border border-[#E5E7EB] flex items-center justify-center text-[14px] font-bold text-[#6B7280] hover:bg-[#F1F5F9] transition-colors"
                         >+</button>
                       </div>
-                      <button
-                        onClick={() => addToCart(ticket)}
-                        disabled={holdingId === ticket.id}
-                        className="px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold transition-colors active:scale-95 disabled:opacity-50"
-                      >
-                        {holdingId === ticket.id ? '...' : 'Add'}
-                      </button>
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => {
+                            const qty = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
+                            handleBuyNow(ticket, qty);
+                          }}
+                          disabled={buyingId === ticket.id}
+                          className="px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold transition-colors active:scale-95 disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {buyingId === ticket.id ? '...' : 'Buy Now'}
+                        </button>
+                        <button
+                          onClick={() => addToCart(ticket)}
+                          disabled={holdingId === ticket.id}
+                          className="px-5 py-2 rounded-[8px] border border-[#E5E7EB] bg-white hover:bg-[#F1F5F9] text-[#374151] text-[12px] font-medium transition-colors active:scale-95 disabled:opacity-50"
+                        >
+                          {holdingId === ticket.id ? '...' : 'Add to Cart'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
