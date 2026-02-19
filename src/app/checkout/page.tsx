@@ -175,6 +175,23 @@ export default function CheckoutPage() {
                     <span>Sec {item.section} • Row {item.row} × {item.quantity}</span>
                     <span className="font-semibold text-[#171717]">${(item.pricePerTicket * item.quantity).toFixed(2)}</span>
                   </div>
+                  {item.ticketType && (
+                    <div className="flex gap-1.5 mt-1.5">
+                      <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF]">{item.ticketType}</span>
+                    </div>
+                  )}
+                  {item.benefits && item.benefits.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[11px] text-[#9CA3AF] mb-1">Features</p>
+                      <div className="flex flex-wrap gap-1">
+                        {item.benefits.map((b, i) => (
+                          <span key={i} className="px-2 py-0.5 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] text-[10px] font-medium text-[#2B7FFF]">
+                            {b}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
 

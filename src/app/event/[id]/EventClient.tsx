@@ -167,6 +167,7 @@ export default function EventClient({ id }: { id: string }) {
         section: ticket.section, row: ticket.row, quantity: qty,
         pricePerTicket: ticket.price, currency: match?.currency || 'USD',
         ticketType: ticket.type, holdId,
+        benefits: ticket.benefits,
       });
     } catch {
       // Still add to cart even if hold fails
@@ -175,6 +176,7 @@ export default function EventClient({ id }: { id: string }) {
         section: ticket.section, row: ticket.row, quantity: qty,
         pricePerTicket: ticket.price, currency: match?.currency || 'USD',
         ticketType: ticket.type,
+        benefits: ticket.benefits,
       });
     } finally {
       setHoldingId(null);

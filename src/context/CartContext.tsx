@@ -13,6 +13,7 @@ export interface CartItem {
   ticketType: string;
   holdId?: string;
   holdExpiresAt?: number; // timestamp
+  benefits?: string[];
 }
 
 interface CartContextType {
