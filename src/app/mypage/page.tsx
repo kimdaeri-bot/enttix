@@ -68,7 +68,7 @@ function MyPageInner() {
     supabase
       .from('orders')
       .select('*')
-      .eq('customer_email', user.email)
+      .or(`user_id.eq.${user.id},customer_email.eq.${user.email}`)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setOrders(data || []);

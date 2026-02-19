@@ -7,6 +7,7 @@ import SeatMap from '@/components/SeatMap';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -60,7 +61,9 @@ function CheckoutContent() {
   const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   const timerUrgent = timeLeft < 120;
 
-  // Form state
+  const { user } = useAuth();
+
+  // Form state — 로그인 시 이메일 자동 채우기
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -68,6 +71,13 @@ function CheckoutContent() {
     phone: '',
     agreed: false,
   });
+
+  // 로그인 유저 이메일 자동 채우기
+  useEffect(() => {
+    if (user?.email) {
+      setForm(prev => ({ ...prev, email: prev.email || user.email || '' }));
+    }
+  }, [user]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -127,8 +137,9 @@ function CheckoutContent() {
         // ✅ Supabase에 주문 저장
         await supabase.from('orders').insert({
           order_number: tixstockOrderId,
+          user_id: user?.id || null,
           customer_name: `${form.firstName} ${form.lastName}`,
-          customer_email: form.email,
+          customer_email: user?.email || form.email,
           customer_phone: form.phone || null,
           event_name: eventName,
           quantity: quantity,
