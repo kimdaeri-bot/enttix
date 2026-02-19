@@ -6,10 +6,11 @@ const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY!;
 
 interface PlannerItem {
   time: string;
-  type: 'attraction' | 'food' | 'event' | 'cafe' | 'dessert' | 'shopping' | 'transport';
+  type: 'attraction' | 'food' | 'event' | 'cafe' | 'dessert' | 'shopping' | 'transport' | 'musical';
   name: string;
   desc: string;
   event_id?: number | null;
+  musical_event_id?: number | null;
   price?: number | null;
   event_date?: string | null;
   venue?: string | null;
@@ -77,13 +78,17 @@ Return ONLY valid JSON (no markdown):
         { "time": "14:00", "type": "attraction", "name": "Tate Modern", "desc": "세계적인 현대미술관, 무료 입장", "bookable": false },
         { "time": "15:30", "type": "dessert", "name": "Kova Patisserie", "desc": "말차 수플레 팬케이크 유명", "bookable": false },
         { "time": "18:00", "type": "food", "name": "Dishoom", "desc": "봄베이 스타일 인도 레스토랑, 예약 추천", "bookable": true },
-        { "time": "20:00", "type": "event", "name": "Arsenal vs Chelsea", "desc": "프리미어 리그 경기", "event_id": null, "bookable": true }
+        { "time": "20:00", "type": "event", "name": "Arsenal vs Chelsea", "desc": "프리미어 리그 경기", "event_id": null, "bookable": true },
+        { "time": "19:30", "type": "musical", "name": "Hamilton", "desc": "West End 뮤지컬, 빅토리아 팰리스", "bookable": true }
       ]
     }
   ]
 }
 
-Item types: "attraction", "food", "cafe", "dessert", "event", "shopping", "transport"
+Item types: "attraction", "food", "cafe", "dessert", "event", "musical", "shopping", "transport"
+- type "musical": 뮤지컬/연극 공연. Include when city has theatre district (London West End, NYC Broadway, etc.)
+- type "event": 스포츠/콘서트 이벤트
+- For musical: { "time": "19:30", "type": "musical", "name": "Hamilton", "desc": "West End 뮤지컬, 빅토리아 팰리스", "bookable": true }
 - bookable: true if reservation/ticket is needed or recommended, false if walk-in or free
 
 Rules:
@@ -92,7 +97,7 @@ Rules:
 - Lunch: local restaurant recommendation with specific dish or specialty
 - Afternoon: attraction + dessert/cafe break
 - Dinner: restaurant with cuisine style noted
-- Evening: event (sports, theater, concert) when available
+- Evening: event (sports, concert) or musical (West End/Broadway) when city has theatre district; prefer musical for London/NYC
 - Use REAL, SPECIFIC restaurant/cafe names that actually exist in that city
 - Include specific dish recommendations in desc when possible
 - For events, use real venue/team/artist names
@@ -188,6 +193,59 @@ Rules:
           item.venue = bestMatch.venue?.name || bestMatch.venue || null;
           item.desc = bestMatch.category || bestMatch.competition || item.desc;
         }
+      }
+    }
+
+    // Step 4: LTD Musical matching (London only)
+    let ltdEvents: any[] = [];
+    if (plan.city.toLowerCase().includes('london')) {
+      try {
+        const ltdRes = await fetch(`${process.env.LTD_BASE_URL}/Events`, {
+          headers: { 'Api-Key': process.env.LTD_API_KEY!, 'Content-Type': 'application/json' },
+          next: { revalidate: 3600 },
+        });
+        if (ltdRes.ok) {
+          const ltdData = await ltdRes.json();
+          ltdEvents = ltdData.Events || [];
+        }
+      } catch { /* continue without */ }
+    }
+
+    // Match musical items to LTD events
+    for (const day of plan.days) {
+      for (const item of day.items) {
+        if (item.type !== 'musical') continue;
+        const nameLower = item.name.toLowerCase();
+        const match = ltdEvents.find(ev => {
+          const evName = (ev.Name || '').toLowerCase();
+          return evName.includes(nameLower) || nameLower.includes(evName.split(' ')[0]);
+        });
+        if (match) {
+          item.musical_event_id = match.EventId;
+          item.venue = item.venue || match.VenueName || match.Venue?.Name || null;
+          item.price = item.price || match.FromPrice || null;
+        }
+      }
+    }
+
+    // Auto-add unmatched LTD event to first day if no musical yet
+    const usedMusicalIds = new Set(
+      plan.days.flatMap(d => d.items.filter(i => i.musical_event_id).map(i => i.musical_event_id))
+    );
+    const firstDay = plan.days[0];
+    if (firstDay && ltdEvents.length > 0) {
+      const unmatched = ltdEvents.find(ev => !usedMusicalIds.has(ev.EventId) && ev.FromPrice);
+      if (unmatched && !firstDay.items.some(i => i.type === 'musical')) {
+        firstDay.items.push({
+          time: '19:30',
+          type: 'musical',
+          name: unmatched.Name,
+          desc: unmatched.TagLine || 'West End Musical',
+          musical_event_id: unmatched.EventId,
+          venue: unmatched.VenueName || null,
+          price: unmatched.FromPrice || null,
+          bookable: true,
+        });
       }
     }
 

@@ -8,13 +8,15 @@ import { Suspense } from 'react';
 
 interface PlannerItem {
   time: string;
-  type: 'attraction' | 'food' | 'event';
+  type: 'attraction' | 'food' | 'event' | 'cafe' | 'dessert' | 'shopping' | 'transport' | 'musical';
   name: string;
   desc: string;
   event_id?: number | null;
+  musical_event_id?: number | null;
   price?: number | null;
   event_date?: string | null;
   venue?: string | null;
+  bookable?: boolean;
 }
 
 interface PlannerDay {
@@ -52,6 +54,11 @@ const typeConfig: Record<string, { icon: string; label: string; color: string; b
   attraction: { icon: '🏛️', label: 'Attraction', color: '#6366F1', bg: '#EEF2FF' },
   food: { icon: '🍽️', label: 'Restaurant', color: '#F59E0B', bg: '#FFFBEB' },
   event: { icon: '🎫', label: 'Event', color: '#2B7FFF', bg: '#EFF6FF' },
+  cafe: { icon: '☕', label: 'Cafe', color: '#92400E', bg: '#FFFBEB' },
+  dessert: { icon: '🍰', label: 'Dessert', color: '#EC4899', bg: '#FDF2F8' },
+  shopping: { icon: '🛍️', label: 'Shopping', color: '#10B981', bg: '#ECFDF5' },
+  transport: { icon: '🚇', label: 'Transport', color: '#64748B', bg: '#F1F5F9' },
+  musical: { icon: '🎭', label: 'Musical', color: '#7C3AED', bg: '#F5F3FF' },
 };
 
 function PlannerContent() {
@@ -66,6 +73,9 @@ function PlannerContent() {
   const [tickets, setTickets] = useState<Record<string, Ticket[]>>({});
   const [ticketLoading, setTicketLoading] = useState<string | null>(null);
   const [activeDay, setActiveDay] = useState(1);
+  const [expandedMusical, setExpandedMusical] = useState<string | null>(null);
+  const [musicalPerformances, setMusicalPerformances] = useState<Record<string, any[]>>({});
+  const [musicalLoading, setMusicalLoading] = useState<string | null>(null);
 
   const handleSearch = async (q?: string) => {
     const searchQuery = q || query;
@@ -75,6 +85,8 @@ function PlannerContent() {
     setPlan(null);
     setExpandedEvent(null);
     setTickets({});
+    setExpandedMusical(null);
+    setMusicalPerformances({});
 
     try {
       const res = await fetch('/api/planner', {
@@ -100,6 +112,27 @@ function PlannerContent() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleToggleMusical = async (key: string, eventId: number) => {
+    if (expandedMusical === key) {
+      setExpandedMusical(null);
+      return;
+    }
+    setExpandedMusical(key);
+    if (musicalPerformances[key]) return;
+
+    setMusicalLoading(key);
+    try {
+      const res = await fetch(`/api/ltd/event/${eventId}`);
+      const data = await res.json();
+      const perfs = (data.Performances || data.Event?.Performances || []).slice(0, 5);
+      setMusicalPerformances(prev => ({ ...prev, [key]: perfs }));
+    } catch {
+      setMusicalPerformances(prev => ({ ...prev, [key]: [] }));
+    } finally {
+      setMusicalLoading(null);
+    }
+  };
 
   const handleToggleTickets = async (key: string, eventId: number) => {
     if (expandedEvent === key) {
@@ -285,6 +318,8 @@ function PlannerContent() {
                   const key = `${day.day}-${idx}`;
                   const isEvent = item.type === 'event' && item.event_id;
                   const isExpanded = expandedEvent === key;
+                  const isMusical = item.type === 'musical';
+                  const isMusicalExpanded = expandedMusical === key;
                   const cfg = typeConfig[item.type] || typeConfig.attraction;
 
                   return (
@@ -331,9 +366,87 @@ function PlannerContent() {
                             <span className="flex-shrink-0 px-3 py-2 rounded-lg bg-[#F9FAFB] text-[#9CA3AF] text-[12px] border border-[#F1F5F9]">
                               Not available
                             </span>
+                          ) : isMusical ? (
+                            item.musical_event_id ? (
+                              <button
+                                onClick={() => handleToggleMusical(key, item.musical_event_id!)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all ${
+                                  isMusicalExpanded
+                                    ? 'bg-[#7C3AED] text-white shadow-sm'
+                                    : 'bg-[#F5F3FF] text-[#7C3AED] hover:bg-[#EDE9FE]'
+                                }`}
+                              >
+                                🎭 {item.price ? `From £${item.price}` : 'Book Musical'}
+                              </button>
+                            ) : (
+                              <Link
+                                href="/musical/london"
+                                className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#F5F3FF] text-[#7C3AED] hover:bg-[#EDE9FE] transition-colors"
+                              >
+                                🎭 Book Musical
+                              </Link>
+                            )
                           ) : null}
                         </div>
                       </div>
+
+                      {/* Musical Accordion */}
+                      {isMusical && (
+                        <div className={`overflow-hidden transition-all duration-300 ${isMusicalExpanded ? 'max-h-[600px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+                          <div className="bg-white rounded-2xl shadow-lg border border-[#E5E7EB] overflow-hidden ml-8">
+                            {musicalLoading === key ? (
+                              <div className="flex justify-center py-8">
+                                <div className="animate-spin w-5 h-5 border-2 border-[#7C3AED] border-t-transparent rounded-full" />
+                              </div>
+                            ) : musicalPerformances[key]?.length ? (
+                              <div>
+                                <div className="px-5 py-3 border-b border-[#F1F5F9] bg-[#F5F3FF]">
+                                  <p className="text-[#7C3AED] text-[12px] font-semibold uppercase tracking-wider">
+                                    🎭 Available Performances
+                                  </p>
+                                </div>
+                                <div className="divide-y divide-[#F1F5F9]">
+                                  {musicalPerformances[key].map((perf, pi) => (
+                                    <div key={pi} className="flex items-center gap-4 px-5 py-4 hover:bg-[#F9FAFB]">
+                                      <div className="flex-1">
+                                        <p className="text-[#0F172A] font-semibold text-[14px]">
+                                          {perf.DateTime ? new Date(perf.DateTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }) : ''}
+                                        </p>
+                                        <p className="text-[#64748B] text-[12px]">
+                                          {perf.DateTime ? new Date(perf.DateTime).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        {perf.FromPrice && (
+                                          <p className="text-[#0F172A] font-bold text-[16px]">From £{perf.FromPrice}</p>
+                                        )}
+                                        <a
+                                          href={`/musical/event/${item.musical_event_id}`}
+                                          className="inline-block mt-1 px-4 py-1.5 rounded-lg bg-[#7C3AED] text-white text-[12px] font-semibold hover:bg-[#6D28D9] transition-colors"
+                                        >
+                                          Book Now
+                                        </a>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="px-5 py-3 border-t border-[#F1F5F9] text-center">
+                                  <a href={`/musical/event/${item.musical_event_id}`} className="text-[#7C3AED] text-[13px] font-semibold hover:underline">
+                                    View All Performances →
+                                  </a>
+                                </div>
+                              </div>
+                            ) : isMusicalExpanded ? (
+                              <div className="text-center py-8">
+                                <p className="text-[#94A3B8] text-[13px] mb-3">No upcoming performances found</p>
+                                <a href={`/musical/event/${item.musical_event_id}`} className="text-[#7C3AED] text-[13px] font-semibold hover:underline">
+                                  Check availability →
+                                </a>
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Tickets Accordion */}
                       <div
