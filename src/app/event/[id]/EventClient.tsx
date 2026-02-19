@@ -21,6 +21,7 @@ interface TicketListing {
   isEticket: boolean;
   isAisle: boolean;
   isVip: boolean;
+  isGA?: boolean;
 }
 
 const demoTickets: TicketListing[] = [
@@ -31,14 +32,16 @@ const demoTickets: TicketListing[] = [
   { id: 't5', section: 'NW Corner', row: '6', seat: '1-6', type: 'eTicket', price: 110.00, maxQty: 6, quantityOptions: [1,2,3,4,5,6], benefits: [], isEticket: true, isAisle: true, isVip: false },
 ];
 
-function getSplitQuantities(available: number, splitType: string, displayQty?: number): number[] {
-  if (displayQty && displayQty > 0) return [displayQty];
+function getSplitQuantities(available: number, splitType: string, splitQty?: number): number[] {
+  const max = Math.min(available, 10); // 최대 10개 표시
   switch (splitType) {
-    case 'any': return Array.from({ length: available }, (_, i) => i + 1);
-    case 'avoid-one': return Array.from({ length: available }, (_, i) => i + 1).filter(n => n !== available - 1);
+    case 'avoid-one': return Array.from({ length: max }, (_, i) => i + 1).filter(n => n !== available - 1);
     case 'none': return [available];
-    case 'pairs': return Array.from({ length: Math.floor(available / 2) }, (_, i) => (i + 1) * 2);
-    default: return Array.from({ length: available }, (_, i) => i + 1);
+    case 'multiples': {
+      const step = splitQty && splitQty > 0 ? splitQty : 1;
+      return Array.from({ length: Math.floor(max / step) }, (_, i) => (i + 1) * step);
+    }
+    default: return Array.from({ length: max }, (_, i) => i + 1);
   }
 }
 
@@ -83,28 +86,40 @@ export default function EventClient({ id }: { id: string }) {
           const listings = tickData.data || [];
           if (listings.length > 0) {
             setTickets(listings.map((l: Record<string, unknown>) => {
-              const seat = l.seat_details as Record<string, string> || {};
-              const pricing = l.pricing as Record<string, number> || {};
-              const qty = l.quantity as Record<string, number> || {};
-              const ticket = l.ticket as Record<string, string> || {};
-              const rb = (l.restrictions_benefits as string[]) || [];
-              const available = qty.available || 1;
-              const splitType = ticket.split_type || 'any';
-              const displayQty = qty.display_quantity || 0;
+              const seat = (l.seat_details as Record<string, string>) || {};
+              const proceedPrice = (l.proceed_price as Record<string, string>) || {};
+              const qtyInfo = (l.number_of_tickets_for_sale as Record<string, number>) || {};
+              const ticket = (l.ticket as Record<string, unknown>) || {};
+              const rb = ((l.restrictions_benefits as Record<string, unknown[]>)?.options || []) as string[];
+              const available = qtyInfo.quantity_available || 1;
+              const splitType = String(ticket.split_type || 'No Preferences');
+              const displayQty = qtyInfo.display_quantity || 0;
+              const splitQty = qtyInfo.split_quantity || 0;
+              const price = parseFloat(proceedPrice.amount || '0');
+              const isGA = String(ticket.general_admission) === 'true';
               return {
                 id: String(l.id),
                 section: seat.section || seat.category || 'General',
-                row: seat.row || 'GA',
-                seat: seat.seat || '',
-                type: ticket.type || 'eTicket',
-                price: pricing.proceed_price || 0,
-                maxQty: available,
-                quantityOptions: getSplitQuantities(available, splitType, displayQty),
+                row: seat.row || '',
+                seat: seat.first_seat || '',
+                type: String(ticket.type || 'eTicket'),
+                price,
+                maxQty: displayQty || available,
+                quantityOptions: getSplitQuantities(
+                  displayQty || available,
+                  splitType === 'No Preferences' ? 'any'
+                    : splitType === 'All Together' ? 'none'
+                    : splitType === 'Avoid leaving one' ? 'avoid-one'
+                    : splitType === 'Sell In Multiples' ? 'multiples'
+                    : 'any',
+                  splitQty,
+                ),
                 benefits: rb,
-                isEticket: (ticket.type || '').toLowerCase().includes('eticket') || (ticket.etickets as unknown as string[])?.length > 0,
+                isEticket: String(ticket.type || '').toLowerCase().includes('eticket'),
                 isAisle: false,
-                isVip: rb.some(r => r.toLowerCase().includes('vip')),
-                splitWarning: splitType === 'avoid-one' ? 'Cannot purchase leaving only 1 ticket' : undefined,
+                isVip: rb.some((r: string) => r.toLowerCase().includes('vip')),
+                isGA,
+                splitWarning: splitType === 'Avoid leaving one' ? 'Cannot purchase leaving only 1 ticket' : undefined,
               };
             }));
           }
@@ -174,7 +189,7 @@ export default function EventClient({ id }: { id: string }) {
         alert('Hold failed. Please try again.');
         return;
       }
-      const isGA = ticket.row === 'GA' || ticket.seat === 'GA' || ticket.seat === '';
+      const isGA = ticket.isGA ?? (ticket.row === 'GA' || ticket.seat === 'GA');
       router.push(
         `/sport/checkout?holdId=${holdId}&listingId=${ticket.id}&quantity=${qty}&price=${ticket.price}` +
         `&section=${encodeURIComponent(ticket.section)}&row=${encodeURIComponent(ticket.row)}` +
@@ -335,7 +350,7 @@ export default function EventClient({ id }: { id: string }) {
                     {/* Right: Price + Qty + Add */}
                     <div className="flex-shrink-0 flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-[18px] font-bold text-[#171717]">${ticket.price.toFixed(2)}</p>
+                        <p className="text-[18px] font-bold text-[#171717]">£{ticket.price.toFixed(2)}</p>
                         <p className="text-[11px] text-[#9CA3AF]">per ticket</p>
                       </div>
                       <div className="flex items-center gap-1.5">
