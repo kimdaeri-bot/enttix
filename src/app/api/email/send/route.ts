@@ -12,16 +12,21 @@ const resend = new Resend(RESEND_API_KEY);
 
 // ── 주문 확인 이메일 HTML 템플릿 ──
 function buildOrderConfirmHtml({
-  customerName, orderId, orderName, amount, method, approvedAt, items,
+  customerName, orderId, orderName, amount, currency, method, approvedAt, items,
 }: {
   customerName: string;
   orderId: string;
   orderName: string;
   amount: number;
+  currency?: string;
   method: string;
   approvedAt: string;
   items?: { name: string; section: string; qty: number; price: number }[];
 }) {
+  const currencySymbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : '₩';
+  const formatAmount = (n: number) => currency && currency !== 'KRW'
+    ? `${currencySymbol}${n.toFixed(2)}`
+    : `₩${Math.round(n * 1700).toLocaleString()}`;
   const dateStr = new Date(approvedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 
   const itemRows = items?.map(item => `
@@ -29,7 +34,7 @@ function buildOrderConfirmHtml({
       <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#374151">${item.name}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#374151;text-align:center">${item.section}</td>
       <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;color:#374151;text-align:center">${item.qty}</td>
-      <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:700;color:#2B7FFF;text-align:right">₩${(item.price * item.qty * 1700).toLocaleString()}</td>
+      <td style="padding:10px 12px;border-bottom:1px solid #F1F5F9;font-size:13px;font-weight:700;color:#2B7FFF;text-align:right">${formatAmount(item.price * item.qty)}</td>
     </tr>
   `).join('') || '';
 
@@ -60,7 +65,7 @@ function buildOrderConfirmHtml({
           <tr><td style="font-size:13px;color:#64748B;padding:4px 0">주문번호</td><td style="font-size:12px;font-family:monospace;color:#374151;text-align:right">${orderId}</td></tr>
           <tr><td style="font-size:13px;color:#64748B;padding:4px 0">결제수단</td><td style="font-size:13px;color:#374151;text-align:right">${method}</td></tr>
           <tr><td style="font-size:13px;color:#64748B;padding:4px 0">결제시각</td><td style="font-size:13px;color:#374151;text-align:right">${dateStr}</td></tr>
-          <tr><td style="font-size:15px;font-weight:700;color:#0F172A;padding:10px 0 4px">합계</td><td style="font-size:20px;font-weight:900;color:#2B7FFF;text-align:right">₩${amount.toLocaleString()}</td></tr>
+          <tr><td style="font-size:15px;font-weight:700;color:#0F172A;padding:10px 0 4px">합계</td><td style="font-size:20px;font-weight:900;color:#2B7FFF;text-align:right">${formatAmount(amount)}</td></tr>
         </table>
       </div>
 

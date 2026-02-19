@@ -134,6 +134,33 @@ function CheckoutContent() {
           }),
         });
 
+        // ✅ 구매 확인 이메일 발송
+        try {
+          await fetch('/api/email/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'order_confirm',
+              to: form.email,
+              customerName: `${form.firstName} ${form.lastName}`,
+              orderId: tixstockOrderId,
+              orderName: eventName,
+              amount: price * quantity,
+              currency: 'GBP',
+              method: 'Tixstock',
+              approvedAt: new Date().toISOString(),
+              items: [{
+                name: eventName,
+                section: section || 'General Admission',
+                qty: quantity,
+                price: price,
+              }],
+            }),
+          });
+        } catch (emailErr) {
+          console.warn('Email send failed (non-critical):', emailErr);
+        }
+
         router.push(
           `/sport/order-success?orderId=${tixstockOrderId}&enttixOrderId=${encodeURIComponent(data.data?.order_id || '')}` +
           `&eventName=${encodeURIComponent(eventName)}&quantity=${quantity}&total=${grandTotal}&listingId=${listingId}`
