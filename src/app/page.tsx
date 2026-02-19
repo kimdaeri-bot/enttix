@@ -46,6 +46,13 @@ const CITY_IMAGES: Record<string, string> = {
   madrid: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&h=400&fit=crop',
 };
 
+// 도시별 Tiqets 어트랙션 수
+const CITY_ATTRACTION_COUNT: Record<string, number> = {
+  london: 5, paris: 4, rome: 3, barcelona: 2,
+  'new-york': 4, amsterdam: 2, dubai: 2, tokyo: 2,
+  singapore: 1, 'hong-kong': 1, istanbul: 1,
+};
+
 const REVIEWS = [
   { name: 'Sarah J.', badge: 'VERIFIED FAN', text: 'The interface is incredibly smooth. Secured my Champions League tickets in seconds!', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face' },
   { name: 'Michael C.', badge: 'SEASON TICKET HOLDER', text: 'Finally a platform that looks and feels modern. The mobile experience is top notch.', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=face' },
@@ -269,7 +276,7 @@ export default async function Home() {
               <h2 className="text-[24px] font-bold text-[#171717]">Popular Cities</h2>
               <div className="w-12 h-1 bg-[#2B7FFF] rounded-full mt-1" />
             </div>
-            <Link href="/cities" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
+            <Link href="/attractions" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
               VIEW ALL →
             </Link>
           </div>
@@ -277,7 +284,7 @@ export default async function Home() {
             {cities.map(city => (
               <Link
                 key={city.slug}
-                href={`/city/${city.slug}`}
+                href={`/attractions/${city.slug}`}
                 className="group relative rounded-[16px] overflow-hidden aspect-[16/10]"
               >
                 <img
@@ -285,9 +292,14 @@ export default async function Home() {
                   alt={city.name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
                   <h3 className="text-[20px] font-bold text-white">{city.name}</h3>
+                  {CITY_ATTRACTION_COUNT[city.slug] && (
+                    <p className="text-[12px] text-white/80 mt-0.5 flex items-center gap-1">
+                      🎟️ {CITY_ATTRACTION_COUNT[city.slug]} Experiences
+                    </p>
+                  )}
                 </div>
               </Link>
             ))}
