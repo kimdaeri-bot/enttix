@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { supabase } from '@/lib/supabase';
 
 function CheckoutContent() {
   const router = useRouter();
@@ -91,12 +92,15 @@ function CheckoutContent() {
               email_address: form.email,
               contact_number: form.phone || null,
             },
-            items: Array.from({ length: quantity }, () => ({
-              general_admission: generalAdmission,
-              row: row || '',
-              seat: seat || '',
+            items: [{
+              listing_id: listingId,
+              quantity: quantity,
               price: price,
-            })),
+              currency: 'GBP',
+              general_admission: generalAdmission,
+              row: row || undefined,
+              seat: seat || undefined,
+            }],
           },
         }),
       });
@@ -105,6 +109,31 @@ function CheckoutContent() {
       const tixstockOrderId = data.data?.id;
 
       if (tixstockOrderId) {
+        // ✅ Supabase에 주문 저장
+        await supabase.from('orders').insert({
+          order_number: tixstockOrderId,
+          customer_name: `${form.firstName} ${form.lastName}`,
+          customer_email: form.email,
+          customer_phone: form.phone || null,
+          event_name: eventName,
+          quantity: quantity,
+          unit_price: price,
+          total_price: price * quantity,
+          currency: 'GBP',
+          api_source: 'tixstock',
+          status: 'confirmed',
+          notes: JSON.stringify({
+            enttix_order_id: orderId,
+            tixstock_order_id: tixstockOrderId,
+            listing_id: listingId,
+            event_id: eventId,
+            section,
+            row,
+            seat,
+            general_admission: generalAdmission,
+          }),
+        });
+
         router.push(
           `/sport/order-success?orderId=${tixstockOrderId}&enttixOrderId=${encodeURIComponent(data.data?.order_id || '')}` +
           `&eventName=${encodeURIComponent(eventName)}&quantity=${quantity}&total=${grandTotal}&listingId=${listingId}`
