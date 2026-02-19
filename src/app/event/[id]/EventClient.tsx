@@ -190,11 +190,15 @@ export default function EventClient({ id }: { id: string }) {
         return;
       }
       const isGA = ticket.isGA ?? (ticket.row === 'GA' || ticket.seat === 'GA');
+      const benefitsParam = ticket.benefits.length > 0
+        ? `&benefits=${encodeURIComponent(JSON.stringify(ticket.benefits))}`
+        : '';
       router.push(
         `/sport/checkout?holdId=${holdId}&listingId=${ticket.id}&quantity=${qty}&price=${ticket.price}` +
         `&section=${encodeURIComponent(ticket.section)}&row=${encodeURIComponent(ticket.row)}` +
         `&seat=${encodeURIComponent(ticket.seat)}&eventId=${id}` +
-        `&eventName=${encodeURIComponent(match?.name || '')}&general_admission=${isGA}`
+        `&eventName=${encodeURIComponent(match?.name || '')}&general_admission=${isGA}&ticketType=${encodeURIComponent(ticket.type)}` +
+        benefitsParam
       );
     } catch {
       alert('Hold failed. Please try again.');
