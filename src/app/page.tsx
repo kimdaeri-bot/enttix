@@ -46,12 +46,6 @@ const CITY_IMAGES: Record<string, string> = {
   madrid: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&h=400&fit=crop',
 };
 
-// 도시별 Tiqets 어트랙션 수
-const CITY_ATTRACTION_COUNT: Record<string, number> = {
-  london: 5, paris: 4, rome: 3, barcelona: 2,
-  'new-york': 4, amsterdam: 2, dubai: 2, tokyo: 2,
-  singapore: 1, 'hong-kong': 1, istanbul: 1,
-};
 
 const REVIEWS = [
   { name: 'Sarah J.', badge: 'VERIFIED FAN', text: 'The interface is incredibly smooth. Secured my Champions League tickets in seconds!', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face' },
@@ -295,11 +289,6 @@ export default async function Home() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
                   <h3 className="text-[20px] font-bold text-white">{city.name}</h3>
-                  {CITY_ATTRACTION_COUNT[city.slug] && (
-                    <p className="text-[12px] text-white/80 mt-0.5 flex items-center gap-1">
-                      🎟️ {CITY_ATTRACTION_COUNT[city.slug]} Experiences
-                    </p>
-                  )}
                 </div>
               </Link>
             ))}
