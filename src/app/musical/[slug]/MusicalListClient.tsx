@@ -314,8 +314,11 @@ export default function MusicalListClient({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
-  const displayed = sorted.slice(0, displayCount);
-  const hasMore = displayed.length < sorted.length;
+  // top10에 이미 표시된 쇼는 메인 그리드에서 제외 (중복 방지)
+  const top10Ids = new Set(top10.map(ev => ev.EventId));
+  const gridEvents = sorted.filter(ev => !top10Ids.has(ev.EventId));
+  const displayed = gridEvents.slice(0, displayCount);
+  const hasMore = displayed.length < gridEvents.length;
 
   const heroUrl = `https://images.unsplash.com/${HERO_PHOTO}?w=1600&h=800&fit=crop`;
   void displayName; // used by page.tsx (for breadcrumb/SEO), not displayed in this layout

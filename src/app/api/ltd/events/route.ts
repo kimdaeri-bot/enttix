@@ -34,13 +34,29 @@ export async function GET(req: NextRequest) {
     // ── Deduplicate by name ──
     // Same show can appear multiple times (different price tiers / booking windows).
     // Keep the one with: lowest price > latest EndDate > lowest EventId.
+    // Normalize: remove trailing *, !, whitespace for comparison key
+    const normalizeKey = (name: string) =>
+      name.trim().toLowerCase()
+        .replace(/\s*\*\s*/g, '')   // "Hamilton *" → "hamilton"
+        .replace(/\s*!\s*/g, '')    // "MAMMA MIA!" → "mamma mia"
+        .replace(/\s+/g, ' ')
+        .trim();
+
     const nameMap = new Map<string, Record<string, unknown>>();
     for (const ev of events) {
-      const key = ((ev.Name as string) || '').trim().toLowerCase();
+      const key = normalizeKey((ev.Name as string) || '');
       const existing = nameMap.get(key);
       if (!existing) {
         nameMap.set(key, ev);
       } else {
+        const nameNew = ((ev.Name as string) || '');
+        const nameOld = ((existing.Name as string) || '');
+        const hasStar = (n: string) => n.includes('*');
+
+        // Prefer non-star version
+        if (!hasStar(nameNew) && hasStar(nameOld)) { nameMap.set(key, ev); continue; }
+        if (hasStar(nameNew) && !hasStar(nameOld)) continue;
+
         const priceNew = (ev.EventMinimumPrice as number) || 0;
         const priceOld = (existing.EventMinimumPrice as number) || 0;
         const endNew = new Date((ev.EndDate as string) || '').getTime() || 0;
