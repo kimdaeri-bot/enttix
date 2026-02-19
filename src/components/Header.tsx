@@ -116,7 +116,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
               href="/musical/west-end"
               className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
             >
-              뮤지컬
+              Musical
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
             {openDropdown === 'musical' && <DropdownMenu items={musicalItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
@@ -269,7 +269,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {[
               { key: 'sports', label: '🏆 Sports', emoji: '🏆', items: sportsItems, basePath: '/sport' },
               { key: 'concerts', label: '🎵 Concerts', emoji: '🎵', items: concertItems, basePath: '/concert' },
-              { key: 'musical', label: '🎭 뮤지컬', emoji: '🎭', items: musicalItems, basePath: '/musical' },
+              { key: 'musical', label: '🎭 Musical', emoji: '🎭', items: musicalItems, basePath: '/musical' },
               { key: 'attractions', label: '🗺️ Attractions', emoji: '🗺️', items: attractionItems, basePath: '/attractions' },
             ].map(({ key, label, items, basePath }) => (
               <div key={key} className="border-b border-white/8">
