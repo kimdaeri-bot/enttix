@@ -133,37 +133,39 @@ function CheckoutContent() {
       const data = await res.json();
       const tixstockOrderId = data.data?.id;
 
-      if (tixstockOrderId) {
-        // ✅ Supabase에 주문 저장
-        await supabase.from('orders').insert({
-          order_number: tixstockOrderId,
-          user_id: user?.id || null,
-          customer_name: `${form.firstName} ${form.lastName}`,
-          customer_email: user?.email || form.email,
-          customer_phone: form.phone || null,
-          event_name: eventName,
-          quantity: quantity,
-          unit_price: price,
-          total_price: price * quantity,
-          currency: 'GBP',
-          api_source: 'tixstock',
-          status: 'confirmed',
-          notes: JSON.stringify({
-            order_id: orderId,
-            enttix_order_id: orderId,
-            tixstock_order_id: tixstockOrderId,
-            listing_id: listingId,
-            event_id: eventId,
-            ticket_details: section || 'General Admission',
-            ticket_type: 'eticket',
-            section,
-            row,
-            seat,
-            general_admission: generalAdmission,
-            order_datetime: new Date().toISOString().slice(0, 19),
-          }),
-        });
+      // ✅ Tixstock 성공/실패 관계없이 항상 Supabase 저장
+      const finalOrderNumber = tixstockOrderId || orderId;
+      await supabase.from('orders').insert({
+        order_number: finalOrderNumber,
+        user_id: user?.id || null,
+        customer_name: `${form.firstName} ${form.lastName}`,
+        customer_email: user?.email || form.email,
+        customer_phone: form.phone || null,
+        event_name: eventName,
+        venue: venue || null,
+        quantity: quantity,
+        unit_price: price,
+        total_price: price * quantity,
+        currency: 'GBP',
+        api_source: 'tixstock',
+        status: tixstockOrderId ? 'confirmed' : 'pending',
+        notes: JSON.stringify({
+          order_id: orderId,
+          enttix_order_id: orderId,
+          tixstock_order_id: tixstockOrderId || null,
+          listing_id: listingId,
+          event_id: eventId,
+          ticket_details: section || 'General Admission',
+          ticket_type: 'eticket',
+          section,
+          row,
+          seat,
+          general_admission: generalAdmission,
+          order_datetime: new Date().toISOString().slice(0, 19),
+        }),
+      });
 
+      if (tixstockOrderId) {
         // ✅ 구매 확인 이메일 발송
         try {
           await fetch('/api/email/send', {
@@ -171,7 +173,7 @@ function CheckoutContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               type: 'order_confirm',
-              to: form.email,
+              to: user?.email || form.email,
               customerName: `${form.firstName} ${form.lastName}`,
               orderId: tixstockOrderId,
               orderName: eventName,
@@ -196,10 +198,11 @@ function CheckoutContent() {
           `&eventName=${encodeURIComponent(eventName)}&quantity=${quantity}&total=${grandTotal}&listingId=${listingId}`
         );
       } else {
+        // Tixstock 실패해도 My Orders에는 저장됨 — 에러 표시
         const errMsg = data.errors
           ? Object.values(data.errors).flat().join(', ')
           : data.error || 'Order failed. Please try again.';
-        setError(errMsg);
+        setError(`${errMsg} (주문 기록은 My Orders에 저장되었습니다)`);
       }
     } catch (err) {
       setError('Network error. Please try again.');
