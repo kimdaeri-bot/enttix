@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -239,6 +239,22 @@ export default function MusicalListClient({
   const [sort, setSort] = useState<SortKey>('popular');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Drag-to-scroll for Top 10 slider
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+  const onDragStart = (clientX: number) => {
+    if (!sliderRef.current) return;
+    dragState.current = { isDragging: true, startX: clientX - sliderRef.current.offsetLeft, scrollLeft: sliderRef.current.scrollLeft };
+    setIsDragging(true);
+  };
+  const onDragMove = (clientX: number) => {
+    if (!dragState.current.isDragging || !sliderRef.current) return;
+    const x = clientX - sliderRef.current.offsetLeft;
+    sliderRef.current.scrollLeft = dragState.current.scrollLeft - (x - dragState.current.startX);
+  };
+  const onDragEnd = () => { dragState.current.isDragging = false; setIsDragging(false); };
 
   const fetchEvents = useCallback(async () => {
     setLoading(true);
@@ -379,7 +395,18 @@ export default function MusicalListClient({
             <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
               Top 10 West End Shows
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-none">
+            <div
+              ref={sliderRef}
+              className={`flex gap-4 overflow-x-auto pb-3 scrollbar-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              onMouseDown={e => onDragStart(e.clientX)}
+              onMouseMove={e => onDragMove(e.clientX)}
+              onMouseUp={onDragEnd}
+              onMouseLeave={onDragEnd}
+              onTouchStart={e => onDragStart(e.touches[0].clientX)}
+              onTouchMove={e => onDragMove(e.touches[0].clientX)}
+              onTouchEnd={onDragEnd}
+            >
               {top10.map((ev, i) => (
                 <Top10Card key={ev.EventId} ev={ev} index={i} />
               ))}
