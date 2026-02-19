@@ -123,14 +123,18 @@ function CheckoutContent() {
           api_source: 'tixstock',
           status: 'confirmed',
           notes: JSON.stringify({
+            order_id: orderId,
             enttix_order_id: orderId,
             tixstock_order_id: tixstockOrderId,
             listing_id: listingId,
             event_id: eventId,
+            ticket_details: section || 'General Admission',
+            ticket_type: 'eticket',
             section,
             row,
             seat,
             general_admission: generalAdmission,
+            order_datetime: new Date().toISOString().slice(0, 19),
           }),
         });
 
