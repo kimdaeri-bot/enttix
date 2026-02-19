@@ -168,32 +168,57 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 sticky top-4">
               <h2 className="text-[16px] font-bold text-[#171717] mb-4">Order Summary</h2>
 
-              {items.map(item => (
-                <div key={item.listingId} className="mb-3 pb-3 border-b border-[#F1F5F9] last:border-0">
-                  <p className="text-[13px] font-semibold text-[#171717] truncate">{item.eventName}</p>
-                  <div className="flex justify-between text-[12px] text-[#6B7280] mt-1">
-                    <span>Sec {item.section} • Row {item.row} × {item.quantity}</span>
-                    <span className="font-semibold text-[#171717]">${(item.pricePerTicket * item.quantity).toFixed(2)}</span>
-                  </div>
-                  {item.ticketType && (
-                    <div className="flex gap-1.5 mt-1.5">
-                      <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF]">{item.ticketType}</span>
-                    </div>
-                  )}
-                  {item.benefits && item.benefits.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-[11px] text-[#9CA3AF] mb-1">Features</p>
-                      <div className="flex flex-wrap gap-1">
-                        {item.benefits.map((b, i) => (
-                          <span key={i} className="px-2 py-0.5 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] text-[10px] font-medium text-[#2B7FFF]">
-                            {b}
-                          </span>
-                        ))}
+              {items.map(item => {
+                const sym = item.currency === 'GBP' ? '£' : '$';
+                const fmtDate = (dt?: string) => {
+                  if (!dt) return '';
+                  try {
+                    const d = new Date(dt);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+                      ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                  } catch { return dt; }
+                };
+                return (
+                  <div key={item.listingId} className="mb-4 pb-4 border-b border-[#F1F5F9] last:border-0">
+                    <div className="divide-y divide-[#F1F5F9] text-[12px]">
+                      {[
+                        { label: 'Event', value: item.eventName },
+                        { label: 'Event date', value: fmtDate(item.eventDate) },
+                        { label: 'Venue', value: item.venue },
+                        { label: 'Quantity', value: String(item.quantity) },
+                        { label: 'Section', value: item.section || '—' },
+                        { label: 'Row', value: item.row || '—' },
+                        { label: 'Format', value: item.ticketType || 'eTicket' },
+                      ].map(({ label, value }) => value ? (
+                        <div key={label} className="flex py-2 gap-2">
+                          <span className="w-[110px] flex-shrink-0 text-[#9CA3AF]">{label}</span>
+                          <span className="flex-1 text-[#171717] font-semibold">{value}</span>
+                        </div>
+                      ) : null)}
+                      <div className="flex py-2 gap-2">
+                        <span className="w-[110px] flex-shrink-0 text-[#9CA3AF]">Features</span>
+                        <div className="flex-1">
+                          {item.benefits && item.benefits.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.benefits.map((b, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] text-[10px] font-medium text-[#2B7FFF]">{b}</span>
+                              ))}
+                            </div>
+                          ) : <span className="text-[#171717] font-semibold">N/A</span>}
+                        </div>
+                      </div>
+                      <div className="flex py-2 gap-2">
+                        <span className="w-[110px] flex-shrink-0 text-[#9CA3AF]">Price per ticket</span>
+                        <span className="flex-1 text-[#171717] font-semibold">{sym}{item.pricePerTicket.toFixed(2)}</span>
+                      </div>
+                      <div className="flex py-2 gap-2 font-bold">
+                        <span className="w-[110px] flex-shrink-0 text-[#374151]">Total</span>
+                        <span className="flex-1 text-[#171717]">{sym}{(item.pricePerTicket * item.quantity).toFixed(2)}</span>
                       </div>
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
 
               <div className="border-t border-[#E5E7EB] mt-2 pt-4">
                 <div className="flex justify-between text-[13px] mb-2">

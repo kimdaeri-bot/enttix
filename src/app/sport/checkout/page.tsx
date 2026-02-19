@@ -22,8 +22,19 @@ function CheckoutContent() {
   const eventName = params.get('eventName') || '';
   const generalAdmission = params.get('general_admission') === 'true';
   const ticketType = params.get('ticketType') || 'eTicket';
+  const eventDateRaw = params.get('eventDate') || '';
+  const venue = params.get('venue') || '';
   const benefitsRaw = params.get('benefits') || '[]';
   const benefits: string[] = (() => { try { return JSON.parse(benefitsRaw); } catch { return []; } })();
+
+  const formatEventDate = (dt: string) => {
+    if (!dt) return '';
+    try {
+      const d = new Date(dt);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
+        ', ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    } catch { return dt; }
+  };
 
   const grandTotal = (price * quantity).toFixed(2);
 
@@ -205,59 +216,51 @@ function CheckoutContent() {
         <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
           <h2 className="text-[15px] font-bold text-[#171717] mb-4">Order Summary</h2>
 
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-[10px] bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
-                <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z"/>
-              </svg>
-            </div>
-            <div className="flex-1">
-              <p className="text-[16px] font-bold text-[#171717]">{eventName || 'Event'}</p>
-              <p className="text-[13px] text-[#6B7280] mt-0.5">
-                {section}{row ? ` · Row ${row}` : ''}{seat ? ` · Seat ${seat}` : ''}
-              </p>
-            </div>
-          </div>
+          {/* Tixstock-style detail table */}
+          <div className="divide-y divide-[#F1F5F9] text-[13px]">
+            {[
+              { label: 'Event', value: eventName },
+              { label: 'Event date', value: formatEventDate(eventDateRaw) },
+              { label: 'Venue', value: venue },
+              { label: 'Quantity', value: String(quantity) },
+              { label: 'Section', value: section || '—' },
+              { label: 'Row', value: row || '—' },
+              { label: 'Format', value: ticketType || 'eTicket' },
+            ].map(({ label, value }) => value ? (
+              <div key={label} className="flex py-2.5 gap-3">
+                <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">{label}</span>
+                <span className="flex-1 text-[#171717] font-semibold">{value}</span>
+              </div>
+            ) : null)}
 
-          {/* Ticket Details */}
-          <div className="mt-4 space-y-2 border-t border-[#F1F5F9] pt-4">
-            {section && (
-              <div className="flex justify-between text-[13px]">
-                <span className="text-[#6B7280]">Section</span>
-                <span className="font-semibold text-[#171717]">{section}</span>
+            {/* Benefits row */}
+            <div className="flex py-2.5 gap-3">
+              <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">Features</span>
+              <div className="flex-1">
+                {benefits.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {benefits.map((b, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] text-[11px] font-medium text-[#2B7FFF]">{b}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-[#171717] font-semibold">N/A</span>
+                )}
               </div>
-            )}
-            {row && (
-              <div className="flex justify-between text-[13px]">
-                <span className="text-[#6B7280]">Row</span>
-                <span className="font-semibold text-[#171717]">{row}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-[13px]">
-              <span className="text-[#6B7280]">Tickets</span>
-              <span className="font-semibold text-[#171717]">{quantity} ticket{quantity > 1 ? 's' : ''}</span>
             </div>
-            <div className="flex justify-between text-[13px]">
-              <span className="text-[#6B7280]">Ticket Type</span>
-              <span className="font-semibold text-[#171717]">{ticketType}</span>
-            </div>
-            {benefits.length > 0 && (
-              <div className="pt-1">
-                <p className="text-[13px] text-[#6B7280] mb-2">Features</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {benefits.map((b, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-full border border-[#DBEAFE] bg-[#EFF6FF] text-[11px] font-medium text-[#2B7FFF]">
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
 
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#F1F5F9]">
-            <p className="text-[13px] text-[#6B7280]">{quantity} × £{price.toFixed(2)}</p>
-            <p className="text-[18px] font-extrabold text-[#171717]">£{grandTotal}</p>
+            <div className="flex py-2.5 gap-3">
+              <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">Price per ticket</span>
+              <span className="flex-1 text-[#171717] font-semibold">£{price.toFixed(2)}</span>
+            </div>
+            <div className="flex py-2.5 gap-3">
+              <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">Additional charges</span>
+              <span className="flex-1 text-[#171717] font-semibold">£0</span>
+            </div>
+            <div className="flex py-2.5 gap-3 bg-[#F8FAFC] -mx-6 px-6 rounded-b-[10px]">
+              <span className="w-[130px] flex-shrink-0 text-[#374151] font-bold">Total proceeds</span>
+              <span className="flex-1 text-[#171717] font-extrabold text-[15px]">£{grandTotal}</span>
+            </div>
           </div>
 
           {/* Timer */}

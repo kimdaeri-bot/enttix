@@ -162,21 +162,27 @@ export default function EventClient({ id }: { id: string }) {
         const data = await res.json();
         holdId = data.meta?.hold_id;
       }
+      const venueStr2 = [match?.venue?.name, match?.venue?.city, match?.venue?.country_code].filter(Boolean).join(', ');
       cart.addItem({
         listingId: ticket.id, eventId: id, eventName: match?.name || '',
         section: ticket.section, row: ticket.row, quantity: qty,
         pricePerTicket: ticket.price, currency: match?.currency || 'USD',
         ticketType: ticket.type, holdId,
         benefits: ticket.benefits,
+        eventDate: match?.datetime,
+        venue: venueStr2,
       });
     } catch {
       // Still add to cart even if hold fails
+      const venueStr3 = [match?.venue?.name, match?.venue?.city, match?.venue?.country_code].filter(Boolean).join(', ');
       cart.addItem({
         listingId: ticket.id, eventId: id, eventName: match?.name || '',
         section: ticket.section, row: ticket.row, quantity: qty,
         pricePerTicket: ticket.price, currency: match?.currency || 'USD',
         ticketType: ticket.type,
         benefits: ticket.benefits,
+        eventDate: match?.datetime,
+        venue: venueStr3,
       });
     } finally {
       setHoldingId(null);
@@ -201,11 +207,13 @@ export default function EventClient({ id }: { id: string }) {
       const benefitsParam = ticket.benefits.length > 0
         ? `&benefits=${encodeURIComponent(JSON.stringify(ticket.benefits))}`
         : '';
+      const venueStr = [match?.venue?.name, match?.venue?.city, match?.venue?.country_code].filter(Boolean).join(', ');
       router.push(
         `/sport/checkout?holdId=${holdId}&listingId=${ticket.id}&quantity=${qty}&price=${ticket.price}` +
         `&section=${encodeURIComponent(ticket.section)}&row=${encodeURIComponent(ticket.row)}` +
         `&seat=${encodeURIComponent(ticket.seat)}&eventId=${id}` +
         `&eventName=${encodeURIComponent(match?.name || '')}&general_admission=${isGA}&ticketType=${encodeURIComponent(ticket.type)}` +
+        `&eventDate=${encodeURIComponent(match?.datetime || '')}&venue=${encodeURIComponent(venueStr)}` +
         benefitsParam
       );
     } catch {

@@ -14,6 +14,8 @@ export interface CartItem {
   holdId?: string;
   holdExpiresAt?: number; // timestamp
   benefits?: string[];
+  eventDate?: string;
+  venue?: string;
 }
 
 interface CartContextType {
