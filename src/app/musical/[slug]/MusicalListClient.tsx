@@ -1,22 +1,39 @@
 'use client';
-import { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Link from 'next/link';
 
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import Header from '@/components/Header';
+
+/* ─── LTD EVENT TYPE ────────────────────────────────────────── */
 interface LTDEvent {
   EventId: number;
   Name: string;
   TagLine: string;
   MainImageUrl: string;
-  DetailImageUrl: string;
   RunningTime: string;
   EventMinimumPrice: number;
   AgeRating: number;
   EndDate: string;
   StartDate: string;
   EventType: number;
+  VenueId?: number;
+  VenueName?: string;
 }
+
+/* ─── CONSTANTS ─────────────────────────────────────────────── */
+const HERO_PHOTO = 'photo-1558618666-fcd25c85cd64'; // West End theatre
+const FALLBACK_PHOTO = 'photo-1513635269975-59663e0ac1ad'; // London
+
+const LTD_CATEGORIES = [
+  { label: 'All',     value: 0, icon: '🎭' },
+  { label: 'Musical', value: 1, icon: '🎵' },
+  { label: 'Play',    value: 2, icon: '📖' },
+  { label: 'Dance',   value: 3, icon: '💃' },
+  { label: 'Opera',   value: 4, icon: '🎼' },
+  { label: 'Ballet',  value: 5, icon: '🩰' },
+  { label: 'Circus',  value: 6, icon: '🎪' },
+];
 
 const EVENT_TYPE_LABELS: Record<number, string> = {
   1: 'Musical', 2: 'Play', 3: 'Dance', 4: 'Opera', 5: 'Ballet', 6: 'Circus',
@@ -24,24 +41,165 @@ const EVENT_TYPE_LABELS: Record<number, string> = {
 
 const EVENT_TYPE_COLORS: Record<number, string> = {
   1: 'bg-purple-600', 2: 'bg-blue-600', 3: 'bg-pink-500',
-  4: 'bg-red-600', 5: 'bg-indigo-500', 6: 'bg-orange-500',
+  4: 'bg-red-600',    5: 'bg-indigo-500', 6: 'bg-orange-500',
 };
 
-/* 카테고리 필터 탭 (모든 타입) */
-const FILTER_TABS = [
-  { label: 'All', value: 0 },
-  { label: 'Musical', value: 1 },
-  { label: 'Play', value: 2 },
-  { label: 'Dance', value: 3 },
-  { label: 'Opera', value: 4 },
-  { label: 'Ballet', value: 5 },
-  { label: 'Circus', value: 6 },
+const THEATRE_IMAGES: Record<string, string> = {
+  'Lyceum Theatre':            'photo-1503095396549-807759245b35',
+  'Palace Theatre':            'photo-1578662996442-48f60103fc96',
+  'Victoria Palace Theatre':   'photo-1507003211169-0a1dd7228f2d',
+  'Dominion Theatre':          'photo-1514306191717-452ec28c7814',
+  'Cambridge Theatre':         'photo-1516450360452-9312f5e86fc7',
+  default:                     'photo-1558618666-fcd25c85cd64',
+};
+
+const AUDIENCE_CHIPS = [
+  { icon: '👫', label: 'Couples' },
+  { icon: '👨‍👩‍👧', label: 'Families' },
+  { icon: '🧍', label: 'Solo' },
+  { icon: '👥', label: 'Friends' },
+  { icon: '🎒', label: 'Backpackers' },
 ];
 
+type SortKey = 'popular' | 'price_asc' | 'price_desc';
+
+/* ─── SKELETON ───────────────────────────────────────────────── */
+function CardSkeleton() {
+  return (
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+      <div className="aspect-[4/3] bg-gray-200 animate-pulse" />
+      <div className="p-3 space-y-2">
+        <div className="h-3.5 bg-gray-200 rounded animate-pulse" />
+        <div className="h-3 bg-gray-200 rounded w-2/3 animate-pulse" />
+        <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse mt-2" />
+      </div>
+    </div>
+  );
+}
+
+/* ─── TOP 10 CARD ─────────────────────────────────────────────── */
+function Top10Card({ ev, index }: { ev: LTDEvent; index: number }) {
+  return (
+    <Link
+      href={`/musical/event/${ev.EventId}`}
+      className="group flex-shrink-0 w-[260px] rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        {ev.MainImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={ev.MainImageUrl}
+            alt={ev.Name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl">🎭</div>
+        )}
+        {/* Number badge */}
+        <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-[#2B7FFF] text-white font-extrabold text-[15px] flex items-center justify-center shadow-md">
+          {index + 1}
+        </div>
+      </div>
+      <div className="p-3">
+        <h3 className="text-[13px] font-semibold text-[#0F172A] line-clamp-2 mb-1.5 leading-snug">
+          {ev.Name}
+        </h3>
+        <span className="text-[#2B7FFF] text-[12px]">★ Official LTD Partner</span>
+        {ev.EventMinimumPrice > 0 && (
+          <p className="text-[13px] font-bold text-[#0F172A] mt-1">From £{ev.EventMinimumPrice}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─── EVENT CARD ─────────────────────────────────────────────── */
+function EventCard({ ev }: { ev: LTDEvent }) {
+  const endDate = ev.EndDate ? new Date(ev.EndDate) : null;
+  const isEnding = endDate && endDate.getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
+  const typeLabel = EVENT_TYPE_LABELS[ev.EventType] || 'Show';
+  const typeBg = EVENT_TYPE_COLORS[ev.EventType] || 'bg-[#0F172A]';
+
+  return (
+    <Link
+      href={`/musical/event/${ev.EventId}`}
+      className="group cursor-pointer rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col"
+    >
+      {/* Image */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        {ev.MainImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={ev.MainImageUrl}
+            alt={ev.Name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-4xl">🎭</div>
+        )}
+        {/* EventType badge (Bestseller position) */}
+        <span className={`absolute top-2 left-2 ${typeBg} text-white text-[11px] font-bold px-2 py-0.5 rounded`}>
+          {typeLabel}
+        </span>
+        {/* Ending Soon badge (Skip Line position) */}
+        {isEnding && (
+          <span className="absolute top-2 right-2 bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded">
+            Ending Soon
+          </span>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="text-[14px] font-semibold text-[#0F172A] line-clamp-2 mb-1.5 leading-snug flex-1">
+          {ev.Name}
+        </h3>
+        {/* LTD Partner (별점 대신) */}
+        <div className="flex items-center gap-1 mb-1.5">
+          <span className="text-[#2B7FFF] text-[12px]">★ Official LTD Partner</span>
+        </div>
+        {ev.RunningTime && (
+          <p className="text-[12px] text-[#64748B] mb-1.5">⏱ {ev.RunningTime}</p>
+        )}
+        {ev.EventMinimumPrice > 0 && (
+          <p className="text-[15px] font-bold text-[#0F172A] mt-auto">From £{ev.EventMinimumPrice}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ─── THEATRE CARD ───────────────────────────────────────────── */
+function TheatreCard({
+  name,
+  count,
+}: {
+  name: string;
+  count: number;
+}) {
+  const photoId = THEATRE_IMAGES[name] ?? THEATRE_IMAGES.default;
+  const imgUrl = `https://images.unsplash.com/${photoId}?w=400&h=300&fit=crop`;
+
+  return (
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+        <Image src={imgUrl} alt={name} fill className="object-cover" unoptimized />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute bottom-2 left-3 text-white">
+          <p className="text-[13px] font-bold leading-tight line-clamp-2">{name}</p>
+          <p className="text-[11px] text-white/75">
+            {count} show{count !== 1 ? 's' : ''}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function MusicalListClient({
-  slug,
   displayName,
-  eventType,       // null = all, number = specific type
+  eventType,
 }: {
   slug: string;
   displayName: string;
@@ -49,164 +207,270 @@ export default function MusicalListClient({
 }) {
   const [events, setEvents] = useState<LTDEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeType, setActiveType] = useState<number>(eventType ?? 0);
+  const [displayCount, setDisplayCount] = useState(24);
+  const [sort, setSort] = useState<SortKey>('popular');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
 
-  /* ─── Load events ─── */
-  useEffect(() => {
+  const fetchEvents = useCallback(async () => {
     setLoading(true);
-    // If slug has a specific type, fetch only that type (server-side filter)
-    // If it's "west-end" or unspecified, fetch all
-    const typeParam = eventType !== null ? `?type=${eventType}` : '';
-    fetch(`/api/ltd/events${typeParam}`)
-      .then(r => r.json())
-      .then(d => setEvents(d.events || []))
-      .finally(() => setLoading(false));
-  }, [eventType]);
+    try {
+      const res = await fetch('/api/ltd/events');
+      const data = await res.json();
+      setEvents(data.events || []);
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  /* ─── Client-side filter (search + type tab) ─── */
-  const filtered = events.filter(e => {
-    const matchesType = activeType === 0 ? true : e.EventType === activeType;
-    const q = search.toLowerCase();
-    const matchesSearch = !q
-      || e.Name.toLowerCase().includes(q)
-      || (e.TagLine || '').toLowerCase().includes(q);
-    return matchesType && matchesSearch;
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  /* ─── Filter & sort ─── */
+  let filtered = events.filter(ev => {
+    const matchesSearch =
+      !searchQuery ||
+      ev.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ev.TagLine || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = activeCategory === 0 || ev.EventType === activeCategory;
+    return matchesSearch && matchesType;
   });
 
-  /* Show type tabs only when showing all (west-end) */
-  const showTypeTabs = eventType === null;
+  const sorted = [...filtered].sort((a, b) => {
+    switch (sort) {
+      case 'price_asc':  return (a.EventMinimumPrice || 0) - (b.EventMinimumPrice || 0);
+      case 'price_desc': return (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0);
+      default:           return (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0); // popular = highest price first
+    }
+  });
+
+  /* ─── Top 10 (highest price = premium/popular) ─── */
+  const top10 = [...events]
+    .sort((a, b) => (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0))
+    .slice(0, 10);
+
+  /* ─── Featured Theatres ─── */
+  const theatreMap = new Map<string, number>();
+  events.forEach(ev => {
+    if (!ev.VenueName) return;
+    theatreMap.set(ev.VenueName, (theatreMap.get(ev.VenueName) ?? 0) + 1);
+  });
+  const theatres = [...theatreMap.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  const displayed = sorted.slice(0, displayCount);
+  const hasMore = displayed.length < sorted.length;
+
+  const heroUrl = `https://images.unsplash.com/${HERO_PHOTO}?w=1600&h=800&fit=crop`;
+  void displayName; // used by page.tsx (for breadcrumb/SEO), not displayed in this layout
 
   return (
-    <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]">
-        <Header hideSearch />
-        {/* Hero */}
-        <div className="max-w-[1280px] mx-auto px-4 pt-10 pb-14">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[1px]">LONDON WEST END</span>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <Header hideSearch />
+
+      {/* ─── 1. HERO ──────────────────────────────────────── */}
+      <section className="relative h-[400px] flex flex-col justify-end pb-10">
+        <Image
+          src={heroUrl}
+          alt="West End London"
+          fill
+          className="object-cover"
+          unoptimized
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" />
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 w-full">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-[12px] text-white/60 mb-3">
+            <Link href="/musical" className="hover:text-white transition-colors">Musicals</Link>
+            <span>›</span>
+            <span className="text-white/90">West End</span>
           </div>
-          <h1 className="text-[36px] md:text-[48px] font-extrabold text-white leading-tight mb-2">
-            🎭 {displayName}
+          {/* H1 */}
+          <h1 className="text-[42px] sm:text-[52px] font-extrabold text-white mb-2 leading-tight">
+            West End Shows &amp; Musicals in London
           </h1>
-          <p className="text-[16px] text-[#DBEAFE] opacity-70">
-            {filtered.length} shows · Official London Theatre Direct Partner
+          <p className="text-white/75 text-[15px] mb-6">
+            {events.length > 0 ? `${events.length}+` : '100+'} Shows · Official LTD Partner · Book Online
           </p>
-          {/* Search */}
-          <div className="mt-6 max-w-[500px]">
-            <div className="relative">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input
-                type="text"
-                placeholder="Search shows..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-[#2B7FFF] focus:bg-white/15 transition-all text-[14px]"
-              />
-            </div>
+          {/* Search bar */}
+          <div className="relative max-w-[520px]">
+            <svg
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+              width="18" height="18" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search West End shows..."
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
+            />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── Category filter tabs (West End only) ── */}
-      {showTypeTabs && (
-        <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-40 shadow-sm">
+      {/* ─── 2. TOP 10 ────────────────────────────────────── */}
+      {!loading && top10.length > 0 && (
+        <section className="bg-white py-10 border-b border-[#E5E7EB]">
           <div className="max-w-[1280px] mx-auto px-4">
-            <div className="flex gap-1 overflow-x-auto py-3 scrollbar-hide">
-              {FILTER_TABS.map(tab => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveType(tab.value)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-semibold transition-all ${
-                    activeType === tab.value
-                      ? 'bg-[#2B7FFF] text-white shadow-sm'
-                      : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] hover:text-[#374151]'
-                  }`}
-                >
-                  {tab.label}
-                </button>
+            <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
+              Top 10 West End Shows
+            </h2>
+            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-none">
+              {top10.map((ev, i) => (
+                <Top10Card key={ev.EventId} ev={ev} index={i} />
               ))}
             </div>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="max-w-[1280px] mx-auto px-4 py-8">
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+      {/* ─── 3. RECOMMENDED FOR ───────────────────────────── */}
+      <section className="bg-white py-8 border-b border-[#E5E7EB]">
+        <div className="max-w-[1280px] mx-auto px-4">
+          <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
+            West End shows recommended for
+          </h2>
+          <div className="flex flex-wrap gap-3">
+            {AUDIENCE_CHIPS.map(chip => (
+              <div
+                key={chip.label}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[#374151] text-[14px] font-semibold cursor-pointer hover:border-[#2B7FFF] hover:text-[#2B7FFF] transition-colors select-none"
+              >
+                <span className="text-[18px]">{chip.icon}</span>
+                {chip.label}
+              </div>
+            ))}
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-[#94A3B8]">No shows found.</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filtered.map(ev => {
-              const endDate = ev.EndDate ? new Date(ev.EndDate) : null;
-              const isEnding = endDate && (endDate.getTime() - Date.now()) < 30 * 24 * 60 * 60 * 1000;
-              const typeLabel = EVENT_TYPE_LABELS[ev.EventType] || 'Show';
-              const typeBg = EVENT_TYPE_COLORS[ev.EventType] || 'bg-[#0F172A]';
+        </div>
+      </section>
 
+      {/* ─── 4. FILTER BAR (sticky) ────────────────────────── */}
+      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+        <div className="max-w-[1280px] mx-auto px-4">
+          {/* Category chips */}
+          <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-none">
+            {LTD_CATEGORIES.map(cat => {
+              const isActive = cat.value === activeCategory;
               return (
-                <Link
-                  key={ev.EventId}
-                  href={`/musical/event/${ev.EventId}`}
-                  className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all flex flex-col"
+                <button
+                  key={cat.value}
+                  onClick={() => {
+                    setActiveCategory(cat.value);
+                    setDisplayCount(24);
+                  }}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#0F172A] text-white'
+                      : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
+                  }`}
                 >
-                  {/* Image — 4:3 ratio */}
-                  <div className="relative w-full overflow-hidden bg-[#1E293B]" style={{ aspectRatio: '4/3' }}>
-                    {ev.MainImageUrl ? (
-                      <img
-                        src={ev.MainImageUrl}
-                        alt={ev.Name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={e => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x450/1E293B/94A3B8?text=%F0%9F%8E%AD';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-5xl">🎭</div>
-                    )}
-                    {/* Type badge */}
-                    <div className="absolute top-2 left-2 flex gap-1 flex-wrap">
-                      <span className={`text-[10px] font-bold ${typeBg} text-white px-2 py-0.5 rounded-full`}>{typeLabel}</span>
-                      {isEnding && (
-                        <span className="text-[10px] font-bold bg-[#EF4444] text-white px-2 py-0.5 rounded-full">Ending Soon</span>
-                      )}
-                    </div>
-                    {/* Price overlay at bottom */}
-                    {ev.EventMinimumPrice > 0 && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-3">
-                        <p className="text-white font-bold text-[14px]">From £{ev.EventMinimumPrice}</p>
-                        {ev.RunningTime && (
-                          <p className="text-white/70 text-[11px]">⏱ {ev.RunningTime}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Title + CTA */}
-                  <div className="p-3 flex flex-col flex-1">
-                    <h3 className="font-bold text-[#0F172A] text-[13px] leading-snug mb-1 group-hover:text-[#2B7FFF] transition-colors line-clamp-2 flex-1">
-                      {ev.Name}
-                    </h3>
-                    <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-[11px] text-[#94A3B8] line-clamp-1 flex-1">
-                        {ev.TagLine ? ev.TagLine.substring(0, 30) + (ev.TagLine.length > 30 ? '…' : '') : ''}
-                      </span>
-                      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-[#F1F5F9] group-hover:bg-[#2B7FFF] flex items-center justify-center transition-colors">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#94A3B8] group-hover:text-white transition-colors">
-                          <path d="M5 12h14M12 5l7 7-7 7"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
+                  <span>{cat.icon}</span>
+                  {cat.label}
+                </button>
               );
             })}
           </div>
-        )}
+
+          {/* Sort row */}
+          <div className="flex items-center justify-between py-2 border-t border-[#F1F5F9]">
+            <div>
+              <h2 className="text-[16px] font-extrabold text-[#0F172A] inline mr-3">
+                All West End Shows
+              </h2>
+              <span className="text-[13px] text-[#64748B]">
+                {loading ? 'Loading…' : `${sorted.length} shows found`}
+              </span>
+            </div>
+            <select
+              value={sort}
+              onChange={e => { setSort(e.target.value as SortKey); setDisplayCount(24); }}
+              className="text-[12px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-lg px-3 py-1.5 outline-none focus:border-[#2B7FFF] cursor-pointer bg-white"
+            >
+              <option value="popular">Popular</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+            </select>
+          </div>
+        </div>
       </div>
-      <Footer />
-    </main>
+
+      {/* ─── 5. MAIN GRID ──────────────────────────────────── */}
+      <main className="max-w-[1280px] mx-auto px-4 py-8">
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : sorted.length > 0 ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {displayed.map(ev => (
+                <EventCard key={ev.EventId} ev={ev} />
+              ))}
+            </div>
+
+            {/* ─── 6. LOAD MORE ─────────────────────────── */}
+            {hasMore && (
+              <div className="flex justify-center mt-12">
+                <button
+                  onClick={() => setDisplayCount(c => c + 24)}
+                  className="px-10 py-3.5 rounded-xl bg-[#0F172A] text-white font-semibold text-[15px] hover:bg-[#1E293B] transition-colors"
+                >
+                  Load More Shows
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-[#94A3B8] text-[18px] mb-3">No shows found</p>
+            <button
+              onClick={() => { setActiveCategory(0); setSearchQuery(''); }}
+              className="text-[#2B7FFF] text-[14px] hover:underline"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
+        {/* ─── 7. FEATURED THEATRES ──────────────────────── */}
+        {!loading && theatres.length > 0 && (
+          <section className="mt-16">
+            <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
+              Featured Theatres in London&apos;s West End
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {theatres.map(([name, count]) => (
+                <TheatreCard key={name} name={name} count={count} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Fallback theatres when API has no VenueName data */}
+        {!loading && theatres.length === 0 && (
+          <section className="mt-16">
+            <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
+              Featured Theatres in London&apos;s West End
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Object.entries(THEATRE_IMAGES)
+                .filter(([name]) => name !== 'default')
+                .map(([name]) => (
+                  <TheatreCard key={name} name={name} count={0} />
+                ))}
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
