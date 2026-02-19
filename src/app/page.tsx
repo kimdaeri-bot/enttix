@@ -79,10 +79,10 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
-      <div className="hero-bg min-h-[500px] md:min-h-[700px]">
+      <div className="hero-bg min-h-[500px] md:min-h-[580px]">
         <Header transparent hideSearch />
         <section className="relative w-full px-4 md:px-0">
-          <div className="max-w-[1280px] mx-auto flex flex-col items-center pt-12 md:pt-24 pb-8 md:pb-16">
+          <div className="max-w-[1280px] mx-auto flex flex-col items-center pt-12 md:pt-24 pb-4 md:pb-8">
             {/* Hero Text */}
             <div className="flex flex-col md:flex-row items-center gap-0 md:gap-2">
               <h1 className="text-[48px] md:text-[72px] font-extrabold leading-[53px] md:leading-[79px] tracking-[-2.32px] md:tracking-[-3.48px] italic text-white">
