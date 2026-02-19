@@ -15,8 +15,19 @@ export async function GET(req: NextRequest) {
     const query = req.nextUrl.searchParams.toString();
     const params = req.nextUrl.searchParams;
 
-    // 특정 event_id 조회 시 — 일반 API로 처리
     const eventId = params.get('event_id');
+
+    // Featured 이벤트(Diplat Co 직접 리스팅) — 내부 API 사용 (restrictions_benefits 포함)
+    if (eventId && FEATURED_EVENT_IDS.includes(eventId) && RESELLER_TOKEN) {
+      const fr = await fetch(`${INTERNAL_URL}/feed?event_id=${eventId}`, {
+        headers: { Authorization: `Bearer ${RESELLER_TOKEN}`, 'Content-Type': 'application/json' },
+        next: { revalidate: 60 },
+      });
+      if (fr.ok) {
+        const fd = await fr.json();
+        if (fd.data?.length > 0) return NextResponse.json(fd);
+      }
+    }
 
     // 일반 API 호출
     const res = await fetch(`${BASE_URL}/feed?${query}`, {

@@ -340,7 +340,16 @@ export default function EventClient({ id }: { id: string }) {
                         )}
                       </div>
                       {ticket.benefits.length > 0 && (
-                        <p className="text-[11px] text-[#16A34A] mt-1.5">✨ {ticket.benefits[0]}</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {ticket.benefits.slice(0, 4).map((b: string, i: number) => (
+                            <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
+                              ✨ {b}
+                            </span>
+                          ))}
+                          {ticket.benefits.length > 4 && (
+                            <span className="px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] text-[#16A34A]">+{ticket.benefits.length - 4} more</span>
+                          )}
+                        </div>
                       )}
                       {ticket.splitWarning && (
                         <p className="text-[11px] text-[#EF4444] mt-1">⚠️ {ticket.splitWarning}</p>
