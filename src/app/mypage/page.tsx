@@ -15,10 +15,29 @@ interface SavedTrip {
   created_at: string;
 }
 
+interface Order {
+  id: string;
+  order_number: string;
+  event_name: string;
+  event_date: string;
+  venue: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  currency: string;
+  status: string;
+  api_source: string;
+  notes: string;
+  created_at: string;
+}
+
 export default function MyPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'trips' | 'orders'>('orders');
   const [trips, setTrips] = useState<SavedTrip[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeDay, setActiveDay] = useState(1);
@@ -38,6 +57,20 @@ export default function MyPage() {
       .then(({ data }) => {
         setTrips(data || []);
         setLoading(false);
+      });
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    setOrdersLoading(true);
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('customer_email', user.email)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setOrders(data || []);
+        setOrdersLoading(false);
       });
   }, [user]);
 
@@ -94,10 +127,104 @@ export default function MyPage() {
       </div>
       <div className="max-w-[800px] mx-auto px-4 pt-8 relative z-10 pb-16">
         <div className="bg-white rounded-[20px] p-6 md:p-8 shadow-lg border border-[#E5E7EB]">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-[24px] font-bold text-[#171717]">My Trips</h1>
-            <p className="text-[13px] text-[#94A3B8]">{trips.length} saved</p>
+          {/* Header + Tabs */}
+          <div className="flex items-center justify-between mb-5">
+            <h1 className="text-[24px] font-bold text-[#171717]">My Account</h1>
+            <p className="text-[12px] text-[#94A3B8]">{user?.email}</p>
           </div>
+          <div className="flex gap-1 mb-6 bg-[#F1F5F9] p-1 rounded-xl w-fit">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-5 py-2 rounded-lg text-[13px] font-semibold transition-all ${activeTab === 'orders' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#94A3B8] hover:text-[#374151]'}`}
+            >
+              🎫 My Orders {orders.length > 0 && <span className="ml-1 bg-[#2B7FFF] text-white text-[10px] px-1.5 py-0.5 rounded-full">{orders.length}</span>}
+            </button>
+            <button
+              onClick={() => setActiveTab('trips')}
+              className={`px-5 py-2 rounded-lg text-[13px] font-semibold transition-all ${activeTab === 'trips' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#94A3B8] hover:text-[#374151]'}`}
+            >
+              ✈️ My Trips {trips.length > 0 && <span className="ml-1 bg-[#2B7FFF] text-white text-[10px] px-1.5 py-0.5 rounded-full">{trips.length}</span>}
+            </button>
+          </div>
+
+          {/* ── MY ORDERS TAB ── */}
+          {activeTab === 'orders' && (
+            <div>
+              {ordersLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-[48px] mb-3">🎫</p>
+                  <p className="text-[16px] font-semibold text-[#374151] mb-1">No orders yet</p>
+                  <p className="text-[13px] text-[#94A3B8] mb-4">Book tickets to see your orders here.</p>
+                  <button onClick={() => router.push('/')} className="px-5 py-2.5 bg-[#2B7FFF] text-white text-[13px] font-semibold rounded-lg hover:bg-[#1D6AE5] transition-colors">
+                    Browse Events
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map(order => {
+                    const notes = (() => { try { return JSON.parse(order.notes || '{}'); } catch { return {}; } })();
+                    const sym = order.currency === 'GBP' ? '£' : order.currency === 'USD' ? '$' : '';
+                    const statusColors: Record<string, string> = {
+                      confirmed: 'bg-blue-100 text-blue-700',
+                      paid: 'bg-green-100 text-green-700',
+                      ticketed: 'bg-purple-100 text-purple-800',
+                      pending: 'bg-yellow-100 text-yellow-700',
+                      cancelled: 'bg-red-100 text-red-600',
+                    };
+                    const eventDate = order.event_date ? new Date(order.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                    const orderDate = new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                    return (
+                      <div key={order.id} className="border border-[#E5E7EB] rounded-[14px] p-4 hover:border-[#2B7FFF]/30 hover:bg-[#F8FAFC] transition-all">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                              <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
+                                {order.status}
+                              </span>
+                              <span className="text-[11px] font-mono text-[#94A3B8]">{order.order_number}</span>
+                              {notes.ticket_type && (
+                                <span className="text-[10px] bg-[#EFF6FF] text-[#2B7FFF] px-2 py-0.5 rounded-full font-semibold">{notes.ticket_type}</span>
+                              )}
+                            </div>
+                            <p className="text-[15px] font-bold text-[#0F172A] leading-tight mb-1">{order.event_name}</p>
+                            <div className="flex items-center gap-3 flex-wrap mt-1">
+                              {eventDate && (
+                                <span className="flex items-center gap-1 text-[12px] text-[#374151]">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                                  {eventDate}
+                                </span>
+                              )}
+                              {order.venue && (
+                                <span className="flex items-center gap-1 text-[12px] text-[#374151]">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                  {order.venue}
+                                </span>
+                              )}
+                              {notes.ticket_details && (
+                                <span className="text-[12px] text-[#6B7280]">🪑 {notes.ticket_details}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-[20px] font-extrabold text-[#0F172A]">{sym}{Number(order.total_price).toFixed(2)}</p>
+                            <p className="text-[11px] text-[#94A3B8]">{order.quantity} ticket{order.quantity > 1 ? 's' : ''}</p>
+                            <p className="text-[10px] text-[#C4C9D4] mt-1">{orderDate}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── MY TRIPS TAB ── */}
+          {activeTab === 'trips' && <div>
 
           {/* Search Bar */}
           {!selectedTrip && trips.length > 0 && (
@@ -281,6 +408,9 @@ export default function MyPage() {
               ))}
             </div>
           )}
+          </div>}
+          {/* end trips tab */}
+
         </div>
       </div>
       <Footer />
