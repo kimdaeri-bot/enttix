@@ -144,6 +144,21 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  cache.set(cacheKey, { data: enriched, expires: Date.now() + CACHE_TTL });
-  return NextResponse.json({ products: enriched });
+  // ── 뮤지컬/공연 상품 제외 (Musical 섹션과 중복 방지) ──
+  const MUSICAL_KEYWORDS = [
+    'musical', 'west end', 'broadway', 'the lion king', 'hamilton',
+    'phantom of the opera', 'wicked', 'les misérables', 'les miserables',
+    'mamma mia', 'moulin rouge', 'matilda', 'book of mormon',
+    'harry potter and the cursed child', 'six the musical',
+    'back to the future the musical', 'hadestown', 'opera house',
+    'ballet', 'opera ticket', 'theatre ticket', 'theater ticket',
+  ];
+  const isMusical = (p: TiqetsProductWithImages) => {
+    const text = ((p.title || '') + ' ' + (p.tagline || '') + ' ' + (p.summary || '')).toLowerCase();
+    return MUSICAL_KEYWORDS.some(kw => text.includes(kw));
+  };
+  const filtered = enriched.filter(p => !isMusical(p));
+
+  cache.set(cacheKey, { data: filtered, expires: Date.now() + CACHE_TTL });
+  return NextResponse.json({ products: filtered });
 }
