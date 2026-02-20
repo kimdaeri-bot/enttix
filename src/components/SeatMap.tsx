@@ -133,7 +133,6 @@ export default function SeatMap({
   }, [svgContent]);
 
   // ── 3. Highlight: selected + hover — IMMEDIATE ────────────────────────────
-  // sections은 ref로 참조 → 부모 re-render로 인한 배열 참조 변경이 effect를 재실행시키지 않음
   useEffect(() => {
     const container = svgDivRef.current;
     if (!container || !svgContent) return;
@@ -162,8 +161,7 @@ export default function SeatMap({
         paths.forEach((el) => paintEl(el, '#CBD5E1', '0.25', '#CBD5E1', '0.3'));
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSection, hoverSection, svgContent]);
+  }, [selectedSection, hoverSection, svgContent, sections]);
 
   if (!mapUrl) return null;
 
