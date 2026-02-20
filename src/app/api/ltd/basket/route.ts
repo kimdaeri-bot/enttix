@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === 'create') {
-      // Step 1: Create basket
-      const res = await fetch(`${LTD_BASE_URL}/Baskets`, { method: 'POST', headers });
+      // Step 1: Create basket (body: '{}' required — LTD API returns 411 without Content-Length)
+      const res = await fetch(`${LTD_BASE_URL}/Baskets`, { method: 'POST', headers, body: '{}' });
       const data = await res.json();
       if (!data.Success) return NextResponse.json({ error: 'Failed to create basket' }, { status: 500 });
       return NextResponse.json({ basketId: data.BasketId });
@@ -40,14 +40,29 @@ export async function POST(req: NextRequest) {
     if (action === 'add-tickets') {
       // Step 2: Add tickets via BestSeats (area + quantity auto-select)
       const { basketId, performanceId, areaId, seatsCount, price } = await req.json();
+
+      // AreaId: 0 is invalid — omit it so LTD picks best available area
+      const bestSeats: Record<string, unknown> = {
+        PerformanceId: performanceId,
+        SeatsCount: seatsCount,
+        Price: price,
+      };
+      if (areaId && areaId !== 0) bestSeats.AreaId = areaId;
+
       const res = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}/Tickets`, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
-          BestSeats: { PerformanceId: performanceId, AreaId: areaId, SeatsCount: seatsCount, Price: price }
-        }),
+        body: JSON.stringify({ BestSeats: bestSeats }),
       });
+
       const data = await res.json();
+
+      // LTD API error (e.g. "An error has occurred" with Message/ErrorCode structure)
+      if (data.Message && !data.Success) {
+        const errMsg = data.MessageDetail || data.Message || '티켓 추가에 실패했습니다.';
+        return NextResponse.json({ error: errMsg, raw: data }, { status: 502 });
+      }
+
       if (!data.Success) {
         const reason = data.FailureReason || 0;
         const msg = reason === 1 ? '선택한 좌석이 매진되었습니다.' :
