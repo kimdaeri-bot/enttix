@@ -180,30 +180,39 @@ export default function SeatMap({
   }
 
   return (
-    <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-4 md:p-6">
-      <div className="flex items-center justify-between mb-3">
+    <div className="flex flex-col h-full bg-[#F8FAFC]">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB] bg-white flex-shrink-0">
         <div>
-          <h3 className="text-[15px] font-bold text-[#171717]">{venueName}</h3>
-          <p className="text-[12px] text-[#9CA3AF]">Click a section to filter tickets</p>
+          <h3 className="text-[14px] font-bold text-[#171717]">{venueName}</h3>
+          <p className="text-[11px] text-[#9CA3AF]">Click a section to filter tickets</p>
         </div>
-        {selectedSection && (
-          <button onClick={() => onSectionClick?.(null)} className="text-[12px] text-[#2B7FFF] hover:underline px-3 py-1 rounded-lg bg-[#EFF6FF]">
-            Clear ✕
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {selectedSection && (
+            <button onClick={() => onSectionClick?.(null)} className="text-[11px] text-[#2B7FFF] hover:underline px-2.5 py-1 rounded-lg bg-[#EFF6FF]">
+              Clear ✕
+            </button>
+          )}
+          {/* Legend */}
+          <div className="hidden md:flex items-center gap-3 text-[10px] text-[#6B7280]">
+            <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#22C55E] inline-block"/> Budget</div>
+            <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#F59E0B] inline-block"/> Mid</div>
+            <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#EF4444] inline-block"/> Premium</div>
+            <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#CBD5E1] inline-block"/> None</div>
+          </div>
+        </div>
       </div>
 
-      <div ref={containerRef} className="relative select-none">
+      {/* Map area */}
+      <div ref={containerRef} className="relative select-none flex-1 overflow-hidden flex items-center justify-center p-4">
         {loading && (
-          <div className="h-[320px] flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-[#2B7FFF] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-              <p className="text-[13px] text-[#9CA3AF]">Loading stadium map…</p>
-            </div>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-10 h-10 border-2 border-[#2B7FFF] border-t-transparent rounded-full animate-spin" />
+            <p className="text-[13px] text-[#9CA3AF]">Loading stadium map…</p>
           </div>
         )}
         {!loading && svgContent && (
-          <div ref={svgDivRef} className="w-full [&>svg]:w-full [&>svg]:h-auto" dangerouslySetInnerHTML={{ __html: svgContent }} />
+          <div ref={svgDivRef} className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:max-h-full" dangerouslySetInnerHTML={{ __html: svgContent }} />
         )}
 
         {hoveredSection && tooltipText && (
@@ -220,13 +229,6 @@ export default function SeatMap({
             </div>
           </div>
         )}
-      </div>
-
-      <div className="flex items-center gap-3 mt-3 text-[11px] text-[#6B7280] flex-wrap">
-        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#22C55E]" /> Budget</div>
-        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#F59E0B]" /> Mid</div>
-        <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#EF4444]" /> Premium</div>
-        <div className="flex items-center gap-1 ml-auto"><span className="inline-block w-3 h-3 rounded-sm bg-[#CBD5E1]" /> No listings</div>
       </div>
     </div>
   );
