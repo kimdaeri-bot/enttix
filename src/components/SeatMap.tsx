@@ -133,18 +133,20 @@ export default function SeatMap({
   }, [svgContent]);
 
   // ── 3. Highlight: selected + hover — IMMEDIATE ────────────────────────────
+  // sections은 ref로 참조 → 부모 re-render로 인한 배열 참조 변경이 effect를 재실행시키지 않음
   useEffect(() => {
     const container = svgDivRef.current;
     if (!container || !svgContent) return;
 
-    const allPrices = sections.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
+    const secs = sectionsRef.current;
+    const allPrices = secs.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
     const gMin = allPrices.length ? Math.min(...allPrices) : 0;
     const gMax = allPrices.length ? Math.max(...allPrices) : 0;
     const anySelected = !!selectedSection;
 
     container.querySelectorAll<SVGGElement>('g[data-section]').forEach((g) => {
       const secKey = g.getAttribute('data-section')!;
-      const sec = sections.find((s) => s.name === secKey);
+      const sec = secs.find((s) => s.name === secKey);
       const isSelected = secKey === selectedSection;
       const isHovered = secKey === hoverSection;
       const paths = g.querySelectorAll('path, polygon, rect, ellipse, circle');
@@ -160,7 +162,8 @@ export default function SeatMap({
         paths.forEach((el) => paintEl(el, '#CBD5E1', '0.25', '#CBD5E1', '0.3'));
       }
     });
-  }, [selectedSection, hoverSection, svgContent, sections]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSection, hoverSection, svgContent]);
 
   if (!mapUrl) return null;
 

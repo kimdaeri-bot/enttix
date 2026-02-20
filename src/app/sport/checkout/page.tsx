@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import SeatMap from '@/components/SeatMap';
@@ -41,6 +41,12 @@ function CheckoutContent() {
   };
 
   const grandTotal = (price * quantity).toFixed(2);
+
+  // sections 배열을 메모이즈 — 타이머 re-render에서 참조 안정화 (SeatMap 깜박임 방지)
+  const seatMapSections = useMemo(
+    () => svgSection ? [{ name: svgSection, displayName: section }] : [],
+    [svgSection, section],
+  );
 
   // 10-minute countdown
   const [timeLeft, setTimeLeft] = useState(10 * 60);
@@ -303,7 +309,7 @@ function CheckoutContent() {
               mapUrl={mapUrl || undefined}
               compact={true}
               selectedSection={svgSection || undefined}
-              sections={svgSection ? [{ name: svgSection, displayName: section }] : []}
+              sections={seatMapSections}
               highlightSection={section}
             />
           </div>
