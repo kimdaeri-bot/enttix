@@ -190,6 +190,18 @@ export default function EventClient({ id }: { id: string }) {
     }
   };
 
+  // seatMapSections: tickets 변경 시에만 재계산 — early return 앞에 위치 (Hook 규칙 준수)
+  const seatMapSections = useMemo(() => {
+    const svgSections = [...new Set(tickets.map(t => t.svgSection).filter(Boolean))] as string[];
+    return svgSections.map(svgKey => {
+      const sectionTickets = tickets.filter(t => t.svgSection === svgKey);
+      const min = Math.min(...sectionTickets.map(t => t.price));
+      const count = sectionTickets.reduce((acc, t) => acc + t.maxQty, 0);
+      const displayName = sectionTickets[0]?.section || svgKey;
+      return { name: svgKey, displayName, minPrice: min, count };
+    });
+  }, [tickets]);
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#F5F7FA]">
@@ -223,18 +235,6 @@ export default function EventClient({ id }: { id: string }) {
     if (selectedMapSection && t.svgSection !== selectedMapSection) return false;
     return true;
   });
-
-  // seatMapSections: tickets 변경 시에만 재계산 (useMemo로 참조 안정화 → SeatMap flicker 방지)
-  const seatMapSections = useMemo(() => {
-    const svgSections = [...new Set(tickets.map(t => t.svgSection).filter(Boolean))] as string[];
-    return svgSections.map(svgKey => {
-      const sectionTickets = tickets.filter(t => t.svgSection === svgKey);
-      const min = Math.min(...sectionTickets.map(t => t.price));
-      const count = sectionTickets.reduce((acc, t) => acc + t.maxQty, 0);
-      const displayName = sectionTickets[0]?.section || svgKey;
-      return { name: svgKey, displayName, minPrice: min, count };
-    });
-  }, [tickets]);
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
