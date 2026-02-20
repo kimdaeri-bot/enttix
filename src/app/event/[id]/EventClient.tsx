@@ -49,6 +49,7 @@ export default function EventClient({ id }: { id: string }) {
   const [match, setMatch] = useState<Match | null>(null);
   const [tickets, setTickets] = useState<TicketListing[]>(demoTickets);
   const [loading, setLoading] = useState(true);
+  const [mapUrl, setMapUrl] = useState<string>('');
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [minQtyFilter, setMinQtyFilter] = useState(1);
   const [sectionFilter, setSectionFilter] = useState('');
@@ -83,6 +84,7 @@ export default function EventClient({ id }: { id: string }) {
               leagueId: '', leagueName: ev.categories?.[0]?.name || '',
               startingPrice: ev.min_ticket_price || 0, currency: ev.currency || 'USD', ticketsLeft: ev.total_tickets || 0,
             });
+            if (ev.map_url) setMapUrl(String(ev.map_url));
           }
         }
 
@@ -461,6 +463,7 @@ export default function EventClient({ id }: { id: string }) {
             <div className="sticky top-4">
               <SeatMap
                 venueName={match.venue.name}
+                mapUrl={mapUrl || undefined}
                 sections={seatMapSections}
                 selectedSection={selectedMapSection}
                 onSectionClick={setSelectedMapSection}
