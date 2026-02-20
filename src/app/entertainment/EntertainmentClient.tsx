@@ -30,6 +30,16 @@ const TABS = [
   { key: 'sports', label: '🏆 Sports' },
 ];
 
+// Sports 리그 필터 (Sports 탭에서만 표시)
+const LEAGUES = [
+  { key: '',    label: 'All Sports', icon: '🏆', count: 26546 },
+  { key: 'mlb', label: 'MLB',        icon: '⚾', count: 8096 },
+  { key: 'nba', label: 'NBA',        icon: '🏀', count: 1959 },
+  { key: 'nhl', label: 'NHL',        icon: '🏒', count: 1513 },
+  { key: 'mls', label: 'MLS',        icon: '⚽', count: 913  },
+  { key: 'nfl', label: 'NFL',        icon: '🏈', count: 552  },
+];
+
 // Ticketmaster 지원 국가 (이벤트 수 기준 정렬)
 const COUNTRIES = [
   { code: '', name: 'All', flag: '🌏' },
@@ -167,19 +177,21 @@ function EventCard({ event }: { event: TmEvent }) {
 
 export default function EntertainmentClient() {
   const [activeTab, setActiveTab] = useState('arts');
-  const [activeCountry, setActiveCountry] = useState('GB'); // 기본값 GB
+  const [activeCountry, setActiveCountry] = useState('GB');
+  const [activeLeague, setActiveLeague] = useState(''); // sports 탭 전용
   const [events, setEvents] = useState<TmEvent[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchEvents = useCallback(async (tab: string, countryCode: string, page: number) => {
+  const fetchEvents = useCallback(async (tab: string, countryCode: string, league: string, page: number) => {
     setLoading(true);
     setError('');
     try {
       const params = new URLSearchParams({ tab, page: String(page), size: '20' });
       if (countryCode) params.set('countryCode', countryCode);
+      if (tab === 'sports' && league) params.set('league', league);
       const res = await fetch(`/api/ticketmaster/events?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -195,12 +207,12 @@ export default function EntertainmentClient() {
 
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeTab, activeCountry, 0);
-  }, [activeTab, activeCountry, fetchEvents]);
+    fetchEvents(activeTab, activeCountry, activeLeague, 0);
+  }, [activeTab, activeCountry, activeLeague, fetchEvents]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    fetchEvents(activeTab, activeCountry, newPage);
+    fetchEvents(activeTab, activeCountry, activeLeague, newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -230,7 +242,11 @@ export default function EntertainmentClient() {
             {TABS.map(tab => (
               <button
                 key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setCurrentPage(0); }}
+                onClick={() => {
+                  setActiveTab(tab.key);
+                  setActiveLeague(''); // 탭 전환 시 리그 리셋
+                  setCurrentPage(0);
+                }}
                 className={`flex-shrink-0 px-5 py-3 text-[14px] font-semibold rounded-t-[10px] transition-colors ${
                   activeTab === tab.key
                     ? 'bg-[#F5F7FA] text-[#171717]'
@@ -270,6 +286,33 @@ export default function EntertainmentClient() {
           </div>
         </div>
       </div>
+
+      {/* Sports 리그 필터 (Sports 탭일 때만) */}
+      {activeTab === 'sports' && (
+        <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
+          <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
+              {LEAGUES.map(league => (
+                <button
+                  key={league.key}
+                  onClick={() => { setActiveLeague(league.key); setCurrentPage(0); }}
+                  className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${
+                    activeLeague === league.key
+                      ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                      : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
+                  }`}
+                >
+                  <span className="text-[16px]">{league.icon}</span>
+                  <span>{league.label}</span>
+                  <span className={`text-[10px] font-medium ${activeLeague === league.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
+                    {formatCount(league.count)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 컨텐츠 */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">

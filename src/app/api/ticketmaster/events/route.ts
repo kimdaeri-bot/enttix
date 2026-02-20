@@ -10,9 +10,19 @@ const TAB_MAP: Record<string, string> = {
   sports: 'Sports',
 };
 
+// Sports 리그 → subGenreId mapping (Ticketmaster 공식 ID)
+const LEAGUE_SUBGENRE: Record<string, string> = {
+  mlb: 'KZazBEonSMnZfZ7vF1n',   // Baseball > MLB (8,096개)
+  nba: 'KZazBEonSMnZfZ7vFJA',   // Basketball > NBA (1,959개)
+  nhl: 'KZazBEonSMnZfZ7vFEE',   // Hockey > NHL (1,513개)
+  mls: 'KZazBEonSMnZfZ7vFtI',   // Soccer > MLS (913개)
+  nfl: 'KZazBEonSMnZfZ7vFEJ',   // Football > Professional/NFL (552개)
+};
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const tab = searchParams.get('tab') || 'arts';
+  const league = searchParams.get('league') || '';   // sports 탭 전용
   const page = searchParams.get('page') || '0';
   const size = searchParams.get('size') || '20';
   const countryCode = searchParams.get('countryCode') || 'GB';
@@ -21,13 +31,21 @@ export async function GET(req: NextRequest) {
 
   const params = new URLSearchParams({
     apikey: API_KEY,
-    countryCode,
-    classificationName,
     size,
     page,
     sort: 'date,asc',
     locale: '*',
   });
+
+  // 국가 코드 (All = 전체)
+  if (countryCode) params.set('countryCode', countryCode);
+
+  // Sports 리그 필터: subGenreId 사용
+  if (tab === 'sports' && league && LEAGUE_SUBGENRE[league]) {
+    params.set('subGenreId', LEAGUE_SUBGENRE[league]);
+  } else {
+    params.set('classificationName', classificationName);
+  }
 
   try {
     const res = await fetch(`${BASE_URL}?${params}`, {
