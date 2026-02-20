@@ -19,6 +19,7 @@ interface SavedTrip {
 interface Order {
   id: string;
   order_number: string;
+  customer_email: string;
   event_name: string;
   event_date: string;
   venue: string;
@@ -255,6 +256,67 @@ function MyPageInner() {
                             <p className="text-[10px] text-[#C4C9D4] mt-1">{orderDate}</p>
                           </div>
                         </div>
+
+                        {/* Order Progress Tracker */}
+                        {order.status !== 'cancelled' && (() => {
+                          const steps = [
+                            { key: 'pending',   label: 'Ordered',        icon: '📋' },
+                            { key: 'confirmed', label: 'Confirmed',       icon: '✅' },
+                            { key: 'ticketed',  label: 'Ticket Issued',   icon: '🎫' },
+                            { key: 'done',      label: 'Complete',        icon: '🏟️' },
+                          ];
+                          const statusOrder = ['pending', 'confirmed', 'ticketed', 'done'];
+                          const currentIdx = statusOrder.indexOf(order.status === 'paid' ? 'confirmed' : order.status);
+                          return (
+                            <div className="mt-4 pt-4 border-t border-[#F1F5F9]">
+                              <div className="flex items-center justify-between relative">
+                                {/* connecting line */}
+                                <div className="absolute top-4 left-0 right-0 h-[2px] bg-[#E5E7EB] mx-8 z-0" />
+                                <div
+                                  className="absolute top-4 left-0 h-[2px] bg-[#2B7FFF] mx-8 z-0 transition-all duration-500"
+                                  style={{ width: `${(currentIdx / (steps.length - 1)) * (100 - 0)}%`, maxWidth: 'calc(100% - 4rem)' }}
+                                />
+                                {steps.map((step, i) => {
+                                  const done = i <= currentIdx;
+                                  return (
+                                    <div key={step.key} className="flex flex-col items-center gap-1 z-10 flex-1">
+                                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[14px] border-2 transition-all ${done ? 'bg-[#2B7FFF] border-[#2B7FFF]' : 'bg-white border-[#E5E7EB]'}`}>
+                                        {done ? <span>{step.icon}</span> : <span className="w-2 h-2 rounded-full bg-[#CBD5E1]" />}
+                                      </div>
+                                      <span className={`text-[9px] font-semibold text-center leading-tight ${done ? 'text-[#2B7FFF]' : 'text-[#9CA3AF]'}`}>
+                                        {step.label}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Email notice for confirmed */}
+                              {(order.status === 'confirmed' || order.status === 'paid') && (
+                                <p className="text-[11px] text-[#6B7280] mt-3 text-center">
+                                  📧 Ticket will be sent to <span className="font-semibold text-[#374151]">{order.customer_email || 'your email'}</span>
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Download Ticket — shown when status = ticketed AND ticket URL stored */}
+                        {order.status === 'ticketed' && notes.ticket_url && (
+                          <div className="mt-3">
+                            <a
+                              href={notes.ticket_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-3 bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold rounded-[10px] transition-colors"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                              </svg>
+                              Download Ticket (PDF)
+                            </a>
+                          </div>
+                        )}
 
                         {/* Seat Map — shown when map_url + svg_section are stored */}
                         {notes.map_url && notes.svg_section && (
