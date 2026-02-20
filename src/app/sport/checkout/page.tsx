@@ -165,6 +165,7 @@ function CheckoutContent() {
           general_admission: generalAdmission,
           map_url: mapUrl || null,
           svg_section: svgSection || null,
+          benefits: benefits.length > 0 ? benefits : null,
           order_datetime: new Date().toISOString().slice(0, 19),
         }),
       });

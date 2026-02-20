@@ -41,6 +41,7 @@ function MyPageInner() {
   const [trips, setTrips] = useState<SavedTrip[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [expandedBenefits, setExpandedBenefits] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [selectedTrip, setSelectedTrip] = useState<SavedTrip | null>(null);
   const [activeDay, setActiveDay] = useState(1);
@@ -211,6 +212,42 @@ function MyPageInner() {
                                 <span className="text-[12px] text-[#6B7280]">🪑 {notes.section}{notes.row ? ` · Row ${notes.row}` : ''}{notes.seat ? ` · Seat ${notes.seat}` : ''}</span>
                               )}
                             </div>
+
+                            {/* Benefits */}
+                            {notes.benefits && notes.benefits.length > 0 && (() => {
+                              const isExpanded = expandedBenefits.has(order.id);
+                              const LIMIT = 7;
+                              const shown = isExpanded ? notes.benefits : notes.benefits.slice(0, LIMIT);
+                              const remaining = notes.benefits.length - LIMIT;
+                              return (
+                                <div className="mt-2">
+                                  <div className="flex flex-wrap gap-1">
+                                    {shown.map((b: string, i: number) => (
+                                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
+                                        ✨ {b}
+                                      </span>
+                                    ))}
+                                    {!isExpanded && remaining > 0 && (
+                                      <button
+                                        onClick={() => setExpandedBenefits(prev => new Set([...prev, order.id]))}
+                                        className="px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF] hover:bg-[#DBEAFE] transition-colors"
+                                      >
+                                        +{remaining} more
+                                      </button>
+                                    )}
+                                    {isExpanded && (
+                                      <button
+                                        onClick={() => setExpandedBenefits(prev => { const n = new Set(prev); n.delete(order.id); return n; })}
+                                        className="px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[10px] font-semibold text-[#64748B] hover:bg-[#E2E8F0] transition-colors"
+                                      >
+                                        접기 ▲
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
                           </div>
                           <div className="text-right flex-shrink-0">
                             <p className="text-[20px] font-extrabold text-[#0F172A]">{sym}{Number(order.total_price).toFixed(2)}</p>
