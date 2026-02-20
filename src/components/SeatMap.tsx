@@ -87,12 +87,17 @@ export default function SeatMap({
       const allPrices = secs.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
       const gMin = allPrices.length ? Math.min(...allPrices) : 0;
       const gMax = allPrices.length ? Math.max(...allPrices) : 0;
+      // Read current selected/hover at timeout time
+      const curSelected = selectedRef.current;
 
       // Apply to data-section groups (individual blocks)
       container.querySelectorAll<SVGGElement>('g[data-section]').forEach((g) => {
         const secKey = g.getAttribute('data-section')!;
         const sec = secs.find((s) => s.name === secKey);
         const paths = g.querySelectorAll('path, polygon, rect, ellipse, circle');
+
+        // Skip selected section — handled by useEffect #3
+        if (secKey === curSelected) { g.style.cursor = 'pointer'; return; }
 
         if (sec?.minPrice) {
           const color = priceColor(sec.minPrice, gMin, gMax);

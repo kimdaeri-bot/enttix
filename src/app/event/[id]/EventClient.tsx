@@ -222,6 +222,7 @@ export default function EventClient({ id }: { id: string }) {
         `&seat=${encodeURIComponent(ticket.seat)}&eventId=${id}` +
         `&eventName=${encodeURIComponent(match?.name || '')}&general_admission=${isGA}&ticketType=${encodeURIComponent(ticket.type)}` +
         `&eventDate=${encodeURIComponent(match?.datetime || '')}&venue=${encodeURIComponent(venueStr)}` +
+        `&mapUrl=${encodeURIComponent(mapUrl || '')}&svgSection=${encodeURIComponent(ticket.svgSection || '')}` +
         benefitsParam
       );
     } catch {

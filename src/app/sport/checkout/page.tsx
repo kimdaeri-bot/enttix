@@ -28,6 +28,8 @@ function CheckoutContent() {
   const venue = params.get('venue') || '';
   const benefitsRaw = params.get('benefits') || '[]';
   const benefits: string[] = (() => { try { return JSON.parse(benefitsRaw); } catch { return []; } })();
+  const mapUrl = params.get('mapUrl') || '';
+  const svgSection = params.get('svgSection') || '';
 
   const formatEventDate = (dt: string) => {
     if (!dt) return '';
@@ -161,6 +163,8 @@ function CheckoutContent() {
           row,
           seat,
           general_admission: generalAdmission,
+          map_url: mapUrl || null,
+          svg_section: svgSection || null,
           order_datetime: new Date().toISOString().slice(0, 19),
         }),
       });
@@ -290,14 +294,16 @@ function CheckoutContent() {
         </div>
 
         {/* Seat Location Card */}
-        {section && (
+        {(mapUrl || section) && (
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
             <h2 className="text-[15px] font-bold text-[#171717] mb-4">Your Seat Location</h2>
             <SeatMap
               venueName={venue || 'Venue'}
+              mapUrl={mapUrl || undefined}
               compact={true}
+              selectedSection={svgSection || undefined}
+              sections={svgSection ? [{ name: svgSection, displayName: section }] : []}
               highlightSection={section}
-              sections={[{ name: section }]}
             />
           </div>
         )}

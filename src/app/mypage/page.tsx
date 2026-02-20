@@ -1,6 +1,7 @@
 'use client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import SeatMap from '@/components/SeatMap';
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -180,7 +181,7 @@ function MyPageInner() {
                     const eventDate = order.event_date ? new Date(order.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
                     const orderDate = new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
                     return (
-                      <div key={order.id} className="border border-[#E5E7EB] rounded-[14px] p-4 hover:border-[#2B7FFF]/30 hover:bg-[#F8FAFC] transition-all">
+                      <div key={order.id} className="border border-[#E5E7EB] rounded-[14px] p-4 hover:border-[#2B7FFF]/30 transition-all">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -206,8 +207,8 @@ function MyPageInner() {
                                   {order.venue}
                                 </span>
                               )}
-                              {notes.ticket_details && (
-                                <span className="text-[12px] text-[#6B7280]">🪑 {notes.ticket_details}</span>
+                              {notes.section && (
+                                <span className="text-[12px] text-[#6B7280]">🪑 {notes.section}{notes.row ? ` · Row ${notes.row}` : ''}{notes.seat ? ` · Seat ${notes.seat}` : ''}</span>
                               )}
                             </div>
                           </div>
@@ -217,6 +218,20 @@ function MyPageInner() {
                             <p className="text-[10px] text-[#C4C9D4] mt-1">{orderDate}</p>
                           </div>
                         </div>
+
+                        {/* Seat Map — shown when map_url + svg_section are stored */}
+                        {notes.map_url && notes.svg_section && (
+                          <div className="mt-4 pt-4 border-t border-[#F1F5F9]">
+                            <p className="text-[12px] font-semibold text-[#374151] mb-2">📍 Your Seat Location</p>
+                            <SeatMap
+                              venueName={order.venue || 'Stadium'}
+                              mapUrl={notes.map_url}
+                              compact={true}
+                              selectedSection={notes.svg_section}
+                              sections={[{ name: notes.svg_section, displayName: notes.section }]}
+                            />
+                          </div>
+                        )}
                       </div>
                     );
                   })}
