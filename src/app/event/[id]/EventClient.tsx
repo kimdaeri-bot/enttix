@@ -10,6 +10,7 @@ import { useCart } from '@/context/CartContext';
 interface TicketListing {
   id: string;
   section: string;
+  svgSection?: string;  // data-section key for map matching
   row: string;
   seat: string;
   type: string;
@@ -108,7 +109,11 @@ export default function EventClient({ id }: { id: string }) {
               const isGA = String(ticket.general_admission) === 'true';
               return {
                 id: String(l.id),
-                section: seat.section || seat.category || 'General',
+                section: seat.category || seat.section || 'General',
+                // SVG data-section key: "{category-slug}_{section-num}"
+                svgSection: seat.category && seat.section
+                  ? `${seat.category.toLowerCase().replace(/\s+/g, '-')}_${seat.section}`
+                  : undefined,
                 row: seat.row || '',
                 seat: seat.first_seat || '',
                 type: String(ticket.type || 'eTicket'),
@@ -255,15 +260,19 @@ export default function EventClient({ id }: { id: string }) {
     if (t.maxQty < minQtyFilter) return false;
     if (sectionFilter && t.section !== sectionFilter) return false;
     if (typeFilter && t.type !== typeFilter) return false;
-    if (selectedMapSection && t.section !== selectedMapSection) return false;
+    // Map click: filter by svgSection (data-section key) if set
+    if (selectedMapSection && t.svgSection !== selectedMapSection) return false;
     return true;
   });
 
-  const seatMapSections = sections.map(s => {
-    const sectionTickets = tickets.filter(t => t.section === s);
+  // seatMapSections: use svgSection as key for SVG matching, section as display
+  const svgSections = [...new Set(tickets.map(t => t.svgSection).filter(Boolean))] as string[];
+  const seatMapSections = svgSections.map(svgKey => {
+    const sectionTickets = tickets.filter(t => t.svgSection === svgKey);
     const min = Math.min(...sectionTickets.map(t => t.price));
     const count = sectionTickets.reduce((acc, t) => acc + t.maxQty, 0);
-    return { name: s, minPrice: min, count };
+    const displayName = sectionTickets[0]?.section || svgKey;
+    return { name: svgKey, displayName, minPrice: min, count };
   });
 
   return (
@@ -335,7 +344,7 @@ export default function EventClient({ id }: { id: string }) {
                 <div
                   key={ticket.id}
                   className="bg-white rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-md hover:border-[#2B7FFF]/20 transition-all"
-                  onMouseEnter={() => setHoveredTicketSection(ticket.section)}
+                  onMouseEnter={() => setHoveredTicketSection(ticket.svgSection || ticket.section)}
                   onMouseLeave={() => setHoveredTicketSection(null)}
                 >
                   <div className="flex items-start gap-4">

@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 
 interface SeatMapSection {
-  name: string;
+  name: string;        // SVG data-section key (e.g. "longside-middle-tier-central_104")
+  displayName?: string;
   minPrice?: number;
   count?: number;
 }
@@ -12,25 +13,11 @@ interface SeatMapProps {
   venueName: string;
   mapUrl?: string;
   sections?: SeatMapSection[];
-  selectedSection?: string | null;
-  hoverSection?: string | null;
+  selectedSection?: string | null;   // data-section key
+  hoverSection?: string | null;      // data-section key (from ticket card hover)
   onSectionClick?: (section: string | null) => void;
   compact?: boolean;
   highlightSection?: string;
-}
-
-function toSlug(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-function findStand(name: string, stands: string[]): string | null {
-  if (!name) return null;
-  const slug = toSlug(name);
-  if (stands.includes(slug)) return slug;
-  const lower = name.toLowerCase();
-  return stands.find(
-    (s) => s.includes(lower.replace(/\s+/g, '-')) || lower.includes(s.replace(/-/g, ' '))
-  ) ?? null;
 }
 
 function priceColor(p: number, min: number, max: number): string {
@@ -65,18 +52,15 @@ export default function SeatMap({
   const svgDivRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState('');
   const [loading, setLoading] = useState(false);
-  const [availableStands, setAvailableStands] = useState<string[]>([]);
-  const [hoveredStand, setHoveredStand] = useState<string | null>(null);
+  const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [tooltipText, setTooltipText] = useState('');
 
-  // Keep latest sections in a ref so event listeners always have fresh data
+  // Refs for listener closures
   const sectionsRef = useRef(sections);
-  const standsRef = useRef(availableStands);
   const selectedRef = useRef(selectedSection);
   const onClickRef = useRef(onSectionClick);
   useEffect(() => { sectionsRef.current = sections; }, [sections]);
-  useEffect(() => { standsRef.current = availableStands; }, [availableStands]);
   useEffect(() => { selectedRef.current = selectedSection; }, [selectedSection]);
   useEffect(() => { onClickRef.current = onSectionClick; }, [onSectionClick]);
 
@@ -87,66 +71,63 @@ export default function SeatMap({
     fetch(`/api/tixstock/seatmap?url=${encodeURIComponent(mapUrl)}`)
       .then((r) => r.text())
       .then((svg) => {
-        const clean = svg.replace(/<\?xml[^?]*\?>/g, '').trim();
-        setSvgContent(clean);
-        const found = [...new Set([...clean.matchAll(/data-stand="([^"]+)"/g)].map((m) => m[1]))];
-        setAvailableStands(found);
+        setSvgContent(svg.replace(/<\?xml[^?]*\?>/g, '').trim());
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [mapUrl]);
 
-  // ── 2. Apply base price colors + attach click/hover listeners (once on SVG load) ──
+  // ── 2. Base price colors + click/hover listeners (once on SVG load) ───────
   useEffect(() => {
     if (!svgContent || !svgDivRef.current) return;
     const container = svgDivRef.current;
 
     const t = setTimeout(() => {
-      const allPrices = sectionsRef.current.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
+      const secs = sectionsRef.current;
+      const allPrices = secs.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
       const gMin = allPrices.length ? Math.min(...allPrices) : 0;
       const gMax = allPrices.length ? Math.max(...allPrices) : 0;
 
-      container.querySelectorAll<SVGGElement>('g[data-stand]').forEach((g) => {
-        const stand = g.getAttribute('data-stand')!;
-        const sec = sectionsRef.current.find((s) => findStand(s.name, standsRef.current) === stand);
-
-        // Base color
+      // Apply to data-section groups (individual blocks)
+      container.querySelectorAll<SVGGElement>('g[data-section]').forEach((g) => {
+        const secKey = g.getAttribute('data-section')!;
+        const sec = secs.find((s) => s.name === secKey);
         const paths = g.querySelectorAll('path, polygon, rect, ellipse, circle');
+
         if (sec?.minPrice) {
           const color = priceColor(sec.minPrice, gMin, gMax);
           paths.forEach((el) => paintEl(el, color, '0.5', color, '0.5'));
+          g.style.cursor = 'pointer';
         } else {
-          paths.forEach((el) => paintEl(el, '#CBD5E1', '0.3', '#CBD5E1', '0.5'));
+          paths.forEach((el) => paintEl(el, '#CBD5E1', '0.25', '#CBD5E1', '0.3'));
+          g.style.cursor = 'default';
         }
 
-        g.style.cursor = sec ? 'pointer' : 'default';
-
-        // Click listener
         g.onclick = () => {
           if (!sec) return;
-          onClickRef.current?.(selectedRef.current === stand ? null : stand);
+          onClickRef.current?.(selectedRef.current === secKey ? null : secKey);
         };
 
-        // Map-internal hover (tooltip)
         g.onmouseenter = () => {
           if (!sec) return;
-          setHoveredStand(stand);
+          setHoveredSection(secKey);
           const rect = container.getBoundingClientRect();
           const gRect = g.getBoundingClientRect();
           setTooltipPos({ x: gRect.left - rect.left + gRect.width / 2, y: gRect.top - rect.top });
-          let tip = stand.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-          if (sec.minPrice) tip += ` · From $${sec.minPrice.toFixed(0)}`;
+          const label = sec.displayName || secKey.replace(/_/g, ' ').replace(/-/g, ' ');
+          let tip = label.replace(/\b\w/g, (c) => c.toUpperCase());
+          if (sec.minPrice) tip += ` · £${sec.minPrice.toFixed(0)}`;
           if (sec.count) tip += ` · ${sec.count} tkts`;
           setTooltipText(tip);
         };
-        g.onmouseleave = () => setHoveredStand(null);
+        g.onmouseleave = () => setHoveredSection(null);
       });
     }, 100);
 
     return () => clearTimeout(t);
-  }, [svgContent]); // Only re-run when SVG loads
+  }, [svgContent]);
 
-  // ── 3. Highlight: selected + hover — immediate, no timeout ────────────────
+  // ── 3. Highlight: selected + hover — IMMEDIATE ────────────────────────────
   useEffect(() => {
     const container = svgDivRef.current;
     if (!container || !svgContent) return;
@@ -154,32 +135,28 @@ export default function SeatMap({
     const allPrices = sections.map((s) => s.minPrice ?? 0).filter((p) => p > 0);
     const gMin = allPrices.length ? Math.min(...allPrices) : 0;
     const gMax = allPrices.length ? Math.max(...allPrices) : 0;
-
-    const selectedSlug = selectedSection ? toSlug(selectedSection) : null;
-    const hoverSlug = hoverSection ? toSlug(hoverSection) : null;
     const anySelected = !!selectedSection;
 
-    container.querySelectorAll<SVGGElement>('g[data-stand]').forEach((g) => {
-      const stand = g.getAttribute('data-stand')!;
-      const sec = sections.find((s) => findStand(s.name, availableStands) === stand);
-      const isSelected = !!(selectedSlug && selectedSlug === stand);
-      const isHovered = !!(hoverSlug && hoverSlug === stand);
+    container.querySelectorAll<SVGGElement>('g[data-section]').forEach((g) => {
+      const secKey = g.getAttribute('data-section')!;
+      const sec = sections.find((s) => s.name === secKey);
+      const isSelected = secKey === selectedSection;
+      const isHovered = secKey === hoverSection;
       const paths = g.querySelectorAll('path, polygon, rect, ellipse, circle');
 
       if (isSelected) {
         paths.forEach((el) => paintEl(el, '#2B7FFF', '0.9', '#1D4ED8', '2'));
       } else if (isHovered) {
-        paths.forEach((el) => paintEl(el, '#2B7FFF', '0.65', '#2B7FFF', '2.5'));
+        paths.forEach((el) => paintEl(el, '#2B7FFF', '0.7', '#2B7FFF', '2'));
       } else if (sec?.minPrice) {
         const color = priceColor(sec.minPrice, gMin, gMax);
         paths.forEach((el) => paintEl(el, color, anySelected ? '0.15' : '0.5', color, '0.5'));
       } else {
-        paths.forEach((el) => paintEl(el, '#CBD5E1', '0.3', '#CBD5E1', '0.5'));
+        paths.forEach((el) => paintEl(el, '#CBD5E1', '0.25', '#CBD5E1', '0.3'));
       }
     });
-  }, [selectedSection, hoverSection, svgContent, sections, availableStands]);
+  }, [selectedSection, hoverSection, svgContent, sections]);
 
-  // No mapUrl → show nothing
   if (!mapUrl) return null;
 
   if (compact) {
@@ -198,7 +175,6 @@ export default function SeatMap({
 
   return (
     <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-4 md:p-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
           <h3 className="text-[15px] font-bold text-[#171717]">{venueName}</h3>
@@ -211,7 +187,6 @@ export default function SeatMap({
         )}
       </div>
 
-      {/* Map */}
       <div ref={containerRef} className="relative select-none">
         {loading && (
           <div className="h-[320px] flex items-center justify-center">
@@ -222,15 +197,10 @@ export default function SeatMap({
           </div>
         )}
         {!loading && svgContent && (
-          <div
-            ref={svgDivRef}
-            className="w-full [&>svg]:w-full [&>svg]:h-auto"
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
+          <div ref={svgDivRef} className="w-full [&>svg]:w-full [&>svg]:h-auto" dangerouslySetInnerHTML={{ __html: svgContent }} />
         )}
 
-        {/* Tooltip */}
-        {hoveredStand && tooltipText && (
+        {hoveredSection && tooltipText && (
           <div
             className="absolute z-20 pointer-events-none"
             style={{
@@ -246,7 +216,6 @@ export default function SeatMap({
         )}
       </div>
 
-      {/* Legend */}
       <div className="flex items-center gap-3 mt-3 text-[11px] text-[#6B7280] flex-wrap">
         <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#22C55E]" /> Budget</div>
         <div className="flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-sm bg-[#F59E0B]" /> Mid</div>
