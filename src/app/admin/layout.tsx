@@ -24,17 +24,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (authLoading) return;
     if (!user) { router.push('/login'); return; }
 
+    // Check if user exists in admin_users (RLS: can only see own row)
     supabase.from('admin_users').select('role').eq('id', user.id).single()
       .then(({ data, error }) => {
-        if (error || !data) {
-          supabase.from('admin_users').select('id').limit(1).then(({ data: admins }) => {
-            if (!admins || admins.length === 0) {
-              supabase.from('admin_users').insert({ id: user.id, role: 'admin' }).then(() => {
-                setIsAdmin(true); setChecking(false);
-              });
-            } else { setIsAdmin(false); setChecking(false); }
-          });
-        } else { setIsAdmin(true); setChecking(false); }
+        if (!error && data) {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+        setChecking(false);
       });
   }, [user, authLoading, router]);
 
