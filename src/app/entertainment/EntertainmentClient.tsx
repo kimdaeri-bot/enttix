@@ -25,10 +25,56 @@ interface PageInfo {
 }
 
 const TABS = [
-  { key: 'arts', label: '🎭 Arts & Theatre', countryCode: 'GB' },
-  { key: 'music', label: '🎵 Music', countryCode: 'GB' },
-  { key: 'sports', label: '🏆 Sports', countryCode: 'GB' },
+  { key: 'arts',   label: '🎭 Arts & Theatre' },
+  { key: 'music',  label: '🎵 Music' },
+  { key: 'sports', label: '🏆 Sports' },
 ];
+
+// Ticketmaster 지원 국가 (이벤트 수 기준 정렬)
+const COUNTRIES = [
+  { code: '', name: 'All', flag: '🌏' },
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'IE', name: 'Ireland', flag: '🇮🇪' },
+  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'TR', name: 'Turkey', flag: '🇹🇷' },
+  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿' },
+  { code: 'BE', name: 'Belgium', flag: '🇧🇪' },
+  { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
+  { code: 'PL', name: 'Poland', flag: '🇵🇱' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+  { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+  { code: 'CZ', name: 'Czech Republic', flag: '🇨🇿' },
+  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦' },
+  { code: 'AT', name: 'Austria', flag: '🇦🇹' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+  { code: 'PE', name: 'Peru', flag: '🇵🇪' },
+  { code: 'LU', name: 'Luxembourg', flag: '🇱🇺' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+  { code: 'CL', name: 'Chile', flag: '🇨🇱' },
+  { code: 'GR', name: 'Greece', flag: '🇬🇷' },
+];
+
+// 이벤트 수 (국가별 표시용 - 전체 기준)
+const COUNTRY_COUNTS: Record<string, number> = {
+  '': 280452,
+  US: 171736, GB: 39848, CA: 12887, AU: 11631, IE: 3295,
+  MX: 2684, NL: 2122, DE: 1947, ES: 1730, TR: 1563,
+  NZ: 1518, BE: 1184, DK: 773, PL: 736, IT: 678,
+  JP: 641, NO: 442, CH: 378, CZ: 369, SE: 314,
+  FI: 220, ZA: 218, AT: 132, SG: 116, BR: 77,
+  PE: 29, LU: 7, FR: 5, CL: 3, GR: 1,
+};
 
 function formatDate(dateStr: string) {
   if (!dateStr) return 'TBA';
@@ -40,6 +86,11 @@ function formatCurrency(amount: number | null, currency: string) {
   if (amount === null || amount === 0) return 'See prices';
   const sym = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency + ' ';
   return `From ${sym}${amount.toFixed(0)}`;
+}
+
+function formatCount(n: number) {
+  if (n >= 1000) return `${(n / 1000).toFixed(0)}K`;
+  return String(n);
 }
 
 function EventCard({ event }: { event: TmEvent }) {
@@ -66,7 +117,6 @@ function EventCard({ event }: { event: TmEvent }) {
             <span className="text-4xl opacity-30">🎬</span>
           </div>
         )}
-        {/* 장르 배지 */}
         {event.genre && event.genre !== 'Undefined' && (
           <div className="absolute top-3 left-3">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.5px] text-white bg-black/60 backdrop-blur-sm">
@@ -83,19 +133,19 @@ function EventCard({ event }: { event: TmEvent }) {
         </h3>
 
         <div className="flex flex-col gap-1 mb-3 flex-1">
-          {/* 날짜 */}
           <div className="flex items-center gap-1.5 text-[12px] text-[#6B7280]">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
             </svg>
-            {formatDate(event.date)} {event.time ? `· ${event.time.slice(0, 5)}` : ''}
+            {formatDate(event.date)}{event.time ? ` · ${event.time.slice(0, 5)}` : ''}
           </div>
-          {/* 장소 */}
           <div className="flex items-center gap-1.5 text-[12px] text-[#6B7280]">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
             </svg>
-            <span className="truncate">{event.venueName ? `${event.venueName}` : event.city}{event.city && event.venueName ? `, ${event.city}` : ''}</span>
+            <span className="truncate">
+              {[event.venueName, event.city].filter(Boolean).join(', ')}
+            </span>
           </div>
         </div>
 
@@ -117,17 +167,20 @@ function EventCard({ event }: { event: TmEvent }) {
 
 export default function EntertainmentClient() {
   const [activeTab, setActiveTab] = useState('arts');
+  const [activeCountry, setActiveCountry] = useState('GB'); // 기본값 GB
   const [events, setEvents] = useState<TmEvent[]>([]);
   const [pageInfo, setPageInfo] = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
 
-  const fetchEvents = useCallback(async (tab: string, page: number) => {
+  const fetchEvents = useCallback(async (tab: string, countryCode: string, page: number) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/ticketmaster/events?tab=${tab}&page=${page}&size=20`);
+      const params = new URLSearchParams({ tab, page: String(page), size: '20' });
+      if (countryCode) params.set('countryCode', countryCode);
+      const res = await fetch(`/api/ticketmaster/events?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setEvents(data.events || []);
@@ -142,36 +195,42 @@ export default function EntertainmentClient() {
 
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeTab, 0);
-  }, [activeTab, fetchEvents]);
+    fetchEvents(activeTab, activeCountry, 0);
+  }, [activeTab, activeCountry, fetchEvents]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
-    fetchEvents(activeTab, newPage);
+    fetchEvents(activeTab, activeCountry, newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const activeCountryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
+
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      {/* 히어로 */}
-      <div className="bg-[#0F172A] pb-0">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-6">
+      {/* 히어로 + 탭 */}
+      <div className="bg-[#0F172A]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-0">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[12px] font-bold text-[#2B7FFF] tracking-[1.5px]">TICKETMASTER</span>
+            <span className="text-[12px] text-[#475569]">·</span>
+            <span className="text-[12px] text-[#475569]">Global Events</span>
           </div>
-          <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">Entertainment</h1>
-          <p className="text-[15px] text-[#94A3B8]">
-            UK 현지 공연 · 콘서트 · 스포츠 이벤트 — Ticketmaster 실시간 데이터
+          <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">
+            Entertainment
+          </h1>
+          <p className="text-[14px] text-[#94A3B8] mb-6">
+            30개국 · {formatCount(COUNTRY_COUNTS[''])}+ 이벤트 — 실시간 Ticketmaster 데이터
           </p>
         </div>
 
-        {/* 탭 */}
+        {/* 카테고리 탭 */}
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {TABS.map(tab => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(0); }}
                 className={`flex-shrink-0 px-5 py-3 text-[14px] font-semibold rounded-t-[10px] transition-colors ${
                   activeTab === tab.key
                     ? 'bg-[#F5F7FA] text-[#171717]'
@@ -185,6 +244,33 @@ export default function EntertainmentClient() {
         </div>
       </div>
 
+      {/* 국가 선택 바 */}
+      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
+            {COUNTRIES.map(country => (
+              <button
+                key={country.code}
+                onClick={() => { setActiveCountry(country.code); setCurrentPage(0); }}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
+                  activeCountry === country.code
+                    ? 'bg-[#2B7FFF] text-white shadow-sm'
+                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
+                }`}
+              >
+                <span className="text-[14px]">{country.flag}</span>
+                <span>{country.name}</span>
+                {COUNTRY_COUNTS[country.code] && (
+                  <span className={`text-[10px] ${activeCountry === country.code ? 'text-white/80' : 'text-[#9CA3AF]'}`}>
+                    {formatCount(COUNTRY_COUNTS[country.code])}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* 컨텐츠 */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
         {/* 상단 정보 */}
@@ -192,8 +278,11 @@ export default function EntertainmentClient() {
           <div className="text-[13px] text-[#6B7280]">
             {!loading && pageInfo.totalElements > 0 && (
               <>
-                총 <span className="font-semibold text-[#171717]">{pageInfo.totalElements.toLocaleString()}</span>개 이벤트 ·{' '}
-                페이지 <span className="font-semibold text-[#171717]">{pageInfo.number + 1}</span> / {pageInfo.totalPages}
+                <span className="font-semibold text-[#171717]">{activeCountryObj.flag} {activeCountryObj.name}</span>
+                {' · '}총{' '}
+                <span className="font-semibold text-[#171717]">{pageInfo.totalElements.toLocaleString()}</span>개 이벤트
+                {' · '}페이지{' '}
+                <span className="font-semibold text-[#171717]">{pageInfo.number + 1}</span> / {pageInfo.totalPages.toLocaleString()}
               </>
             )}
           </div>
@@ -203,7 +292,7 @@ export default function EntertainmentClient() {
           </div>
         </div>
 
-        {/* 로딩 */}
+        {/* 로딩 스켈레톤 */}
         {loading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 20 }).map((_, i) => (
@@ -236,13 +325,22 @@ export default function EntertainmentClient() {
         {/* 빈 결과 */}
         {!loading && !error && events.length === 0 && (
           <div className="text-center py-20">
-            <p className="text-[#94A3B8] text-[15px]">이벤트가 없습니다.</p>
+            <p className="text-[48px] mb-4">🎭</p>
+            <p className="text-[#374151] font-semibold text-[16px] mb-2">이벤트가 없습니다</p>
+            <p className="text-[#94A3B8] text-[13px]">다른 국가나 카테고리를 선택해보세요</p>
           </div>
         )}
 
         {/* 페이지네이션 */}
         {!loading && pageInfo.totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 mt-10">
+          <div className="flex items-center justify-center gap-2 mt-10">
+            <button
+              onClick={() => handlePageChange(0)}
+              disabled={currentPage === 0}
+              className="px-3 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[12px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              «
+            </button>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 0}
@@ -278,6 +376,13 @@ export default function EntertainmentClient() {
             >
               Next
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <button
+              onClick={() => handlePageChange(pageInfo.totalPages - 1)}
+              disabled={currentPage >= pageInfo.totalPages - 1}
+              className="px-3 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[12px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              »
             </button>
           </div>
         )}
