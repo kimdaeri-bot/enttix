@@ -409,8 +409,8 @@ export default function EventClient({ id }: { id: string }) {
           </div>
 
           {/* RIGHT: Seat Map (40%) */}
-          <div className="w-full lg:w-[40%] flex-shrink-0">
-            <div className="sticky top-4">
+          <div className="w-full lg:w-[40%] flex-shrink-0 lg:self-start lg:sticky lg:top-4">
+            <div>
               <SeatMap
                 venueName={match.venue.name}
                 mapUrl={mapUrl || undefined}
