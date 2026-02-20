@@ -194,7 +194,7 @@ function MyPageInner() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                               <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${statusColors[order.status] || 'bg-gray-100 text-gray-600'}`}>
-                                {order.status}
+                                {order.status === 'ticketed' ? 'Ticket Issued' : order.status}
                               </span>
                               <span className="text-[11px] font-mono text-[#94A3B8]">{order.order_number}</span>
                               {notes.ticket_type && (
@@ -319,22 +319,32 @@ function MyPageInner() {
                               Download Ticket (PDF)
                             </a>
                           </div>
-                        ) : (order.status === 'confirmed' || order.status === 'paid') && order.api_source === 'tixstock' ? (
+                        ) : (order.status === 'confirmed' || order.status === 'paid' || order.status === 'ticketed') && order.api_source === 'tixstock' ? (
                           // Tixstock 주문 — 티켓은 이메일로 전송
-                          <div className="mt-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-[10px] px-4 py-3">
+                          <div className={`mt-3 border rounded-[10px] px-4 py-3 ${order.status === 'ticketed' ? 'bg-[#EFF6FF] border-[#BFDBFE]' : 'bg-[#F0FDF4] border-[#BBF7D0]'}`}>
                             <div className="flex items-start gap-3">
-                              <div className="w-8 h-8 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
-                                  <path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0l-8 5-8-5"/>
-                                </svg>
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${order.status === 'ticketed' ? 'bg-[#DBEAFE]' : 'bg-[#DCFCE7]'}`}>
+                                {order.status === 'ticketed' ? (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
+                                    <path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0l-8 5-8-5"/>
+                                  </svg>
+                                )}
                               </div>
                               <div>
-                                <p className="text-[12px] font-bold text-[#15803D]">티켓이 이메일로 전송됩니다</p>
-                                <p className="text-[11px] text-[#166534] mt-0.5">
-                                  Tixstock이 티켓을 처리 중입니다. 확인 이메일을 확인해 주세요.
+                                <p className={`text-[12px] font-bold ${order.status === 'ticketed' ? 'text-[#1D4ED8]' : 'text-[#15803D]'}`}>
+                                  {order.status === 'ticketed' ? '🎫 티켓이 이메일로 발송됐습니다' : '티켓이 이메일로 전송됩니다'}
+                                </p>
+                                <p className={`text-[11px] mt-0.5 ${order.status === 'ticketed' ? 'text-[#1E40AF]' : 'text-[#166534]'}`}>
+                                  {order.status === 'ticketed'
+                                    ? `${order.customer_email || 'your email'} 받은편지함을 확인해 주세요.`
+                                    : 'Tixstock이 티켓을 처리 중입니다. 확인 이메일을 확인해 주세요.'}
                                 </p>
                                 {(notes.tixstock_order_id || order.order_number) && (
-                                  <p className="text-[10px] text-[#166534] mt-1 font-mono">
+                                  <p className={`text-[10px] mt-1 font-mono ${order.status === 'ticketed' ? 'text-[#1E40AF]' : 'text-[#166534]'}`}>
                                     Tixstock Order: <span className="font-bold">{notes.tixstock_order_id || order.order_number}</span>
                                   </p>
                                 )}
