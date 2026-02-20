@@ -2,7 +2,7 @@
 import Header from '@/components/Header';
 import SeatMap from '@/components/SeatMap';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Match } from '@/types';
 // Cart removed — Buy Now direct flow only
@@ -65,6 +65,7 @@ export default function EventClient({ id }: { id: string }) {
     return next;
   });
   const router = useRouter();
+  const seatMapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -301,9 +302,19 @@ export default function EventClient({ id }: { id: string }) {
               {filteredTickets.map(ticket => (
                 <div
                   key={ticket.id}
-                  className="bg-white rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-md hover:border-[#2B7FFF]/20 transition-all"
+                  className="bg-white rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-md hover:border-[#2B7FFF]/20 transition-all cursor-pointer"
                   onMouseEnter={() => setHoveredTicketSection(ticket.svgSection || ticket.section)}
                   onMouseLeave={() => setHoveredTicketSection(null)}
+                  onClick={(e) => {
+                    // 버튼 클릭은 카드 탭으로 처리하지 않음
+                    if ((e.target as HTMLElement).closest('button')) return;
+                    // 모바일(lg 미만)에서만 SeatMap으로 스크롤
+                    const section = ticket.svgSection || ticket.section;
+                    setHoveredTicketSection(section);
+                    if (window.innerWidth < 1024 && seatMapRef.current) {
+                      seatMapRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
                 >
                   {/* Row 1: Icon + Section info + Price */}
                   <div className="flex items-start justify-between gap-3">
@@ -410,7 +421,7 @@ export default function EventClient({ id }: { id: string }) {
 
           {/* RIGHT: Seat Map (40%) */}
           <div className="w-full lg:w-[40%] flex-shrink-0 lg:self-start lg:sticky lg:top-4">
-            <div>
+            <div ref={seatMapRef}>
               <SeatMap
                 venueName={match.venue.name}
                 mapUrl={mapUrl || undefined}
