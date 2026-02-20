@@ -55,6 +55,7 @@ export default function EventClient({ id }: { id: string }) {
   const [sectionFilter, setSectionFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [selectedMapSection, setSelectedMapSection] = useState<string | null>(null);
+  const [hoveredTicketSection, setHoveredTicketSection] = useState<string | null>(null);
   const [holdingId, setHoldingId] = useState<string | null>(null);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [expandedBenefits, setExpandedBenefits] = useState<Set<string>>(new Set());
@@ -331,7 +332,12 @@ export default function EventClient({ id }: { id: string }) {
             {/* Ticket Cards */}
             <div className="flex flex-col gap-3">
               {filteredTickets.map(ticket => (
-                <div key={ticket.id} className="bg-white rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-md hover:border-[#2B7FFF]/20 transition-all">
+                <div
+                  key={ticket.id}
+                  className="bg-white rounded-[12px] border border-[#E5E7EB] p-4 hover:shadow-md hover:border-[#2B7FFF]/20 transition-all"
+                  onMouseEnter={() => setHoveredTicketSection(ticket.section)}
+                  onMouseLeave={() => setHoveredTicketSection(null)}
+                >
                   <div className="flex items-start gap-4">
                     {/* Left: Icon + Section */}
                     <div className="flex-shrink-0 flex items-center gap-3">
@@ -466,6 +472,7 @@ export default function EventClient({ id }: { id: string }) {
                 mapUrl={mapUrl || undefined}
                 sections={seatMapSections}
                 selectedSection={selectedMapSection}
+                hoverSection={hoveredTicketSection}
                 onSectionClick={setSelectedMapSection}
               />
 

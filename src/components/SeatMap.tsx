@@ -13,6 +13,7 @@ interface SeatMapProps {
   mapUrl?: string;
   sections?: SeatMapSection[];
   selectedSection?: string | null;
+  hoverSection?: string | null;   // ticket card hover → highlight on map
   onSectionClick?: (section: string | null) => void;
   compact?: boolean;
   highlightSection?: string;
@@ -46,6 +47,7 @@ export default function SeatMap({
   mapUrl,
   sections = [],
   selectedSection,
+  hoverSection,
   onSectionClick,
   compact = false,
   highlightSection,
@@ -90,22 +92,35 @@ export default function SeatMap({
     const container = containerRef.current;
     if (!container || !svgContent) return;
 
+    // selectedSection / hoverSection can be data-stand slug OR raw name (e.g. "East Stand")
+    const selectedSlug = selectedSection ? toStandSlug(selectedSection) : null;
+    const hoverSlug = hoverSection ? toStandSlug(hoverSection) : null;
+
     container.querySelectorAll<SVGGElement>('g[data-stand]').forEach((g) => {
       const stand = g.getAttribute('data-stand')!;
       const sec = standToSection[stand];
-      const isSelected = selectedSection === stand;
+      const isSelected = !!(selectedSection && (selectedSection === stand || selectedSlug === stand));
+      const isHoveredFromTicket = !!(hoverSection && (hoverSection === stand || hoverSlug === stand));
+      const anySelected = !!(selectedSection);
 
       g.querySelectorAll('path, polygon, rect, ellipse, circle').forEach((el) => {
         const e = el as SVGElement;
         if (isSelected) {
+          // Clicked on map: solid blue fill
           e.style.fill = '#2B7FFF';
           e.style.fillOpacity = '0.85';
           e.style.stroke = '#1D4ED8';
           e.style.strokeWidth = '2';
+        } else if (isHoveredFromTicket) {
+          // Hovering ticket card: bright highlight
+          e.style.fill = '#2B7FFF';
+          e.style.fillOpacity = '0.6';
+          e.style.stroke = '#2B7FFF';
+          e.style.strokeWidth = '2.5';
         } else if (sec?.minPrice) {
           const color = priceColor(sec.minPrice, globalMin, globalMax);
           e.style.fill = color;
-          e.style.fillOpacity = selectedSection ? '0.2' : '0.5';
+          e.style.fillOpacity = anySelected ? '0.15' : '0.5';
           e.style.stroke = color;
           e.style.strokeWidth = '0.5';
         } else {
@@ -135,13 +150,13 @@ export default function SeatMap({
 
       g.onmouseleave = () => setHoveredStand(null);
     });
-  }, [svgContent, selectedSection, standToSection, globalMin, globalMax, onSectionClick]);
+  }, [svgContent, selectedSection, hoverSection, standToSection, globalMin, globalMax, onSectionClick]);
 
   useEffect(() => {
     if (!svgContent) return;
     const t = setTimeout(applyStyles, 50);
     return () => clearTimeout(t);
-  }, [svgContent, applyStyles]);
+  }, [svgContent, applyStyles, selectedSection, hoverSection]);
 
   // No map_url → show nothing
   if (!mapUrl) return null;
