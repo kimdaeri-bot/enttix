@@ -68,15 +68,21 @@ function MyPageInner() {
   useEffect(() => {
     if (!user) return;
     setOrdersLoading(true);
-    supabase
-      .from('orders')
-      .select('*')
-      .or(`user_id.eq.${user.id},customer_email.eq.${user.email}`)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setOrders(data || []);
-        setOrdersLoading(false);
-      });
+
+    // user_id + email 별도 쿼리 후 병합 (or() 필터 특수문자 이슈 방지)
+    Promise.all([
+      supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      supabase.from('orders').select('*').eq('customer_email', user.email || '').order('created_at', { ascending: false }),
+    ]).then(([byId, byEmail]) => {
+      const idRows = byId.data || [];
+      const emailRows = byEmail.data || [];
+      // 중복 제거 후 병합
+      const seen = new Set(idRows.map((r: Order) => r.id));
+      const merged = [...idRows, ...emailRows.filter((r: Order) => !seen.has(r.id))];
+      merged.sort((a: Order, b: Order) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setOrders(merged);
+      setOrdersLoading(false);
+    }).catch(() => setOrdersLoading(false));
   }, [user]);
 
   const handleDelete = async (id: string) => {
@@ -291,8 +297,8 @@ function MyPageInner() {
                                 })}
                               </div>
 
-                              {/* Email notice for confirmed */}
-                              {(order.status === 'confirmed' || order.status === 'paid') && (
+                              {/* 이메일 안내 — Tixstock 아닌 경우만 */}
+                              {(order.status === 'confirmed' || order.status === 'paid') && order.api_source !== 'tixstock' && (
                                 <p className="text-[11px] text-[#6B7280] mt-3 text-center">
                                   📧 Ticket will be sent to <span className="font-semibold text-[#374151]">{order.customer_email || 'your email'}</span>
                                 </p>
@@ -301,22 +307,41 @@ function MyPageInner() {
                           );
                         })()}
 
-                        {/* Download Ticket — shown when status = ticketed AND ticket URL stored */}
-                        {order.status === 'ticketed' && notes.ticket_url && (
+                        {/* Ticket Action Section */}
+                        {notes.ticket_url ? (
+                          // 티켓 URL 있으면 바로 다운로드
                           <div className="mt-3">
-                            <a
-                              href={notes.ticket_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 w-full py-3 bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold rounded-[10px] transition-colors"
-                            >
+                            <a href={notes.ticket_url} target="_blank" rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-3 bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold rounded-[10px] transition-colors">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                               </svg>
                               Download Ticket (PDF)
                             </a>
                           </div>
-                        )}
+                        ) : (order.status === 'confirmed' || order.status === 'paid') && order.api_source === 'tixstock' ? (
+                          // Tixstock 주문 — 티켓은 이메일로 전송
+                          <div className="mt-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-[10px] px-4 py-3">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 rounded-full bg-[#DCFCE7] flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5">
+                                  <path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0l-8 5-8-5"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="text-[12px] font-bold text-[#15803D]">티켓이 이메일로 전송됩니다</p>
+                                <p className="text-[11px] text-[#166534] mt-0.5">
+                                  Tixstock이 티켓을 처리 중입니다. 확인 이메일을 확인해 주세요.
+                                </p>
+                                {(notes.tixstock_order_id || order.order_number) && (
+                                  <p className="text-[10px] text-[#166534] mt-1 font-mono">
+                                    Tixstock Order: <span className="font-bold">{notes.tixstock_order_id || order.order_number}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
 
                         {/* Seat Map — shown when map_url + svg_section are stored */}
                         {notes.map_url && notes.svg_section && (
