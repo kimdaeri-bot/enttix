@@ -6,6 +6,9 @@ import { AuthProvider } from "@/context/AuthContext";
 export const metadata: Metadata = {
   title: "Enttix - Premium Entertainment Ticket Marketplace",
   description: "Premium Sports Ticket Official Marketplace. No hidden fees, 100% authentic guarantee.",
+  other: {
+    'impact-site-verification': '150533bd-6316-4554-9df8-5633b41308f6',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
