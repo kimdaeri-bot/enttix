@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Match } from '@/types';
-import { useCart } from '@/context/CartContext';
+// Cart removed — Buy Now direct flow only
 
 interface TicketListing {
   id: string;
@@ -57,10 +57,8 @@ export default function EventClient({ id }: { id: string }) {
   const [typeFilter, setTypeFilter] = useState('');
   const [selectedMapSection, setSelectedMapSection] = useState<string | null>(null);
   const [hoveredTicketSection, setHoveredTicketSection] = useState<string | null>(null);
-  const [holdingId, setHoldingId] = useState<string | null>(null);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [expandedBenefits, setExpandedBenefits] = useState<Set<string>>(new Set());
-  const cart = useCart();
   const toggleBenefits = (id: string) => setExpandedBenefits(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -155,47 +153,6 @@ export default function EventClient({ id }: { id: string }) {
       });
     }
   }, [loading, match, id]);
-
-  const addToCart = async (ticket: TicketListing) => {
-    const qty = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
-    setHoldingId(ticket.id);
-    try {
-      const res = await fetch('/api/tixstock/hold', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing_id: ticket.id, quantity: qty }),
-      });
-      let holdId: string | undefined;
-      if (res.ok) {
-        const data = await res.json();
-        holdId = data.meta?.hold_id;
-      }
-      const venueStr2 = [match?.venue?.name, match?.venue?.city, match?.venue?.country_code].filter(Boolean).join(', ');
-      cart.addItem({
-        listingId: ticket.id, eventId: id, eventName: match?.name || '',
-        section: ticket.section, row: ticket.row, quantity: qty,
-        pricePerTicket: ticket.price, currency: match?.currency || 'USD',
-        ticketType: ticket.type, holdId,
-        benefits: ticket.benefits,
-        eventDate: match?.datetime,
-        venue: venueStr2,
-      });
-    } catch {
-      // Still add to cart even if hold fails
-      const venueStr3 = [match?.venue?.name, match?.venue?.city, match?.venue?.country_code].filter(Boolean).join(', ');
-      cart.addItem({
-        listingId: ticket.id, eventId: id, eventName: match?.name || '',
-        section: ticket.section, row: ticket.row, quantity: qty,
-        pricePerTicket: ticket.price, currency: match?.currency || 'USD',
-        ticketType: ticket.type,
-        benefits: ticket.benefits,
-        eventDate: match?.datetime,
-        venue: venueStr3,
-      });
-    } finally {
-      setHoldingId(null);
-    }
-  };
 
   const handleBuyNow = async (ticket: TicketListing, qty: number) => {
     setBuyingId(ticket.id);
@@ -348,120 +305,97 @@ export default function EventClient({ id }: { id: string }) {
                   onMouseEnter={() => setHoveredTicketSection(ticket.svgSection || ticket.section)}
                   onMouseLeave={() => setHoveredTicketSection(null)}
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Left: Icon + Section */}
-                    <div className="flex-shrink-0 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-[8px] bg-[#EFF6FF] flex items-center justify-center">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
+                  {/* Row 1: Icon + Section info + Price */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="w-9 h-9 rounded-[8px] bg-[#EFF6FF] flex-shrink-0 flex items-center justify-center mt-0.5">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
                           <path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 010 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 010-4V7a2 2 0 00-2-2H5z"/>
                         </svg>
                       </div>
-                      <div>
-                        <p className="text-[15px] font-bold text-[#171717]">{ticket.section}</p>
-                        <p className="text-[12px] text-[#6B7280]">Row {ticket.row}{ticket.seat ? ` • Seat ${ticket.seat}` : ''}</p>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-bold text-[#171717] leading-tight">{ticket.section}</p>
+                        <p className="text-[11px] text-[#6B7280] mt-0.5">
+                          {ticket.row ? `Row ${ticket.row}` : 'General'}
+                          {ticket.seat ? ` · Seat ${ticket.seat}` : ''}
+                          {' · '}Up to {ticket.maxQty}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {ticket.isEticket && <span className="px-1.5 py-0.5 rounded bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF]">eTicket</span>}
+                          {ticket.isVip && <span className="px-1.5 py-0.5 rounded bg-[#FEF3C7] text-[10px] font-semibold text-[#D97706]">VIP</span>}
+                          {ticket.isAisle && <span className="px-1.5 py-0.5 rounded bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">Aisle</span>}
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-[18px] font-bold text-[#171717] leading-tight">£{ticket.price.toFixed(2)}</p>
+                      <p className="text-[10px] text-[#9CA3AF]">per ticket</p>
+                    </div>
+                  </div>
 
-                    {/* Center: Badges + Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-[12px] text-[#6B7280]">Up to {ticket.maxQty}</span>
+                  {/* Row 2: Benefits (collapsible) */}
+                  {ticket.benefits.length > 0 && (() => {
+                    const isExpanded = expandedBenefits.has(ticket.id);
+                    const LIMIT = 4;
+                    const shown = isExpanded ? ticket.benefits : ticket.benefits.slice(0, LIMIT);
+                    const remaining = ticket.benefits.length - LIMIT;
+                    return (
+                      <div className="mt-2.5 flex flex-wrap gap-1">
+                        {shown.map((b: string, i: number) => (
+                          <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
+                            ✨ {b}
+                          </span>
+                        ))}
+                        {!isExpanded && remaining > 0 && (
+                          <button onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
+                            className="px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF] hover:bg-[#DBEAFE] transition-colors">
+                            +{remaining} more
+                          </button>
+                        )}
+                        {isExpanded && (
+                          <button onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
+                            className="px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[10px] font-semibold text-[#64748B] hover:bg-[#E2E8F0] transition-colors">
+                            접기 ▲
+                          </button>
+                        )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {ticket.isEticket && (
-                          <span className="px-2 py-0.5 rounded bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF]">eTicket</span>
-                        )}
-                        {ticket.isAisle && (
-                          <span className="px-2 py-0.5 rounded bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">Aisle</span>
-                        )}
-                        {ticket.isVip && (
-                          <span className="px-2 py-0.5 rounded bg-[#FEF3C7] text-[10px] font-semibold text-[#D97706]">VIP</span>
-                        )}
-                      </div>
-                      {ticket.benefits.length > 0 && (() => {
-                        const isExpanded = expandedBenefits.has(ticket.id);
-                        const shown = isExpanded ? ticket.benefits : ticket.benefits.slice(0, 4);
-                        const remaining = ticket.benefits.length - 4;
-                        return (
-                          <div className="mt-1.5">
-                            <div className="flex flex-wrap gap-1">
-                              {shown.map((b: string, i: number) => (
-                                <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F0FDF4] text-[10px] font-semibold text-[#16A34A]">
-                                  ✨ {b}
-                                </span>
-                              ))}
-                              {!isExpanded && remaining > 0 && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
-                                  className="px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[10px] font-semibold text-[#2B7FFF] hover:bg-[#DBEAFE] transition-colors cursor-pointer"
-                                >
-                                  +{remaining} more
-                                </button>
-                              )}
-                              {isExpanded && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); toggleBenefits(ticket.id); }}
-                                  className="px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[10px] font-semibold text-[#64748B] hover:bg-[#E2E8F0] transition-colors cursor-pointer"
-                                >
-                                  collapse ▲
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      {ticket.splitWarning && (
-                        <p className="text-[11px] text-[#EF4444] mt-1">⚠️ {ticket.splitWarning}</p>
-                      )}
-                    </div>
+                    );
+                  })()}
 
-                    {/* Right: Price + Qty + Add */}
-                    <div className="flex-shrink-0 flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="text-[18px] font-bold text-[#171717]">£{ticket.price.toFixed(2)}</p>
-                        <p className="text-[11px] text-[#9CA3AF]">per ticket</p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => {
-                            const cur = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
-                            const idx = ticket.quantityOptions.indexOf(cur);
-                            if (idx > 0) setQuantities({ ...quantities, [ticket.id]: ticket.quantityOptions[idx - 1] });
-                          }}
-                          className="w-8 h-8 rounded-[6px] border border-[#E5E7EB] flex items-center justify-center text-[14px] font-bold text-[#6B7280] hover:bg-[#F1F5F9] transition-colors"
-                        >−</button>
-                        <span className="w-8 text-center text-[14px] font-bold text-[#171717]">
-                          {quantities[ticket.id] || ticket.quantityOptions[0] || 1}
-                        </span>
-                        <button
-                          onClick={() => {
-                            const cur = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
-                            const idx = ticket.quantityOptions.indexOf(cur);
-                            if (idx < ticket.quantityOptions.length - 1) setQuantities({ ...quantities, [ticket.id]: ticket.quantityOptions[idx + 1] });
-                          }}
-                          className="w-8 h-8 rounded-[6px] border border-[#E5E7EB] flex items-center justify-center text-[14px] font-bold text-[#6B7280] hover:bg-[#F1F5F9] transition-colors"
-                        >+</button>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <button
-                          onClick={() => {
-                            const qty = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
-                            handleBuyNow(ticket, qty);
-                          }}
-                          disabled={buyingId === ticket.id}
-                          className="px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold transition-colors active:scale-95 disabled:opacity-50 whitespace-nowrap"
-                        >
-                          {buyingId === ticket.id ? '...' : 'Buy Now'}
-                        </button>
-                        <button
-                          onClick={() => addToCart(ticket)}
-                          disabled={holdingId === ticket.id}
-                          className="px-5 py-2 rounded-[8px] border border-[#E5E7EB] bg-white hover:bg-[#F1F5F9] text-[#374151] text-[12px] font-medium transition-colors active:scale-95 disabled:opacity-50"
-                        >
-                          {holdingId === ticket.id ? '...' : 'Add to Cart'}
-                        </button>
-                      </div>
+                  {ticket.splitWarning && (
+                    <p className="text-[11px] text-[#EF4444] mt-2">⚠️ {ticket.splitWarning}</p>
+                  )}
+
+                  {/* Row 3: Qty selector + Buy Now */}
+                  <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#F1F5F9]">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          const cur = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
+                          const idx = ticket.quantityOptions.indexOf(cur);
+                          if (idx > 0) setQuantities({ ...quantities, [ticket.id]: ticket.quantityOptions[idx - 1] });
+                        }}
+                        className="w-8 h-8 rounded-[6px] border border-[#E5E7EB] flex items-center justify-center text-[15px] font-bold text-[#6B7280] hover:bg-[#F1F5F9] transition-colors"
+                      >−</button>
+                      <span className="w-8 text-center text-[14px] font-bold text-[#171717]">
+                        {quantities[ticket.id] || ticket.quantityOptions[0] || 1}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const cur = quantities[ticket.id] || ticket.quantityOptions[0] || 1;
+                          const idx = ticket.quantityOptions.indexOf(cur);
+                          if (idx < ticket.quantityOptions.length - 1) setQuantities({ ...quantities, [ticket.id]: ticket.quantityOptions[idx + 1] });
+                        }}
+                        className="w-8 h-8 rounded-[6px] border border-[#E5E7EB] flex items-center justify-center text-[15px] font-bold text-[#6B7280] hover:bg-[#F1F5F9] transition-colors"
+                      >+</button>
                     </div>
+                    <button
+                      onClick={() => { const qty = quantities[ticket.id] || ticket.quantityOptions[0] || 1; handleBuyNow(ticket, qty); }}
+                      disabled={buyingId === ticket.id}
+                      className="flex-1 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] font-semibold transition-colors active:scale-95 disabled:opacity-50"
+                    >
+                      {buyingId === ticket.id ? 'Processing…' : 'Buy Now'}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -486,27 +420,6 @@ export default function EventClient({ id }: { id: string }) {
                 onSectionClick={setSelectedMapSection}
               />
 
-              {/* Quick cart summary */}
-              {cart.totalItems > 0 && (
-                <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-5 mt-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-[#2B7FFF] text-white text-[12px] font-bold flex items-center justify-center">{cart.totalItems}</span>
-                      <h3 className="text-[15px] font-bold text-[#171717]">Cart</h3>
-                    </div>
-                    <span className="text-[18px] font-bold text-[#171717]">${cart.totalPrice.toFixed(2)}</span>
-                  </div>
-                  {cart.items.slice(0, 3).map(item => (
-                    <div key={item.listingId} className="flex items-center justify-between py-1.5 text-[12px] text-[#6B7280]">
-                      <span>{item.section} • Row {item.row} × {item.quantity}</span>
-                      <span className="font-semibold text-[#171717]">${(item.pricePerTicket * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
-                  <Link href="/cart" className="block w-full text-center bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold text-[13px] py-3 rounded-[10px] mt-3 transition-colors">
-                    View Cart & Checkout
-                  </Link>
-                </div>
-              )}
             </div>
           </div>
         </div>
