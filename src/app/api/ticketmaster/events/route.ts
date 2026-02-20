@@ -10,22 +10,54 @@ const TAB_MAP: Record<string, string> = {
   sports: 'Sports',
 };
 
-// Sports 리그 → subGenreId mapping (Ticketmaster 공식 ID)
+// Sports 리그 → subGenreId (Ticketmaster 공식 ID)
 const LEAGUE_SUBGENRE: Record<string, string> = {
-  mlb: 'KZazBEonSMnZfZ7vF1n',   // Baseball > MLB (8,096개)
-  nba: 'KZazBEonSMnZfZ7vFJA',   // Basketball > NBA (1,959개)
-  nhl: 'KZazBEonSMnZfZ7vFEE',   // Hockey > NHL (1,513개)
-  mls: 'KZazBEonSMnZfZ7vFtI',   // Soccer > MLS (913개)
-  nfl: 'KZazBEonSMnZfZ7vFEJ',   // Football > Professional/NFL (552개)
+  mlb: 'KZazBEonSMnZfZ7vF1n',
+  nba: 'KZazBEonSMnZfZ7vFJA',
+  nhl: 'KZazBEonSMnZfZ7vFEE',
+  mls: 'KZazBEonSMnZfZ7vFtI',
+  nfl: 'KZazBEonSMnZfZ7vFEJ',
+};
+
+// Music genre → genreId
+const MUSIC_GENRE: Record<string, string> = {
+  rock:             'KnvZfZ7vAeA',  // 20,250
+  pop:              'KnvZfZ7vAev',  //  7,873
+  country:          'KnvZfZ7vAv6',  //  3,551
+  alternative:      'KnvZfZ7vAvv',  //  3,186
+  hiphop:           'KnvZfZ7vAv1',  //  2,794
+  metal:            'KnvZfZ7vAvt',  //  2,194
+  folk:             'KnvZfZ7vAva',  //  1,826
+  jazz:             'KnvZfZ7vAvE',  //  1,789
+  electronic:       'KnvZfZ7vAvF',  //  1,749
+  blues:            'KnvZfZ7vAvd',  //  1,179
+  latin:            'KnvZfZ7vAJ6',  //  1,027
+  classical:        'KnvZfZ7vAeJ',  //    900
+  reggae:           'KnvZfZ7vAed',  //    486
+};
+
+// Arts genre → genreId
+const ARTS_GENRE: Record<string, string> = {
+  theatre:          'KnvZfZ7v7l1',  // 35,040
+  comedy:           'KnvZfZ7vAe1',  // 13,192
+  fineart:          'KnvZfZ7v7nl',  //  4,935
+  circus:           'KnvZfZ7v7n1',  //  2,789
+  magic:            'KnvZfZ7v7lv',  //  2,316
+  variety:          'KnvZfZ7v7lJ',  //  1,206
+  cultural:         'KnvZfZ7v7nE',  //  1,492
+  dance:            'KnvZfZ7v7nI',  //  1,332
+  childrens:        'KnvZfZ7v7na',  //  1,071
+  classical:        'KnvZfZ7v7nJ',  //    923
 };
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const tab = searchParams.get('tab') || 'arts';
-  const league = searchParams.get('league') || '';   // sports 탭 전용
-  const page = searchParams.get('page') || '0';
-  const size = searchParams.get('size') || '20';
-  const countryCode = searchParams.get('countryCode') || 'GB';
+  const tab   = searchParams.get('tab')    || 'arts';
+  const league = searchParams.get('league') || '';  // sports 전용
+  const genre  = searchParams.get('genre')  || '';  // music/arts 전용
+  const page  = searchParams.get('page')   || '0';
+  const size  = searchParams.get('size')   || '20';
+  const countryCode = searchParams.get('countryCode') || '';
 
   const classificationName = TAB_MAP[tab] || 'Arts & Theatre';
 
@@ -37,12 +69,15 @@ export async function GET(req: NextRequest) {
     locale: '*',
   });
 
-  // 국가 코드 (All = 전체)
   if (countryCode) params.set('countryCode', countryCode);
 
-  // Sports 리그 필터: subGenreId 사용
+  // 필터 우선순위: league(sports) > genre(music/arts) > classificationName
   if (tab === 'sports' && league && LEAGUE_SUBGENRE[league]) {
     params.set('subGenreId', LEAGUE_SUBGENRE[league]);
+  } else if (tab === 'music' && genre && MUSIC_GENRE[genre]) {
+    params.set('genreId', MUSIC_GENRE[genre]);
+  } else if (tab === 'arts' && genre && ARTS_GENRE[genre]) {
+    params.set('genreId', ARTS_GENRE[genre]);
   } else {
     params.set('classificationName', classificationName);
   }
