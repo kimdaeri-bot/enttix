@@ -158,8 +158,8 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             )}
           </div>
 
-          <Link href="/all-tickets" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
-            All Tickets
+          <Link href="/entertainment" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
+            Entertainment
           </Link>
           <Link href="/cities" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
             Cities
@@ -311,7 +311,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             ))}
 
             {/* 기타 링크 */}
-            <Link href="/all-tickets" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>All Tickets</Link>
+            <Link href="/entertainment" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎬 Entertainment</Link>
             <Link href="/cities" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>Cities</Link>
             <Link href="/venues" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>🏟️ Venues</Link>
           </div>
