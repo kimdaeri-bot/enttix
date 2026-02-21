@@ -126,6 +126,42 @@ const AUDIENCE_CHIPS = [
   { icon: '🎒', label: 'Backpackers' },
 ];
 
+/* ─── TAG 기반 Unsplash 폴백 이미지 ────────────────────────── */
+const TAG_FALLBACKS: Record<number, string[]> = {
+  708:  ['photo-1552832230-c0197dd311b5','photo-1519197924294-4ba991a11128','photo-1555993539-1732b0258235'],  // Historical Sites
+  709:  ['photo-1539650116574-75c0c6d73f6e','photo-1568322445389-f64ac2515020','photo-1601625828018-98d796de1fd3'],  // Archaeological
+  700:  ['photo-1554907984-15263bfd63bd','photo-1565060169194-19fabf63012c','photo-1500462918059-b1a0cb512f1d'],  // Art Museums
+  701:  ['photo-1576091160550-2173dba999ef','photo-1519750157634-b6d493a0f77c','photo-1526566661780-1a67ea3c863c'],  // Interactive
+  702:  ['photo-1565060169194-19fabf63012c','photo-1571997901935-c03614bf3e3b','photo-1569426489641-e1dbfeac9a28'],  // History Museums
+  703:  ['photo-1518770660439-4636190af475','photo-1507413245164-6160d8298b31','photo-1581091226825-a6a2a5aee158'],  // Science
+  705:  ['photo-1571988840298-3b5301d5109b','photo-1519197924294-4ba991a11128','photo-1558618666-fcd25c85cd64'],  // Castles
+  706:  ['photo-1566073771259-6a8506099945','photo-1587502537104-aac10f5fb6f7','photo-1516550893923-42d28e5677af'],  // Palaces
+  710:  ['photo-1548102245-c79dbbb1f8d8','photo-1611425560021-f3ac52e5a2a8','photo-1502602898657-3e91760cbb34'],  // Worship
+  712:  ['photo-1501854140801-50d01698950b','photo-1426604966848-d7adac402bff','photo-1560193898-70a85e6a47db'],  // Theme Parks
+  723:  ['photo-1474511320723-9a56873867b5','photo-1503256207526-0d5523f31059','photo-1546182990-dffeafbe841d'],  // Zoos
+  725:  ['photo-1416879595882-3373a0480b5b','photo-1466781783364-36c955e42a7f','photo-1459156212016-c812468e2115'],  // Botanical
+  1034: ['photo-1414235077428-338989a2e8c0','photo-1504674900247-0877df9cc836','photo-1565299624946-b28f40a0ae38'],  // Food
+  1035: ['photo-1559494007-9f5847c49d94','photo-1473448912268-2022ce9509d8','photo-1548574505-5e239809ee19'],  // Cruises
+  1040: ['photo-1569949381669-ecf31ae8e613','photo-1499856871958-5b9627545d1a','photo-1476514525535-07fb3b4ae5f1'],  // City Tours
+  1042: ['photo-1488085061387-422e29b40080','photo-1506973035872-a4ec16b8e8d9','photo-1464822759023-fed622ff2c3b'],  // Day Trips
+  2596: ['photo-1503095396549-807759245b35','photo-1540575467063-178a50c2df87','photo-1516450360452-9312f5e86fc7'],  // Shows
+  1033: ['photo-1556909114-f6e7ad7d3136','photo-1498837167922-ddd27525d352','photo-1507048331197-7d4ac70811cf'],  // Workshops
+  1840: ['photo-1436491865332-7a61a109cc05','photo-1544620347-c4fd4a3d5957','photo-1556742049-0cfed4f6a45d'],  // Transfers
+};
+const DEFAULT_FALLBACKS = [
+  'photo-1488085061387-422e29b40080','photo-1476514525535-07fb3b4ae5f1','photo-1469854523086-cc02fe5d8800',
+];
+function getTagFallback(tag_ids: number[] | undefined, productId: number | string): string {
+  const id = Number(productId);
+  if (tag_ids && tag_ids.length > 0) {
+    for (const tid of tag_ids) {
+      const photos = TAG_FALLBACKS[tid];
+      if (photos) return photos[id % photos.length];
+    }
+  }
+  return DEFAULT_FALLBACKS[id % DEFAULT_FALLBACKS.length];
+}
+
 /* ─── TYPES ─────────────────────────────────────────────────── */
 interface TiqetsProduct {
   id: number;
@@ -227,13 +263,11 @@ function Top10Card({
 function ProductCard({
   product,
   citySlug,
-  fallbackPhoto,
 }: {
   product: TiqetsProduct;
   citySlug: string;
-  fallbackPhoto: string;
 }) {
-  const fallback = `https://images.unsplash.com/${fallbackPhoto}?w=560&h=420&fit=crop`;
+  const tagFallback = `https://images.unsplash.com/${getTagFallback(product.tag_ids, product.id)}?w=560&h=420&fit=crop`;
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imgLoading, setImgLoading] = useState(true);
   const fetchedRef = useRef(false);
@@ -242,20 +276,20 @@ function ProductCard({
     if (fetchedRef.current) return;
     fetchedRef.current = true;
 
+    // 서버에서 이미 스크래핑된 이미지 있으면 바로 사용
     if (product.images && product.images.length > 0) {
       setImageUrl(product.images[0]);
       setImgLoading(false);
       return;
     }
+    // 없으면 태그 기반 Unsplash 폴백 즉시 표시 + 백그라운드 스크래핑
+    setImageUrl(tagFallback);
+    setImgLoading(false);
     if (product.product_url) {
       fetch(`/api/tiqets/product-image?product_url=${encodeURIComponent(product.product_url)}`)
         .then(r => r.json())
-        .then(d => setImageUrl(d.imageUrl || fallback))
-        .catch(() => setImageUrl(fallback))
-        .finally(() => setImgLoading(false));
-    } else {
-      setImageUrl(fallback);
-      setImgLoading(false);
+        .then(d => { if (d.imageUrl) setImageUrl(d.imageUrl); })
+        .catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -807,7 +841,6 @@ export default function CityAttractionsPage() {
                   key={p.id}
                   product={p}
                   citySlug={citySlug}
-                  fallbackPhoto={cityInfo.photo}
                 />
               ))}
             </div>
