@@ -175,13 +175,43 @@ export default function MusicClient() {
       if (keyword) p.set('keyword', keyword);
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
-      // 같은 이미지 중복 제거 (동일 아티스트 투어 여러 날짜 → 가장 빠른 1개만)
+      // 같은 이미지 중복 제거
+      // Ticketmaster는 같은 이미지에 _RETINA_PORTRAIT / _TABLET_LANDSCAPE 등 suffix를 붙여 다른 URL로 위장
       const raw: TmEvent[] = data.events || [];
-      const seen = new Set<string>();
+
+      // 이미지 URL 정규화: size/ratio suffix 제거해 "기본 이미지 ID" 추출
+      function normalizeImg(url: string): string {
+        if (!url) return '';
+        // /dam/a/HASH/FILENAME_SIZE_RATIO.jpg → /dam/a/HASH/FILENAME
+        return url.replace(/_(RETINA|TABLET|REINA|STANDARD|CUSTOM)_[A-Z0-9_]+\.(jpg|jpeg|png|webp)$/i, '');
+      }
+
+      // 아티스트명 정규화: 투어명/날짜 등 제거해 핵심 이름 추출
+      function normalizeArtist(name: string): string {
+        return name
+          .toLowerCase()
+          .replace(/[''`]/g, "'")
+          .replace(/'s.*/, '')           // possessive 이후 제거 ("SoDown's On The Air" → "sodown")
+          .replace(/\s*[-–:]\s*.*/,'')     // " - xxx" 제거
+          .replace(/\s+(tour|presents|live|show|concert|vol|ft|feat|x\s).*/, '') // 투어명 제거
+          .replace(/[^a-z0-9\s]/g, '')
+          .trim()
+          .split(/\s+/).slice(0, 2).join(' '); // 첫 두 단어만
+      }
+
+      const seenImg  = new Set<string>();
+      const seenName = new Set<string>();
       const deduped = raw.filter(e => {
-        if (!e.imageUrl) return true;
-        if (seen.has(e.imageUrl)) return false;
-        seen.add(e.imageUrl);
+        const normImg  = normalizeImg(e.imageUrl);
+        const normName = normalizeArtist(e.name);
+
+        // 동일 이미지(정규화) OR 동일 아티스트명 → 중복
+        const dupImg  = normImg  && seenImg.has(normImg);
+        const dupName = normName && seenName.has(normName);
+        if (dupImg || dupName) return false;
+
+        if (normImg)  seenImg.add(normImg);
+        if (normName) seenName.add(normName);
         return true;
       });
       setEvents(deduped);
