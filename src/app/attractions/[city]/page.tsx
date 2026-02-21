@@ -373,6 +373,7 @@ export default function CityAttractionsPage() {
   const [inputValue, setInputValue] = useState('');     // 입력창 표시값 (즉시 반영)
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
   const [showMoreModal, setShowMoreModal] = useState(false);
 
@@ -391,6 +392,9 @@ export default function CityAttractionsPage() {
     setSearchQuery(inputValue);
     setShowSuggestions(false);
     setDisplayCount(24);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   // 초기화
@@ -624,7 +628,7 @@ export default function CityAttractionsPage() {
       </section>
 
       {/* ─── 4. SORT BAR ───────────────────────────────────── */}
-      <div className="bg-white border-b border-[#E5E7EB]">
+      <div ref={resultsRef} className="bg-white border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4">
           <div className="flex items-center justify-between py-3">
             <div>
