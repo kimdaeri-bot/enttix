@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -370,8 +370,31 @@ export default function CityAttractionsPage() {
   const [displayCount, setDisplayCount] = useState(24);
   const [sort, setSort] = useState<SortKey>('popular');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
   const [showMoreModal, setShowMoreModal] = useState(false);
+
+  // 자동완성 후보 (2글자 이상, 최대 7개)
+  const suggestions = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    return products
+      .filter(p => p.title.toLowerCase().includes(q))
+      .slice(0, 7)
+      .map(p => p.title);
+  }, [searchQuery, products]);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   const [dbAttractions, setDbAttractions] = useState<AttractionItem[]>([]);
 
   const fetchProducts = useCallback(async () => {
@@ -476,17 +499,44 @@ export default function CityAttractionsPage() {
           <p className="text-white/75 text-[15px] mb-6">
             {products.length > 0 ? `${products.length}+` : '100+'} Experiences · Skip the Line · Book Online
           </p>
-          {/* Search bar */}
-          <div className="relative max-w-[520px]">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          {/* Search bar + Autocomplete */}
+          <div ref={searchRef} className="relative max-w-[520px]">
+            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] z-10" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             <input
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
+              onFocus={() => setShowSuggestions(true)}
+              onKeyDown={e => { if (e.key === 'Escape') setShowSuggestions(false); }}
               placeholder={`Search experiences in ${cityInfo.name}...`}
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
+              className="w-full pl-12 pr-10 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
             />
+            {/* Clear button */}
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[#E5E7EB] text-[#64748B] hover:bg-[#CBD5E1] text-[14px] leading-none"
+              >×</button>
+            )}
+            {/* Autocomplete dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-[#E5E7EB] overflow-hidden z-50">
+                {suggestions.map((title, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={e => e.preventDefault()} // blur 방지
+                    onClick={() => { setSearchQuery(title); setShowSuggestions(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F1F5F9] transition-colors border-b border-[#F1F5F9] last:border-0"
+                  >
+                    <svg className="text-[#94A3B8] flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <span className="text-[14px] text-[#0F172A] line-clamp-1">{title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
