@@ -369,21 +369,37 @@ export default function CityAttractionsPage() {
   const [loading, setLoading] = useState(true);
   const [displayCount, setDisplayCount] = useState(24);
   const [sort, setSort] = useState<SortKey>('popular');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');   // 실제 필터에 적용되는 값
+  const [inputValue, setInputValue] = useState('');     // 입력창 표시값 (즉시 반영)
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
   const [showMoreModal, setShowMoreModal] = useState(false);
 
-  // 자동완성 후보 (2글자 이상, 최대 7개)
+  // 자동완성 후보 (inputValue 기준, 2글자 이상, 최대 7개)
   const suggestions = useMemo(() => {
-    if (!searchQuery || searchQuery.length < 2) return [];
-    const q = searchQuery.toLowerCase();
+    if (!inputValue || inputValue.length < 2) return [];
+    const q = inputValue.toLowerCase();
     return products
       .filter(p => p.title.toLowerCase().includes(q))
       .slice(0, 7)
       .map(p => p.title);
-  }, [searchQuery, products]);
+  }, [inputValue, products]);
+
+  // 검색 실행 (버튼 클릭 or Enter)
+  function handleSearch() {
+    setSearchQuery(inputValue);
+    setShowSuggestions(false);
+    setDisplayCount(24);
+  }
+
+  // 초기화
+  function handleClear() {
+    setInputValue('');
+    setSearchQuery('');
+    setShowSuggestions(false);
+    setDisplayCount(24);
+  }
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
@@ -500,33 +516,46 @@ export default function CityAttractionsPage() {
             {products.length > 0 ? `${products.length}+` : '100+'} Experiences · Skip the Line · Book Online
           </p>
           {/* Search bar + Autocomplete */}
-          <div ref={searchRef} className="relative max-w-[520px]">
-            <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] z-10" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setShowSuggestions(true); }}
-              onFocus={() => setShowSuggestions(true)}
-              onKeyDown={e => { if (e.key === 'Escape') setShowSuggestions(false); }}
-              placeholder={`Search experiences in ${cityInfo.name}...`}
-              className="w-full pl-12 pr-10 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
-            />
-            {/* Clear button */}
-            {searchQuery && (
+          <div ref={searchRef} className="relative max-w-[560px]">
+            <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#2B7FFF]">
+              <svg className="ml-4 flex-shrink-0 text-[#94A3B8]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input
+                value={inputValue}
+                onChange={e => { setInputValue(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSearch();
+                  if (e.key === 'Escape') setShowSuggestions(false);
+                }}
+                placeholder={`Search experiences in ${cityInfo.name}...`}
+                className="flex-1 px-3 py-3.5 text-[#0F172A] text-[15px] outline-none placeholder:text-[#94A3B8] bg-transparent"
+              />
+              {/* Clear */}
+              {inputValue && (
+                <button
+                  onClick={handleClear}
+                  className="flex-shrink-0 w-6 h-6 mr-2 flex items-center justify-center rounded-full bg-[#E5E7EB] text-[#64748B] hover:bg-[#CBD5E1] text-[14px] leading-none"
+                >×</button>
+              )}
+              {/* Search button */}
               <button
-                onClick={() => { setSearchQuery(''); setShowSuggestions(false); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-[#E5E7EB] text-[#64748B] hover:bg-[#CBD5E1] text-[14px] leading-none"
-              >×</button>
-            )}
+                onClick={handleSearch}
+                className="flex-shrink-0 m-1.5 px-5 py-2.5 rounded-lg bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors whitespace-nowrap"
+              >
+                Search
+              </button>
+            </div>
+
             {/* Autocomplete dropdown */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-[#E5E7EB] overflow-hidden z-50">
                 {suggestions.map((title, i) => (
                   <button
                     key={i}
-                    onMouseDown={e => e.preventDefault()} // blur 방지
-                    onClick={() => { setSearchQuery(title); setShowSuggestions(false); }}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => { setInputValue(title); setSearchQuery(title); setShowSuggestions(false); setDisplayCount(24); }}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F1F5F9] transition-colors border-b border-[#F1F5F9] last:border-0"
                   >
                     <svg className="text-[#94A3B8] flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -708,7 +737,7 @@ export default function CityAttractionsPage() {
           <div className="text-center py-20">
             <p className="text-[#94A3B8] text-[18px] mb-3">No experiences found</p>
             <button
-              onClick={() => { setActiveCategory(''); setSearchQuery(''); }}
+              onClick={() => { setActiveCategory(''); handleClear(); }}
               className="text-[#2B7FFF] text-[14px] hover:underline"
             >
               Clear filters
