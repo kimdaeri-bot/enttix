@@ -135,7 +135,7 @@ function EventCard({ event }: { event: TmEvent }) {
 /* ══════════════════════════════════════════════════════ */
 export default function MusicClient() {
   const [activeGenre,     setActiveGenre]     = useState('');
-  const [activeCountry,   setActiveCountry]   = useState('GB');
+  const [activeCountry,   setActiveCountry]   = useState('');
   const [searchQuery,     setSearchQuery]     = useState('');
   const [inputValue,      setInputValue]      = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
