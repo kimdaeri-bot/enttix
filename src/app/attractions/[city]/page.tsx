@@ -603,6 +603,8 @@ export default function CityAttractionsPage() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
   const [showMoreModal, setShowMoreModal] = useState(false);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [catHovered, setCatHovered] = useState(false);
 
   // 자동완성 후보 (inputValue 기준, 2글자 이상, 최대 7개)
   const suggestions = useMemo(() => {
@@ -866,26 +868,49 @@ export default function CityAttractionsPage() {
           <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">
             Browse by category
           </h2>
-          <div className="flex flex-wrap gap-2">
-            {[{ id: '', label: 'All', icon: '✨' }, ...(CITY_CATEGORIES[citySlug] || [])].map(cat => (
-              <button
-                key={cat.id || 'all'}
-                onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
-                  activeCategory === cat.id
-                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
-                }`}
-              >
-                <span className="text-[16px]">{cat.icon}</span>
-                {cat.label}
-              </button>
-            ))}
+          <div
+            className="relative"
+            onMouseEnter={() => setCatHovered(true)}
+            onMouseLeave={() => setCatHovered(false)}
+          >
+            {/* Left arrow */}
             <button
-              onClick={() => setShowMoreModal(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
+              onClick={() => categoryScrollRef.current?.scrollBy({ left: -280, behavior: 'smooth' })}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${catHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+              tabIndex={-1} aria-label="Scroll left"
             >
-              More categories ↓
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            {/* Scrollable row */}
+            <div ref={categoryScrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
+              {[{ id: '', label: 'All', icon: '✨' }, ...(CITY_CATEGORIES[citySlug] || [])].map(cat => (
+                <button
+                  key={cat.id || 'all'}
+                  onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}
+                  className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                    activeCategory === cat.id
+                      ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                      : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                  }`}
+                >
+                  <span className="text-[16px]">{cat.icon}</span>
+                  {cat.label}
+                </button>
+              ))}
+              <button
+                onClick={() => setShowMoreModal(true)}
+                className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
+              >
+                More categories ↓
+              </button>
+            </div>
+            {/* Right arrow */}
+            <button
+              onClick={() => categoryScrollRef.current?.scrollBy({ left: 280, behavior: 'smooth' })}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${catHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+              tabIndex={-1} aria-label="Scroll right"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           </div>
         </div>
