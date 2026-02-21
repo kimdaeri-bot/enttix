@@ -552,6 +552,23 @@ export default function CityAttractionsPage() {
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header hideSearch />
 
+      {/* ─── 로딩 진행바 ──────────────────────────────────── */}
+      {loading && (
+        <div className="fixed top-0 left-0 right-0 z-[200] h-[3px] bg-[#E0E7EF] overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-[#2B7FFF] via-[#7C3AED] to-[#2B7FFF] bg-[length:200%_100%]"
+            style={{ animation: 'loadingBar 1.4s ease-in-out infinite' }}
+          />
+          <style>{`
+            @keyframes loadingBar {
+              0%   { background-position: 200% 0; width: 30%; }
+              50%  { background-position: 0% 0;   width: 80%; }
+              100% { background-position: -200% 0; width: 100%; }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* ─── 1. HERO ──────────────────────────────────────── */}
       <section className="relative h-[400px] flex flex-col justify-end pb-10">
         <Image src={heroUrl} alt={cityInfo.name} fill className="object-cover" unoptimized priority />
@@ -745,8 +762,16 @@ export default function CityAttractionsPage() {
       {/* ─── 5. MAIN GRID ──────────────────────────────────── */}
       <main className="max-w-[1280px] mx-auto px-4 py-8">
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={i} />)}
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-5 h-5 rounded-full border-[2.5px] border-[#2B7FFF] border-t-transparent animate-spin" />
+              <p className="text-[14px] font-semibold text-[#64748B]">
+                Loading experiences in {cityInfo.name}…
+              </p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {Array.from({ length: 12 }).map((_, i) => <CardSkeleton key={i} />)}
+            </div>
           </div>
         ) : sorted.length > 0 ? (
           <>
