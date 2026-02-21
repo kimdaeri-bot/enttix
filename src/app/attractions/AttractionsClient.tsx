@@ -18,33 +18,33 @@ function cityNameToSlug(name: string): string {
    Tiqets city IDs (from tiqets.com/en/city-cXX/ URL pattern)
 ───────────────────────────────────────── */
 const CITIES = [
-  { id: '',   name: 'All Cities',   flag: '🌍', slug: '',          queryFallback: '' },
-  { id: '24', name: 'London',       flag: '🇬🇧', slug: 'london',    queryFallback: '' },
-  { id: '30', name: 'Paris',        flag: '🇫🇷', slug: 'paris',     queryFallback: '' },
-  { id: '38', name: 'Barcelona',    flag: '🇪🇸', slug: 'barcelona', queryFallback: '' },
-  { id: '12', name: 'Rome',         flag: '🇮🇹', slug: 'rome',      queryFallback: 'Rome' },
-  { id: '53', name: 'Amsterdam',    flag: '🇳🇱', slug: 'amsterdam', queryFallback: 'Amsterdam' },
-  { id: '39', name: 'New York',     flag: '🇺🇸', slug: 'new-york',  queryFallback: 'New York' },
-  { id: '86', name: 'Dubai',        flag: '🇦🇪', slug: 'dubai',     queryFallback: 'Dubai' },
-  { id: '77', name: 'Tokyo',        flag: '🇯🇵', slug: 'tokyo',     queryFallback: 'Tokyo' },
-  { id: '78', name: 'Singapore',    flag: '🇸🇬', slug: 'singapore', queryFallback: 'Singapore' },
-  { id: '71', name: 'Hong Kong',    flag: '🇭🇰', slug: 'hong-kong', queryFallback: 'Hong Kong' },
-  { id: '72', name: 'Istanbul',     flag: '🇹🇷', slug: 'istanbul',  queryFallback: 'Istanbul' },
+  { id: '',       name: 'All Cities', flag: '🌍', slug: ''          },
+  { id: '67458',  name: 'London',     flag: '🇬🇧', slug: 'london'    },
+  { id: '66746',  name: 'Paris',      flag: '🇫🇷', slug: 'paris'     },
+  { id: '66342',  name: 'Barcelona',  flag: '🇪🇸', slug: 'barcelona' },
+  { id: '71631',  name: 'Rome',       flag: '🇮🇹', slug: 'rome'      },
+  { id: '75061',  name: 'Amsterdam',  flag: '🇳🇱', slug: 'amsterdam' },
+  { id: '260932', name: 'New York',   flag: '🇺🇸', slug: 'new-york'  },
+  { id: '60005',  name: 'Dubai',      flag: '🇦🇪', slug: 'dubai'     },
+  { id: '72181',  name: 'Tokyo',      flag: '🇯🇵', slug: 'tokyo'     },
+  { id: '78125',  name: 'Singapore',  flag: '🇸🇬', slug: 'singapore' },
+  { id: '34',     name: 'Hong Kong',  flag: '🇭🇰', slug: 'hong-kong' },
+  { id: '79079',  name: 'Istanbul',   flag: '🇹🇷', slug: 'istanbul'  },
 ];
 
 /* City 배경 이미지 (Unsplash) */
 const CITY_IMG: Record<string, string> = {
-  '24': 'photo-1513635269975-59663e0ac1ad',
-  '30': 'photo-1502602898657-3e91760cbb34',
-  '38': 'photo-1583422409516-2895a77efded',
-  '12': 'photo-1552832230-c0197dd311b5',
-  '53': 'photo-1534351590666-13e3e96b5017',
-  '39': 'photo-1496442226666-8d4d0e62e6e9',
-  '86': 'photo-1512453979798-5ea266f8880c',
-  '77': 'photo-1540959733332-eab4deabeeaf',
-  '78': 'photo-1525625293386-3f8f99389edd',
-  '71': 'photo-1617788138017-80ad40651399',
-  '72': 'photo-1541432901042-2d8bd64b4a9b',
+  '67458':  'photo-1513635269975-59663e0ac1ad', // London
+  '66746':  'photo-1502602898657-3e91760cbb34', // Paris
+  '66342':  'photo-1583422409516-2895a77efded', // Barcelona
+  '71631':  'photo-1552832230-c0197dd311b5',    // Rome
+  '75061':  'photo-1534351590666-13e3e96b5017', // Amsterdam
+  '260932': 'photo-1496442226666-8d4d0e62e6e9', // New York
+  '60005':  'photo-1512453979798-5ea266f8880c', // Dubai
+  '72181':  'photo-1540959733332-eab4deabeeaf', // Tokyo
+  '78125':  'photo-1525625293386-3f8f99389edd', // Singapore
+  '34':     'photo-1617788138017-80ad40651399', // Hong Kong
+  '79079':  'photo-1541432901042-2d8bd64b4a9b', // Istanbul
 };
 
 /* 서브 카테고리 */
@@ -189,7 +189,7 @@ function ProductCard({ product, cityId, citySlug }: {
    메인 클라이언트 컴포넌트
 ───────────────────────────────────────── */
 export default function AttractionsClient() {
-  const [activeCity, setActiveCity] = useState('24');
+  const [activeCity, setActiveCity] = useState('67458');
   const [activeCategory, setActiveCategory] = useState('');
   const [products, setProducts] = useState<TiqetsProduct[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -202,21 +202,12 @@ export default function AttractionsClient() {
     setLoading(true);
     setError('');
     try {
-      const cityObj = CITIES.find(c => c.id === cityId);
-      const fallbackQuery = cityObj?.queryFallback || '';
-
       const params = new URLSearchParams({
         page_size: String(PAGE_SIZE),
         page: String(page),
       });
-
-      // city_id 필터 우선, fallbackQuery 있으면 city 이름을 query로
-      if (cityId && !fallbackQuery) {
-        params.set('city_id', cityId);
-      }
-      // category + fallback 조합
-      const queryParts = [fallbackQuery, category].filter(Boolean);
-      if (queryParts.length > 0) params.set('query', queryParts.join(' '));
+      if (cityId) params.set('city_id', cityId);
+      if (category) params.set('query', category);
 
       const res = await fetch(`/api/tiqets/products?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
