@@ -22,18 +22,67 @@ const musicItems = [
   'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
 ];
 
-const attractionItems = [
-  'London', 'Paris', 'Rome', 'Barcelona',
-  'Amsterdam', 'Prague', 'Vienna', 'Madrid',
-  'Florence', 'Venice', 'Milan', 'Lisbon',
-  'Berlin', 'Munich', 'Budapest', 'Krakow',
-  'Athens', 'Istanbul', 'Brussels', 'Bruges',
-  'Edinburgh', 'Dublin',
-  'Dubai', 'Cairo', 'Cape Town',
-  'Singapore', 'Bangkok', 'Bali',
-  'Tokyo', 'Osaka', 'Kyoto', 'Seoul',
-  'New York', 'Sydney', 'Mexico City',
-  'All Destinations',
+/* ── Attractions — 지역별 도시 (상품 수 인기순) ── */
+const ATTRACTION_REGIONS = [
+  {
+    id: 'europe',
+    label: '🌍 Europe',
+    cities: [
+      { name: 'London',     slug: 'london',      flag: '🇬🇧' },
+      { name: 'Paris',      slug: 'paris',        flag: '🇫🇷' },
+      { name: 'Rome',       slug: 'rome',         flag: '🇮🇹' },
+      { name: 'Barcelona',  slug: 'barcelona',    flag: '🇪🇸' },
+      { name: 'Amsterdam',  slug: 'amsterdam',    flag: '🇳🇱' },
+      { name: 'Florence',   slug: 'florence',     flag: '🇮🇹' },
+      { name: 'Venice',     slug: 'venice',       flag: '🇮🇹' },
+      { name: 'Vienna',     slug: 'vienna',       flag: '🇦🇹' },
+      { name: 'Prague',     slug: 'prague',       flag: '🇨🇿' },
+      { name: 'Madrid',     slug: 'madrid',       flag: '🇪🇸' },
+      { name: 'Berlin',     slug: 'berlin',       flag: '🇩🇪' },
+      { name: 'Athens',     slug: 'athens',       flag: '🇬🇷' },
+      { name: 'Lisbon',     slug: 'lisbon',       flag: '🇵🇹' },
+      { name: 'Budapest',   slug: 'budapest',     flag: '🇭🇺' },
+      { name: 'Milan',      slug: 'milan',        flag: '🇮🇹' },
+      { name: 'Brussels',   slug: 'brussels',     flag: '🇧🇪' },
+      { name: 'Edinburgh',  slug: 'edinburgh',    flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+      { name: 'Dublin',     slug: 'dublin',       flag: '🇮🇪' },
+      { name: 'Munich',     slug: 'munich',       flag: '🇩🇪' },
+      { name: 'Krakow',     slug: 'krakow',       flag: '🇵🇱' },
+      { name: 'Bruges',     slug: 'bruges',       flag: '🇧🇪' },
+    ],
+  },
+  {
+    id: 'emea',
+    label: '🕌 Middle East & Africa',
+    cities: [
+      { name: 'Dubai',      slug: 'dubai',        flag: '🇦🇪' },
+      { name: 'Istanbul',   slug: 'istanbul',     flag: '🇹🇷' },
+      { name: 'Cairo',      slug: 'cairo',        flag: '🇪🇬' },
+      { name: 'Cape Town',  slug: 'cape-town',    flag: '🇿🇦' },
+    ],
+  },
+  {
+    id: 'americas',
+    label: '🗽 North & South America',
+    cities: [
+      { name: 'New York',     slug: 'new-york',     flag: '🇺🇸' },
+      { name: 'Mexico City',  slug: 'mexico-city',  flag: '🇲🇽' },
+    ],
+  },
+  {
+    id: 'apac',
+    label: '🌏 Asia-Pacific',
+    cities: [
+      { name: 'Singapore',  slug: 'singapore',    flag: '🇸🇬' },
+      { name: 'Bangkok',    slug: 'bangkok',      flag: '🇹🇭' },
+      { name: 'Bali',       slug: 'bali',         flag: '🇮🇩' },
+      { name: 'Tokyo',      slug: 'tokyo',        flag: '🇯🇵' },
+      { name: 'Sydney',     slug: 'sydney',       flag: '🇦🇺' },
+      { name: 'Osaka',      slug: 'osaka',        flag: '🇯🇵' },
+      { name: 'Kyoto',      slug: 'kyoto',        flag: '🇯🇵' },
+      { name: 'Seoul',      slug: 'seoul',        flag: '🇰🇷' },
+    ],
+  },
 ];
 
 const popularDropdownItems = [
@@ -98,6 +147,46 @@ function DropdownMenu({ items, basePath, onClose }: { items: string[]; basePath:
           {item}
         </Link>
       ))}
+    </div>
+  );
+}
+
+function AttractionsDropdown({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-[14px] shadow-2xl border border-[#E5E7EB] py-3 w-[560px] z-50 max-h-[80vh] overflow-y-auto">
+      {ATTRACTION_REGIONS.map((region, ri) => (
+        <div key={region.id}>
+          {ri > 0 && <div className="mx-4 my-1.5 border-t border-[#F1F5F9]" />}
+          {/* Region header */}
+          <p className="px-4 pt-1 pb-1.5 text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+            {region.label}
+          </p>
+          {/* City grid */}
+          <div className="grid grid-cols-3 px-1">
+            {region.cities.map(city => (
+              <Link
+                key={city.slug}
+                href={`/attractions/${city.slug}`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
+                onClick={onClose}
+              >
+                <span className="text-[14px] leading-none flex-shrink-0">{city.flag}</span>
+                <span className="truncate">{city.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+      {/* All Destinations */}
+      <div className="mx-4 mt-2 pt-2 border-t border-[#E5E7EB]">
+        <Link
+          href="/attractions"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold text-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors"
+          onClick={onClose}
+        >
+          🌍 All Destinations →
+        </Link>
+      </div>
     </div>
   );
 }
@@ -195,31 +284,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
               Attractions
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
-            {openDropdown === 'attractions' && (
-              <div className="absolute top-full left-0 mt-1 bg-white rounded-[12px] shadow-xl border border-[#E5E7EB] py-2 min-w-[360px] z-50">
-                <div className="grid grid-cols-3 gap-0">
-                  {attractionItems.filter(i => i !== 'All Destinations').map(item => (
-                    <Link
-                      key={item}
-                      href={`/attractions/${toSlug(item)}`}
-                      className="px-4 py-2 text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
-                      onClick={() => setOpenDropdown(null)}
-                    >
-                      {item}
-                    </Link>
-                  ))}
-                </div>
-                <div className="border-t border-[#E5E7EB] mt-1 pt-1">
-                  <Link
-                    href="/attractions"
-                    className="flex items-center gap-2 px-4 py-2.5 text-[13px] font-semibold text-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors"
-                    onClick={() => setOpenDropdown(null)}
-                  >
-                    🌍 All Destinations →
-                  </Link>
-                </div>
-              </div>
-            )}
+            {openDropdown === 'attractions' && <AttractionsDropdown onClose={() => setOpenDropdown(null)} />}
           </div>
 
           <Link href="/entertainment" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
@@ -328,10 +393,9 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
           {/* ── 카테고리 (접기/펼치기) ── */}
           <div className="mt-2 px-2">
             {[
-              { key: 'sports',      label: '🏆 Sports',      items: sportsItems,     basePath: '/sport' },
-              { key: 'shows',       label: '🎭 Shows',       items: showsItems,      basePath: '/musical' },
-              { key: 'music',       label: '🎵 Music',       items: musicItems,      basePath: '/concert' },
-              { key: 'attractions', label: '🗺️ Attractions', items: attractionItems, basePath: '/attractions' },
+              { key: 'sports', label: '🏆 Sports', items: sportsItems, basePath: '/sport' },
+              { key: 'shows',  label: '🎭 Shows',  items: showsItems,  basePath: '/musical' },
+              { key: 'music',  label: '🎵 Music',  items: musicItems,  basePath: '/concert' },
             ].map(({ key, label, items, basePath }) => (
               <div key={key} className="border-b border-white/8">
                 <button
@@ -348,7 +412,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
                 </button>
                 {mobileExpanded === key && (
                   <div className="pb-2 grid grid-cols-2 gap-0">
-                    {items.filter(item => item !== 'All Destinations').map(item => (
+                    {items.map(item => (
                       <Link
                         key={item}
                         href={`${basePath}/${toSlug(item)}`}
@@ -358,15 +422,57 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
                         {item}
                       </Link>
                     ))}
-                    {key === 'attractions' && (
-                      <Link href="/attractions" className="col-span-2 px-5 py-2 text-[13px] font-semibold text-[#60A5FA]" onClick={() => setMobileOpen(false)}>
-                        🌍 All Destinations →
-                      </Link>
-                    )}
                   </div>
                 )}
               </div>
             ))}
+
+            {/* Attractions — 지역별 */}
+            <div className="border-b border-white/8">
+              <button
+                onClick={() => toggleSection('attractions')}
+                className="w-full flex items-center justify-between px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]"
+              >
+                <span>🗺️ Attractions</span>
+                <svg
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  className={`transition-transform duration-200 text-[#64748B] ${mobileExpanded === 'attractions' ? 'rotate-180' : ''}`}
+                >
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              {mobileExpanded === 'attractions' && (
+                <div className="pb-3">
+                  {ATTRACTION_REGIONS.map(region => (
+                    <div key={region.id} className="mb-2">
+                      <p className="px-5 pt-2 pb-1 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
+                        {region.label}
+                      </p>
+                      <div className="grid grid-cols-2 gap-0">
+                        {region.cities.map(city => (
+                          <Link
+                            key={city.slug}
+                            href={`/attractions/${city.slug}`}
+                            className="flex items-center gap-1.5 px-5 py-1.5 text-[13px] text-[#93C5FD] hover:text-white"
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <span className="text-[12px]">{city.flag}</span>
+                            {city.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  <Link
+                    href="/attractions"
+                    className="flex items-center gap-2 px-5 py-2 mt-1 text-[13px] font-semibold text-[#60A5FA]"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    🌍 All Destinations →
+                  </Link>
+                </div>
+              )}
+            </div>
 
             {/* 기타 링크 */}
             <Link href="/popular" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🔥 Popular</Link>
