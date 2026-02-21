@@ -10,23 +10,41 @@ interface TmEvent {
 }
 interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
 
-
 const COUNTRIES = [
-  { code: '',   name: 'All',           flag: '🌏', count: 76601 },
-  { code: 'US', name: 'United States', flag: '🇺🇸', count: 45000 },
-  { code: 'GB', name: 'United Kingdom',flag: '🇬🇧', count: 12000 },
-  { code: 'CA', name: 'Canada',        flag: '🇨🇦', count: 5000  },
-  { code: 'AU', name: 'Australia',     flag: '🇦🇺', count: 3500  },
-  { code: 'DE', name: 'Germany',       flag: '🇩🇪', count: 1500  },
-  { code: 'FR', name: 'France',        flag: '🇫🇷', count: 800   },
-  { code: 'NL', name: 'Netherlands',   flag: '🇳🇱', count: 700   },
-  { code: 'ES', name: 'Spain',         flag: '🇪🇸', count: 600   },
-  { code: 'IE', name: 'Ireland',       flag: '🇮🇪', count: 500   },
-  { code: 'BE', name: 'Belgium',       flag: '🇧🇪', count: 400   },
-  { code: 'SE', name: 'Sweden',        flag: '🇸🇪', count: 300   },
-  { code: 'NO', name: 'Norway',        flag: '🇳🇴', count: 200   },
-  { code: 'DK', name: 'Denmark',       flag: '🇩🇰', count: 180   },
+  { code: '',   name: 'All',            flag: '🌏', count: 77000 },
+  { code: 'US', name: 'United States',  flag: '🇺🇸', count: 45000 },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', count: 12000 },
+  { code: 'CA', name: 'Canada',         flag: '🇨🇦', count: 5000  },
+  { code: 'AU', name: 'Australia',      flag: '🇦🇺', count: 4000  },
+  { code: 'DE', name: 'Germany',        flag: '🇩🇪', count: 2000  },
+  { code: 'FR', name: 'France',         flag: '🇫🇷', count: 800   },
+  { code: 'NL', name: 'Netherlands',    flag: '🇳🇱', count: 700   },
+  { code: 'ES', name: 'Spain',          flag: '🇪🇸', count: 600   },
+  { code: 'IE', name: 'Ireland',        flag: '🇮🇪', count: 500   },
+  { code: 'BE', name: 'Belgium',        flag: '🇧🇪', count: 400   },
+  { code: 'SE', name: 'Sweden',         flag: '🇸🇪', count: 300   },
+  { code: 'NO', name: 'Norway',         flag: '🇳🇴', count: 200   },
+  { code: 'DK', name: 'Denmark',        flag: '🇩🇰', count: 180   },
 ];
+
+const MUSIC_GENRES_MAIN = [
+  { key: '',           label: 'All Music',   icon: '🎵' },
+  { key: 'rock',       label: 'Rock',        icon: '🎸' },
+  { key: 'pop',        label: 'Pop',         icon: '🎤' },
+  { key: 'country',    label: 'Country',     icon: '🤠' },
+  { key: 'alternative',label: 'Alternative', icon: '🎶' },
+  { key: 'hiphop',     label: 'Hip-Hop/Rap', icon: '🎧' },
+  { key: 'metal',      label: 'Metal',       icon: '🤘' },
+];
+const MUSIC_GENRES_MORE = [
+  { key: 'folk',        label: 'Folk',        icon: '🪕' },
+  { key: 'jazz',        label: 'Jazz',        icon: '🎷' },
+  { key: 'classical',   label: 'Classical',   icon: '🎻' },
+  { key: 'soul',        label: 'R&B / Soul',  icon: '🎼' },
+  { key: 'electronic',  label: 'Electronic',  icon: '🎛️' },
+  { key: 'latin',       label: 'Latin',       icon: '💃' },
+];
+const ALL_GENRES = [...MUSIC_GENRES_MAIN, ...MUSIC_GENRES_MORE];
 
 function formatDate(d: string) {
   if (!d) return 'TBA';
@@ -77,16 +95,19 @@ function EventCard({ event }: { event: TmEvent }) {
 }
 
 export default function MusicClient() {
+  const [activeGenre,   setActiveGenre]   = useState('');
   const [activeCountry, setActiveCountry] = useState('GB');
+  const [showMoreGenres, setShowMoreGenres] = useState(false);
   const [events,        setEvents]        = useState<TmEvent[]>([]);
   const [pageInfo,      setPageInfo]      = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading,       setLoading]       = useState(true);
   const [currentPage,   setCurrentPage]   = useState(0);
 
-  const fetchEvents = useCallback(async (country: string, page: number) => {
+  const fetchEvents = useCallback(async (genre: string, country: string, page: number) => {
     setLoading(true);
     try {
       const p = new URLSearchParams({ tab: 'music', page: String(page), size: '20' });
+      if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       const res = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
@@ -95,49 +116,95 @@ export default function MusicClient() {
     } catch { setEvents([]); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { setCurrentPage(0); fetchEvents(activeCountry, 0); }, [activeCountry, fetchEvents]);
-
-  const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  useEffect(() => { setCurrentPage(0); fetchEvents(activeGenre, activeCountry, 0); }, [activeGenre, activeCountry, fetchEvents]);
+  const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeGenre, activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
+  const displayedGenres = showMoreGenres ? ALL_GENRES : MUSIC_GENRES_MAIN;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero */}
       <div className="bg-[#0F172A]">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-0">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-8">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[12px] font-bold text-[#2B7FFF] tracking-[1.5px]">TICKETMASTER</span>
             <span className="text-[12px] text-[#475569]">·</span>
             <span className="text-[12px] text-[#475569]">Live Concerts</span>
           </div>
           <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">🎵 Music</h1>
-          <p className="text-[14px] text-[#94A3B8] mb-6">30개국 · 76K+ 이벤트 — 실시간 Ticketmaster 데이터</p>
+          <p className="text-[14px] text-[#94A3B8]">30개국 · 77K+ 이벤트 — 실시간 Ticketmaster 데이터</p>
         </div>
       </div>
 
-      {/* Country filter */}
-      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+      {/* ── Browse by country ──────────────────────────── */}
+      <section className="bg-white py-6 border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
+          <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">Browse by country</h2>
+          <div className="flex flex-wrap gap-2">
             {COUNTRIES.map(c => (
-              <button key={c.code} onClick={() => { setActiveCountry(c.code); setCurrentPage(0); }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${activeCountry === c.code ? 'bg-[#2B7FFF] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'}`}>
-                <span>{c.flag}</span><span>{c.name}</span>
-                <span className={`text-[10px] ${activeCountry === c.code ? 'text-white/80' : 'text-[#9CA3AF]'}`}>{formatCount(c.count)}</span>
+              <button
+                key={c.code}
+                onClick={() => { setActiveCountry(c.code); setCurrentPage(0); }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                  activeCountry === c.code
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                }`}
+              >
+                <span className="text-[16px]">{c.flag}</span>
+                <span>{c.name}</span>
+                <span className={`text-[11px] font-medium ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
+                  {formatCount(c.count)}
+                </span>
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-
+      {/* ── Browse by genre ────────────────────────────── */}
+      <section className="bg-white py-6 border-b border-[#E5E7EB]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">Browse by genre</h2>
+          <div className="flex flex-wrap gap-2">
+            {displayedGenres.map(g => (
+              <button
+                key={g.key}
+                onClick={() => { setActiveGenre(g.key); setCurrentPage(0); }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                  activeGenre === g.key
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                }`}
+              >
+                <span className="text-[16px]">{g.icon}</span>
+                {g.label}
+              </button>
+            ))}
+            {!showMoreGenres && (
+              <button
+                onClick={() => setShowMoreGenres(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
+              >
+                More genres ↓
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Content */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
         <div className="flex items-center justify-between mb-6">
           <div className="text-[13px] text-[#6B7280]">
             {!loading && pageInfo.totalElements > 0 && (
-              <><span className="font-semibold text-[#171717]">{countryObj.flag} {countryObj.name}</span>{' · '}총{' '}<span className="font-semibold text-[#171717]">{pageInfo.totalElements.toLocaleString()}</span>개 이벤트{' · '}페이지{' '}<span className="font-semibold text-[#171717]">{pageInfo.number + 1}</span> / {pageInfo.totalPages.toLocaleString()}</>
+              <>
+                <span className="font-semibold text-[#171717]">{countryObj.flag} {countryObj.name}</span>
+                {' · '}총{' '}
+                <span className="font-semibold text-[#171717]">{pageInfo.totalElements.toLocaleString()}</span>개 이벤트
+                {' · '}페이지{' '}
+                <span className="font-semibold text-[#171717]">{pageInfo.number + 1}</span> / {pageInfo.totalPages.toLocaleString()}
+              </>
             )}
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
@@ -149,12 +216,17 @@ export default function MusicClient() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {Array.from({ length: 20 }).map((_, i) => (
               <div key={i} className="bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] animate-pulse">
-                <div className="aspect-[16/9] bg-[#E5E7EB]" /><div className="p-4 space-y-2"><div className="h-4 bg-[#E5E7EB] rounded w-3/4" /><div className="h-3 bg-[#E5E7EB] rounded w-1/2" /></div>
+                <div className="aspect-[16/9] bg-[#E5E7EB]" />
+                <div className="p-4 space-y-2"><div className="h-4 bg-[#E5E7EB] rounded w-3/4" /><div className="h-3 bg-[#E5E7EB] rounded w-1/2" /></div>
               </div>
             ))}
           </div>
         ) : events.length === 0 ? (
-          <div className="text-center py-20"><p className="text-5xl mb-4">🎵</p><p className="text-[#374151] font-semibold">이벤트가 없습니다</p><p className="text-[#94A3B8] text-[13px] mt-1">다른 국가나 장르를 선택해보세요</p></div>
+          <div className="text-center py-20">
+            <p className="text-5xl mb-4">🎵</p>
+            <p className="text-[#374151] font-semibold">이벤트가 없습니다</p>
+            <p className="text-[#94A3B8] text-[13px] mt-1">다른 국가나 장르를 선택해보세요</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {events.map(e => <EventCard key={e.id} event={e} />)}
