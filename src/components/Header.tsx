@@ -40,6 +40,7 @@ const popularDropdownItems = [
   { key: 'mlb',            label: 'MLB',                   flag: '⚾' },
   { key: 'nba',            label: 'NBA',                   flag: '🏀' },
   { key: 'nfl',            label: 'NFL',                   flag: '🏈' },
+  { key: 'formula1',       label: 'Formula 1',             flag: '🏎️' },
   { key: 'london-musical', label: 'London Musical',        flag: '🎭' },
   { key: 'broadway',       label: 'Broadway Musical',      flag: '🗽' },
 ];

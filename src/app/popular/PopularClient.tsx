@@ -62,6 +62,7 @@ const CAT_IMG: Record<string, string> = {
   'mlb':            'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400&h=200&fit=crop',
   'nba':            'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=200&fit=crop',
   'nfl':            'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&h=200&fit=crop',
+  'formula1':       'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=400&h=200&fit=crop',
   'london-musical': 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=400&h=200&fit=crop',
   'broadway':       'https://images.unsplash.com/photo-1490157175177-71e8789e0f44?w=400&h=200&fit=crop',
 };
@@ -78,6 +79,7 @@ const CATEGORIES: Category[] = [
   { key: 'mlb',            label: 'MLB',                  flag: '⚾',           source: 'ticketmaster', league: 'mlb',           viewAllHref: '/sport/baseball',   sport: '⚾' },
   { key: 'nba',            label: 'NBA',                  flag: '🏀',           source: 'tixstock',     fetchKey: 'Basketball',  competition: 'NBA',               viewAllHref: '/sport/basketball', sport: '🏀' },
   { key: 'nfl',            label: 'NFL',                  flag: '🏈',           source: 'ticketmaster', league: 'nfl',           viewAllHref: '/sport/american-football', sport: '🏈' },
+  { key: 'formula1',       label: 'Formula 1',            flag: '🏎️',           source: 'tixstock',     fetchKey: 'Formula 1',   competition: 'Formula 1',               viewAllHref: '/sport/formula-1', sport: '🏎️' },
   { key: 'london-musical', label: 'London Musical',       flag: '🎭',           source: 'ltd',           viewAllHref: '/shows' },
   { key: 'broadway',       label: 'Broadway Musical',     flag: '🗽',           source: 'tbd',           viewAllHref: '/shows' },
 ];
@@ -185,11 +187,10 @@ function SkeletonCard() {
 
 // ── Popular Section ───────────────────────────────────────────────
 function PopularSection({
-  cat, txFootball, txBasketball, tmData, ltdShows, loading,
+  cat, txData, tmData, ltdShows, loading,
 }: {
   cat: Category;
-  txFootball: TxEvent[];
-  txBasketball: TxEvent[];
+  txData: Record<string, TxEvent[]>;
   tmData: Record<string, TmEvent[]>;
   ltdShows: LtdEvent[];
   loading: boolean;
@@ -201,8 +202,8 @@ function PopularSection({
   let tmEvents: TmEvent[] = [];
   let ltdEvents: LtdEvent[] = [];
 
-  if (cat.source === 'tixstock') {
-    const pool = cat.fetchKey === 'Football' ? txFootball : txBasketball;
+  if (cat.source === 'tixstock' && cat.fetchKey) {
+    const pool = txData[cat.fetchKey] || [];
     if (cat.competition && pool.length > 0) {
       const kw = cat.competition.toLowerCase();
       const filtered = pool.filter(e =>
@@ -283,23 +284,26 @@ function PopularSection({
 
 // ── Main component ────────────────────────────────────────────────
 export default function PopularClient() {
-  const [txFootball,   setTxFootball]   = useState<TxEvent[]>([]);
-  const [txBasketball, setTxBasketball] = useState<TxEvent[]>([]);
-  const [tmData,       setTmData]       = useState<Record<string, TmEvent[]>>({});
-  const [ltdShows,     setLtdShows]     = useState<LtdEvent[]>([]);
-  const [loading,      setLoading]      = useState(true);
+  const [txData,   setTxData]   = useState<Record<string, TxEvent[]>>({});
+  const [tmData,   setTmData]   = useState<Record<string, TmEvent[]>>({});
+  const [ltdShows, setLtdShows] = useState<LtdEvent[]>([]);
+  const [loading,  setLoading]  = useState(true);
 
   useEffect(() => {
     Promise.allSettled([
       fetch('/api/tixstock/feed?category_name=Football&size=50').then(r => r.json()),
       fetch('/api/tixstock/feed?category_name=Basketball&size=20').then(r => r.json()),
+      fetch('/api/tixstock/feed?category_name=Formula+1&size=20').then(r => r.json()),
       fetch('/api/ticketmaster/events?tab=sports&countryCode=US&league=mls&size=8').then(r => r.json()),
       fetch('/api/ticketmaster/events?tab=sports&countryCode=US&league=mlb&size=8').then(r => r.json()),
       fetch('/api/ticketmaster/events?tab=sports&countryCode=US&league=nfl&size=8').then(r => r.json()),
       fetch('/api/ltd/events').then(r => r.json()),
-    ]).then(([football, basketball, mls, mlb, nfl, ltd]) => {
-      if (football.status   === 'fulfilled') setTxFootball(football.value?.data   || []);
-      if (basketball.status === 'fulfilled') setTxBasketball(basketball.value?.data || []);
+    ]).then(([football, basketball, formula1, mls, mlb, nfl, ltd]) => {
+      const tx: Record<string, TxEvent[]> = {};
+      if (football.status  === 'fulfilled') tx['Football']   = football.value?.data  || [];
+      if (basketball.status === 'fulfilled') tx['Basketball'] = basketball.value?.data || [];
+      if (formula1.status  === 'fulfilled') tx['Formula 1']  = formula1.value?.data  || [];
+      setTxData(tx);
 
       const tm: Record<string, TmEvent[]> = {};
       if (mls.status === 'fulfilled') tm.mls = mls.value?.events || [];
@@ -337,8 +341,7 @@ export default function PopularClient() {
           <PopularSection
             key={cat.key}
             cat={cat}
-            txFootball={txFootball}
-            txBasketball={txBasketball}
+            txData={txData}
             tmData={tmData}
             ltdShows={ltdShows}
             loading={loading}
