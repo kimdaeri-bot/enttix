@@ -140,7 +140,17 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved, dbError: dbError || undefined, dbDebug });
+    // INSERT 후 즉시 SELECT count 검증
+    let verifyCount = -1;
+    try {
+      const vRes = await fetch(`${SUPABASE_URL}/rest/v1/music_images?select=event_id&limit=1`, {
+        headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY, 'Prefer': 'count=exact' },
+      });
+      const range = vRes.headers.get('content-range') || '';
+      verifyCount = parseInt(range.split('/')[1] || '-1');
+    } catch { /* ignore */ }
+
+    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved, dbError: dbError || undefined, dbDebug, verifyCount, supabaseUrl: SUPABASE_URL?.slice(0,40) });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
