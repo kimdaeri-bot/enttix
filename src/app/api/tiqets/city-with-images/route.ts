@@ -46,8 +46,9 @@ async function fetchAllProducts(city_id: string): Promise<TiqetsProductWithImage
   const allProducts: TiqetsProductWithImages[] = [];
   let page = 1;
   const page_size = 50;
+  let total = Infinity;
 
-  while (allProducts.length < 100) {
+  while (allProducts.length < total) {
     const params = new URLSearchParams({
       currency: 'USD',
       lang: 'en',
@@ -58,6 +59,8 @@ async function fetchAllProducts(city_id: string): Promise<TiqetsProductWithImage
     const res = await fetch(`${BASE_URL}/products?${params}`, { headers: TIQETS_HEADERS });
     if (!res.ok) break;
     const data = await res.json();
+    // 첫 페이지에서 실제 총 상품 수 확인
+    if (page === 1) total = data.pagination?.total ?? Infinity;
     const products: TiqetsProductWithImages[] = data.products || [];
     if (products.length === 0) break;
     allProducts.push(...products);
