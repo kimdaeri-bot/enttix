@@ -23,15 +23,38 @@ function upgradeImgixUrl(url: string): string {
   return url;
 }
 
+function extractTiqetsCdn(html: string): string | null {
+  const m = html.match(/https:\/\/aws-tiqets-cdn\.imgix\.net\/images\/content\/([a-f0-9]+\.[a-z]+)/i);
+  if (m) {
+    return `https://aws-tiqets-cdn.imgix.net/images/content/${m[1]}?w=800&h=600&fit=crop&auto=format,compress&q=80`;
+  }
+  return null;
+}
+
 async function scrapeImage(productUrl: string): Promise<string | null> {
+  const productIdMatch = productUrl.match(/-p(\d+)\/?/);
+  const productId = productIdMatch?.[1] || null;
+
   const res = await fetch(productUrl, {
-    headers: { 'User-Agent': BROWSER_UA },
+    headers: {
+      'User-Agent': BROWSER_UA,
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    },
+    redirect: 'follow',
     signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) return null;
+  // 리다이렉트로 다른 페이지로 이동한 경우 무시
+  if (productId && !res.url.includes(productId)) return null;
+
   const html = await res.text();
 
-  // 1. Try JSON-LD Product → image
+  // 1. Tiqets CDN imgix 직접 추출 (Tiqets 페이지는 OG/JSON-LD 없음)
+  const cdnImg = extractTiqetsCdn(html);
+  if (cdnImg) return cdnImg;
+
+  // 2. Try JSON-LD Product → image
   const ldMatches = html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
   for (const match of ldMatches) {
     try {
@@ -53,7 +76,7 @@ async function scrapeImage(productUrl: string): Promise<string | null> {
     }
   }
 
-  // 2. OG image fallback
+  // 3. OG image fallback
   const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
   if (ogMatch?.[1]) {
