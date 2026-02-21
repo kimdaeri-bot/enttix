@@ -857,9 +857,12 @@ export default function CityAttractionsPage() {
               {/* Search button */}
               <button
                 onClick={handleSearch}
-                className="flex-shrink-0 m-1.5 px-4 py-2.5 rounded-lg bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[13px] sm:text-[14px] sm:px-5 font-semibold transition-colors whitespace-nowrap"
+                className="flex-shrink-0 m-1 sm:m-1.5 px-3 sm:px-5 py-2.5 rounded-lg bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold transition-colors"
               >
-                Search
+                <svg className="sm:hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <span className="hidden sm:inline text-[14px]">Search</span>
               </button>
             </div>
 
