@@ -276,7 +276,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
   return (
     <>
-    <header className={`w-full px-4 md:px-10 py-0 relative z-50 ${transparent ? '' : 'bg-[#0F172A]'}`}>
+    <header className={`w-full px-4 md:px-10 py-0 relative z-[120] ${transparent ? '' : 'bg-[#0F172A]'}`}>
       <div className="max-w-[1280px] mx-auto flex items-center justify-between h-[80px]">
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <div className="text-white font-extrabold text-[24px] italic tracking-[-1px]">enttix</div>
