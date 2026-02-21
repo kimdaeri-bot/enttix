@@ -73,6 +73,38 @@ const MUSIC_GENRES = [
   { key: 'latin',       label: 'Latin',       icon: '💃', count: 800   },
 ];
 
+const DATE_PRESETS = [
+  { key: 'all',     label: 'All Dates',     icon: '🗓️' },
+  { key: 'today',   label: 'Today',         icon: '📅' },
+  { key: 'week',    label: 'This Week',     icon: '📆' },
+  { key: 'month',   label: 'This Month',    icon: '🗓' },
+  { key: '3months', label: 'Next 3 Months', icon: '🔜' },
+];
+
+function getEndDateTime(preset: string): string {
+  if (preset === 'all') return '';
+  const now = new Date();
+  if (preset === 'today') {
+    const e = new Date(now); e.setHours(23, 59, 59, 0);
+    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  }
+  if (preset === 'week') {
+    const e = new Date(now);
+    const daysLeft = e.getDay() === 0 ? 7 : 7 - e.getDay();
+    e.setDate(e.getDate() + daysLeft); e.setHours(23, 59, 59, 0);
+    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  }
+  if (preset === 'month') {
+    const e = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 0);
+    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  }
+  if (preset === '3months') {
+    const e = new Date(now); e.setMonth(e.getMonth() + 3); e.setHours(23, 59, 59, 0);
+    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
+  }
+  return '';
+}
+
 function formatDate(d: string) {
   if (!d) return 'TBA';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -177,15 +209,16 @@ function EventCard({ event }: { event: TmEvent }) {
 
 /* ══════════════════════════════════════════════════════ */
 export default function MusicClient() {
-  const [activeGenre,     setActiveGenre]     = useState('');
-  const [activeCountry,   setActiveCountry]   = useState('');
-  const [searchQuery,     setSearchQuery]     = useState('');
-  const [inputValue,      setInputValue]      = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [events,          setEvents]          = useState<TmEvent[]>([]);
-  const [pageInfo,        setPageInfo]        = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
-  const [loading,         setLoading]         = useState(true);
-  const [currentPage,     setCurrentPage]     = useState(0);
+  const [activeGenre,      setActiveGenre]      = useState('');
+  const [activeCountry,    setActiveCountry]    = useState('');
+  const [activeDatePreset, setActiveDatePreset] = useState('all');
+  const [searchQuery,      setSearchQuery]      = useState('');
+  const [inputValue,       setInputValue]       = useState('');
+  const [showSuggestions,  setShowSuggestions]  = useState(false);
+  const [events,           setEvents]           = useState<TmEvent[]>([]);
+  const [pageInfo,         setPageInfo]         = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
+  const [loading,          setLoading]          = useState(true);
+  const [currentPage,      setCurrentPage]      = useState(0);
 
   const searchRef  = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -208,14 +241,16 @@ export default function MusicClient() {
 
   /* API 호출 — 완료 시 scroll 여부 결정 */
   const fetchEvents = useCallback(async (
-    genre: string, country: string, keyword: string, page: number, shouldScroll = false
+    genre: string, country: string, keyword: string, page: number, shouldScroll = false, datePreset = 'all'
   ) => {
     setLoading(true);
     try {
-      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '30' }); // 필터 여유분 포함, 최종 24개 표시
+      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '50' }); // 여유분 충분히 확보 → dedup 후에도 24개 보장
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       if (keyword) p.set('keyword', keyword);
+      const endDt = getEndDateTime(datePreset);
+      if (endDt) p.set('endDateTime', endDt);
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -253,8 +288,8 @@ export default function MusicClient() {
   /* 초기 및 필터 변경 시 로드 (스크롤 없음) */
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false);
-  }, [activeGenre, activeCountry, fetchEvents]);
+    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false, activeDatePreset);
+  }, [activeGenre, activeCountry, activeDatePreset, fetchEvents]);
   // searchQuery 변경은 handleSearch/handleSelectSuggestion에서 직접 호출
 
   /* 검색 실행 */
@@ -262,26 +297,26 @@ export default function MusicClient() {
     setSearchQuery(keyword);
     setShowSuggestions(false);
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, keyword, 0, true); // shouldScroll = true
+    fetchEvents(activeGenre, activeCountry, keyword, 0, true, activeDatePreset);
   }
 
   function handleSearch() { execSearch(inputValue); }
 
   function handleSelectSuggestion(title: string) {
     setInputValue(title);
-    execSearch(title); // 자동완성 클릭 시 즉시 검색 + 스크롤
+    execSearch(title);
   }
 
   function handleClear() {
     setInputValue('');
     setSearchQuery('');
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, '', 0, false);
+    fetchEvents(activeGenre, activeCountry, '', 0, false, activeDatePreset);
   }
 
   const handlePage = (p: number) => {
     setCurrentPage(p);
-    fetchEvents(activeGenre, activeCountry, searchQuery, p, false);
+    fetchEvents(activeGenre, activeCountry, searchQuery, p, false, activeDatePreset);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -394,6 +429,25 @@ export default function MusicClient() {
               </button>
             ))}
           </ScrollRow>
+        </div>
+      </div>
+
+      {/* ── Date filter ── */}
+      <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-2.5 flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider flex-shrink-0 mr-1">Date</span>
+          {DATE_PRESETS.map(d => (
+            <button key={d.key}
+              onClick={() => { setActiveDatePreset(d.key); setCurrentPage(0); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${
+                activeDatePreset === d.key
+                  ? 'bg-[#2B7FFF] text-white border-[#2B7FFF] shadow-sm'
+                  : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#2B7FFF]/40 hover:bg-[#EFF6FF] hover:text-[#2B7FFF]'
+              }`}>
+              <span>{d.icon}</span>
+              <span>{d.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 

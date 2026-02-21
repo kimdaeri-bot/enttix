@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
   const size  = searchParams.get('size')   || '20';
   const countryCode = searchParams.get('countryCode') || '';
   const keyword     = searchParams.get('keyword')     || '';
+  const endDateTime = searchParams.get('endDateTime') || '';  // 날짜 프리셋 필터
 
   const classificationName = TAB_MAP[tab] || 'Arts & Theatre';
 
@@ -76,6 +77,7 @@ export async function GET(req: NextRequest) {
 
   if (countryCode) params.set('countryCode', countryCode);
   if (keyword)     params.set('keyword', keyword);
+  if (endDateTime) params.set('endDateTime', endDateTime);  // 날짜 범위 상한
 
   // 필터 우선순위: league(sports) > genre(music/arts) > classificationName
   if (tab === 'sports' && league && LEAGUE_SUBGENRE[league]) {
