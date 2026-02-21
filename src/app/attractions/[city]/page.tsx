@@ -603,6 +603,8 @@ export default function CityAttractionsPage() {
   const resultsRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
   const [showMoreModal, setShowMoreModal] = useState(false);
+  const top10ScrollRef = useRef<HTMLDivElement>(null);
+  const [top10Hovered, setTop10Hovered] = useState(false);
 
   // 자동완성 후보 (inputValue 기준, 2글자 이상, 최대 7개)
   const suggestions = useMemo(() => {
@@ -845,16 +847,36 @@ export default function CityAttractionsPage() {
             <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
               Top 10 things to do in {cityInfo.name}
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-none">
-              {top10.map((p, i) => (
-                <Top10Card
-                  key={p.id}
-                  product={p}
-                  index={i}
-                  citySlug={citySlug}
-                  fallbackPhoto={cityInfo.photo}
-                />
-              ))}
+            <div
+              className="relative"
+              onMouseEnter={() => setTop10Hovered(true)}
+              onMouseLeave={() => setTop10Hovered(false)}
+            >
+              <button
+                onClick={() => top10ScrollRef.current?.scrollBy({ left: -320, behavior: 'smooth' })}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-[#E5E7EB] shadow-lg flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${top10Hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                tabIndex={-1} aria-label="Scroll left"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div ref={top10ScrollRef} className="flex gap-4 overflow-x-auto pb-3 scrollbar-none">
+                {top10.map((p, i) => (
+                  <Top10Card
+                    key={p.id}
+                    product={p}
+                    index={i}
+                    citySlug={citySlug}
+                    fallbackPhoto={cityInfo.photo}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => top10ScrollRef.current?.scrollBy({ left: 320, behavior: 'smooth' })}
+                className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-[#E5E7EB] shadow-lg flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${top10Hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                tabIndex={-1} aria-label="Scroll right"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             </div>
           </div>
         </section>
