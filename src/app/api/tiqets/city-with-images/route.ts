@@ -52,8 +52,8 @@ async function getDbImages(city_id: string): Promise<Map<number, string>> {
       },
     );
     if (!res.ok) return new Map();
-    const rows: Array<{ product_id: number; image_url: string }> = await res.json();
-    return new Map(rows.map(r => [r.product_id, r.image_url]));
+    const rows: Array<{ product_id: number | string; image_url: string }> = await res.json();
+    return new Map(rows.map(r => [Number(r.product_id), r.image_url]));
   } catch { return new Map(); }
 }
 
@@ -99,15 +99,18 @@ export async function GET(req: NextRequest) {
     } catch { break; }
   }
 
-  // 3. 뮤지컬 제외 + DB 이미지 병합
+  // 3. 뮤지컬 제외 + DB 이미지 병합 (p.id는 string, DB Map은 number → Number() 변환)
   const enriched = allProducts
     .filter(p => !isMusical(p))
-    .map(p => ({
-      ...p,
-      images: dbImages.has(p.id)
-        ? [dbImages.get(p.id)!]
-        : (p.images && p.images.length > 0 ? p.images : []),
-    }));
+    .map(p => {
+      const numId = Number(p.id);
+      return {
+        ...p,
+        images: dbImages.has(numId)
+          ? [dbImages.get(numId)!]
+          : (p.images && p.images.length > 0 ? p.images : []),
+      };
+    });
 
   return NextResponse.json({
     products: enriched,
