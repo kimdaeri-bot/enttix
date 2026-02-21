@@ -110,9 +110,14 @@ export async function GET(req: NextRequest) {
       const country = (venue.country as Record<string, string>)?.name || '';
 
       const images = (e.images as Array<Record<string, unknown>>) || [];
-      // 가장 넓은 이미지 선택
-      const bestImage = images.sort((a, b) => ((b.width as number) || 0) - ((a.width as number) || 0))[0];
-      const imageUrl = (bestImage?.url as string) || '';
+      // 가장 넓은 이미지 선택 (16:9 비율 우선)
+      const ratio169 = images.filter(img => (img.ratio as string) === '16_9');
+      const pool = ratio169.length > 0 ? ratio169 : images;
+      const bestImage = [...pool].sort((a, b) => ((b.width as number) || 0) - ((a.width as number) || 0))[0];
+      // 이벤트 이미지 없으면 venue 이미지 폴백
+      const venueImages = (venue.images as Array<Record<string, unknown>>) || [];
+      const venueImg = venueImages[0]?.url as string || '';
+      const imageUrl = (bestImage?.url as string) || venueImg;
 
       const priceRanges = (e.priceRanges as Array<Record<string, unknown>>) || [];
       const minPrice = (priceRanges[0]?.min as number) || null;
