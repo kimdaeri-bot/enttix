@@ -544,37 +544,10 @@ export default function CityAttractionsPage() {
         </div>
       </section>
 
-      {/* ─── 4. FILTER BAR (sticky) ────────────────────────── */}
-      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+      {/* ─── 4. SORT BAR ───────────────────────────────────── */}
+      <div className="bg-white border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4">
-          {/* Category chips */}
-          <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-none">
-            {MAIN_CATEGORIES.map(cat => (
-              <button
-                key={cat.id || 'all'}
-                onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all whitespace-nowrap ${
-                  activeCategory === cat.id
-                    ? 'bg-[#0F172A] text-white'
-                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
-                }`}
-              >
-                <span>{cat.icon}</span>
-                {cat.label}
-              </button>
-            ))}
-            {/* More categories */}
-            <button
-              onClick={() => setShowMoreModal(true)}
-              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white whitespace-nowrap"
-            >
-              More categories
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-          </div>
-
-          {/* Sort row */}
-          <div className="flex items-center justify-between py-2 border-t border-[#F1F5F9]">
+          <div className="flex items-center justify-between py-3">
             <div>
               <h2 className="text-[16px] font-extrabold text-[#0F172A] inline mr-3">
                 All experiences in {cityInfo.name}
