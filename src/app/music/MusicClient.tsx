@@ -73,36 +73,157 @@ const MUSIC_GENRES = [
   { key: 'latin',       label: 'Latin',       icon: '💃', count: 800   },
 ];
 
-const DATE_PRESETS = [
-  { key: 'all',     label: 'All Dates',     icon: '🗓️' },
-  { key: 'today',   label: 'Today',         icon: '📅' },
-  { key: 'week',    label: 'This Week',     icon: '📆' },
-  { key: 'month',   label: 'This Month',    icon: '🗓' },
-  { key: '3months', label: 'Next 3 Months', icon: '🔜' },
-];
+/* ── 달력 피커 ── */
+const CAL_WEEKDAYS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const CAL_MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
 
-function getEndDateTime(preset: string): string {
-  if (preset === 'all') return '';
+function CalendarPicker({
+  startDate, endDate, onApply, onClear,
+}: {
+  startDate: string | null; endDate: string | null;
+  onApply: (start: string, end: string | null) => void;
+  onClear: () => void;
+}) {
+  const [open,      setOpen]      = useState(false);
+  const [tempStart, setTempStart] = useState<string | null>(startDate);
+  const [tempEnd,   setTempEnd]   = useState<string | null>(endDate);
+  const [hover,     setHover]     = useState<string | null>(null);
   const now = new Date();
-  if (preset === 'today') {
-    const e = new Date(now); e.setHours(23, 59, 59, 0);
-    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
-  }
-  if (preset === 'week') {
-    const e = new Date(now);
-    const daysLeft = e.getDay() === 0 ? 7 : 7 - e.getDay();
-    e.setDate(e.getDate() + daysLeft); e.setHours(23, 59, 59, 0);
-    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
-  }
-  if (preset === 'month') {
-    const e = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 0);
-    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
-  }
-  if (preset === '3months') {
-    const e = new Date(now); e.setMonth(e.getMonth() + 3); e.setHours(23, 59, 59, 0);
-    return e.toISOString().replace(/\.\d{3}Z$/, 'Z');
-  }
-  return '';
+  const [calYear,  setCalYear]  = useState(now.getFullYear());
+  const [calMonth, setCalMonth] = useState(now.getMonth());
+  const ref = useRef<HTMLDivElement>(null);
+  const today = now.toISOString().slice(0, 10);
+
+  useEffect(() => {
+    const fn = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
+  }, []);
+
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const firstDay    = new Date(calYear, calMonth, 1).getDay();
+
+  const handleDay = (d: string) => {
+    if (!tempStart || (tempStart && tempEnd)) {
+      setTempStart(d); setTempEnd(null);
+    } else {
+      if (d === tempStart) { setTempEnd(null); }
+      else if (d < tempStart) { setTempEnd(tempStart); setTempStart(d); }
+      else { setTempEnd(d); }
+    }
+  };
+
+  const isInRange = (d: string) => {
+    const hi = tempEnd || hover;
+    if (!tempStart || !hi) return false;
+    const [lo, h] = tempStart <= hi ? [tempStart, hi] : [hi, tempStart];
+    return d > lo && d < h;
+  };
+
+  const prevM = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y-1); } else setCalMonth(m => m-1); };
+  const nextM = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y+1); } else setCalMonth(m => m+1); };
+
+  const handleApply = () => { if (tempStart) { onApply(tempStart, tempEnd); setOpen(false); } };
+  const handleClear = () => { setTempStart(null); setTempEnd(null); onClear(); setOpen(false); };
+
+  const btnLabel = startDate && endDate
+    ? `${startDate.slice(5).replace('-','/')} – ${endDate.slice(5).replace('-','/')}`
+    : startDate ? startDate.slice(5).replace('-','/')
+    : '🗓️  Date';
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold border transition-all ${
+          startDate
+            ? 'bg-[#2B7FFF] text-white border-[#2B7FFF] shadow-sm'
+            : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#2B7FFF]/40 hover:bg-[#EFF6FF] hover:text-[#2B7FFF]'
+        }`}
+      >
+        {btnLabel}
+        {startDate && (
+          <span
+            onMouseDown={e => { e.stopPropagation(); handleClear(); }}
+            className="ml-0.5 font-bold text-[15px] leading-none opacity-70 hover:opacity-100"
+          >×</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 mt-2 z-50 bg-white rounded-2xl shadow-2xl border border-[#E5E7EB] p-4 w-[272px]">
+          {/* Month nav */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevM} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#F1F5F9]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span className="text-[14px] font-bold text-[#0F172A]">{CAL_MONTHS[calMonth]} {calYear}</span>
+            <button onClick={nextM} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#F1F5F9]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 mb-1">
+            {CAL_WEEKDAYS.map(d => (
+              <div key={d} className="text-center text-[10px] font-semibold text-[#94A3B8] py-1">{d}</div>
+            ))}
+          </div>
+          {/* Day grid */}
+          <div className="grid grid-cols-7">
+            {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const d = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+              const isPast   = d < today;
+              const isS      = d === tempStart;
+              const isE      = d === tempEnd;
+              const inRange  = isInRange(d);
+              const isHov    = !tempEnd && hover === d && !isPast;
+              return (
+                <button
+                  key={d}
+                  onClick={() => !isPast && handleDay(d)}
+                  onMouseEnter={() => { if (!isPast && tempStart && !tempEnd) setHover(d); }}
+                  onMouseLeave={() => setHover(null)}
+                  disabled={isPast}
+                  className={[
+                    'h-9 text-[12px] font-medium transition-colors rounded-lg',
+                    isPast   ? 'text-[#CBD5E1] cursor-default' : '',
+                    isS || isE ? 'bg-[#2B7FFF] text-white' : '',
+                    inRange  ? 'bg-[#DBEAFE] text-[#1D4ED8] rounded-none' : '',
+                    isHov    ? 'bg-[#EFF6FF] text-[#2B7FFF]' : '',
+                    (!isPast && !isS && !isE && !inRange && !isHov) ? 'hover:bg-[#F1F5F9] text-[#0F172A]' : '',
+                  ].join(' ')}
+                >
+                  {day}
+                </button>
+              );
+            })}
+          </div>
+          {/* Footer */}
+          <div className="mt-3 pt-3 border-t border-[#F1F5F9]">
+            <p className="text-[11px] text-[#94A3B8] mb-2 text-center">
+              {!tempStart ? 'Select start date'
+                : !tempEnd ? `${tempStart}  ·  select end date (optional)`
+                : `${tempStart}  →  ${tempEnd}`}
+            </p>
+            <div className="flex gap-2">
+              <button onClick={handleClear} className="flex-1 py-2 rounded-xl border border-[#E5E7EB] text-[12px] text-[#64748B] hover:bg-[#F1F5F9] transition-colors font-semibold">
+                Clear
+              </button>
+              <button onClick={handleApply} disabled={!tempStart}
+                className="flex-1 py-2 rounded-xl bg-[#2B7FFF] text-white text-[12px] font-bold hover:bg-[#1D6AE5] disabled:opacity-40 transition-colors">
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function formatDate(d: string) {
@@ -209,9 +330,10 @@ function EventCard({ event }: { event: TmEvent }) {
 
 /* ══════════════════════════════════════════════════════ */
 export default function MusicClient() {
-  const [activeGenre,      setActiveGenre]      = useState('');
-  const [activeCountry,    setActiveCountry]    = useState('');
-  const [activeDatePreset, setActiveDatePreset] = useState('all');
+  const [activeGenre,   setActiveGenre]   = useState('');
+  const [activeCountry, setActiveCountry] = useState('');
+  const [calStartDate,  setCalStartDate]  = useState<string | null>(null);
+  const [calEndDate,    setCalEndDate]    = useState<string | null>(null);
   const [searchQuery,      setSearchQuery]      = useState('');
   const [inputValue,       setInputValue]       = useState('');
   const [showSuggestions,  setShowSuggestions]  = useState(false);
@@ -241,16 +363,22 @@ export default function MusicClient() {
 
   /* API 호출 — 완료 시 scroll 여부 결정 */
   const fetchEvents = useCallback(async (
-    genre: string, country: string, keyword: string, page: number, shouldScroll = false, datePreset = 'all'
+    genre: string, country: string, keyword: string, page: number,
+    shouldScroll = false, dateStart: string | null = null, dateEnd: string | null = null
   ) => {
     setLoading(true);
     try {
-      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '50' }); // 여유분 충분히 확보 → dedup 후에도 24개 보장
+      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '50' });
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       if (keyword) p.set('keyword', keyword);
-      const endDt = getEndDateTime(datePreset);
-      if (endDt) p.set('endDateTime', endDt);
+      // 날짜 범위: startDate 선택 시 TM API startDateTime 오버라이드
+      if (dateStart) p.set('startDate', dateStart);
+      // endDate: 단일 날짜면 같은 날 끝, 범위면 endDate
+      if (dateStart) {
+        const endIso = `${dateEnd || dateStart}T23:59:59Z`;
+        p.set('endDateTime', endIso);
+      }
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
@@ -288,36 +416,44 @@ export default function MusicClient() {
   /* 초기 및 필터 변경 시 로드 (스크롤 없음) */
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false, activeDatePreset);
-  }, [activeGenre, activeCountry, activeDatePreset, fetchEvents]);
-  // searchQuery 변경은 handleSearch/handleSelectSuggestion에서 직접 호출
+    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false, calStartDate, calEndDate);
+  }, [activeGenre, activeCountry, calStartDate, calEndDate, fetchEvents]);
 
   /* 검색 실행 */
   function execSearch(keyword: string) {
     setSearchQuery(keyword);
     setShowSuggestions(false);
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, keyword, 0, true, activeDatePreset);
+    fetchEvents(activeGenre, activeCountry, keyword, 0, true, calStartDate, calEndDate);
   }
 
   function handleSearch() { execSearch(inputValue); }
-
-  function handleSelectSuggestion(title: string) {
-    setInputValue(title);
-    execSearch(title);
-  }
+  function handleSelectSuggestion(title: string) { setInputValue(title); execSearch(title); }
 
   function handleClear() {
     setInputValue('');
     setSearchQuery('');
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, '', 0, false, activeDatePreset);
+    fetchEvents(activeGenre, activeCountry, '', 0, false, calStartDate, calEndDate);
   }
 
   const handlePage = (p: number) => {
     setCurrentPage(p);
-    fetchEvents(activeGenre, activeCountry, searchQuery, p, false, activeDatePreset);
+    fetchEvents(activeGenre, activeCountry, searchQuery, p, false, calStartDate, calEndDate);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /* 달력 날짜 적용 */
+  const handleDateApply = (start: string, end: string | null) => {
+    setCalStartDate(start);
+    setCalEndDate(end);
+    setCurrentPage(0);
+    // useEffect가 calStartDate/calEndDate 변경을 감지해 자동 refetch
+  };
+  const handleDateClear = () => {
+    setCalStartDate(null);
+    setCalEndDate(null);
+    setCurrentPage(0);
   };
 
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
@@ -434,20 +570,21 @@ export default function MusicClient() {
 
       {/* ── Date filter ── */}
       <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-2.5 flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider flex-shrink-0 mr-1">Date</span>
-          {DATE_PRESETS.map(d => (
-            <button key={d.key}
-              onClick={() => { setActiveDatePreset(d.key); setCurrentPage(0); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${
-                activeDatePreset === d.key
-                  ? 'bg-[#2B7FFF] text-white border-[#2B7FFF] shadow-sm'
-                  : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#2B7FFF]/40 hover:bg-[#EFF6FF] hover:text-[#2B7FFF]'
-              }`}>
-              <span>{d.icon}</span>
-              <span>{d.label}</span>
-            </button>
-          ))}
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-2.5 flex items-center gap-3">
+          <span className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider flex-shrink-0">Date</span>
+          <CalendarPicker
+            startDate={calStartDate}
+            endDate={calEndDate}
+            onApply={handleDateApply}
+            onClear={handleDateClear}
+          />
+          {calStartDate && (
+            <span className="text-[12px] text-[#64748B]">
+              {calStartDate && calEndDate
+                ? `Events from ${calStartDate} to ${calEndDate}`
+                : `Events on ${calStartDate}`}
+            </span>
+          )}
         </div>
       </div>
 

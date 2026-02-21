@@ -59,12 +59,14 @@ export async function GET(req: NextRequest) {
   const size  = searchParams.get('size')   || '20';
   const countryCode = searchParams.get('countryCode') || '';
   const keyword     = searchParams.get('keyword')     || '';
-  const endDateTime = searchParams.get('endDateTime') || '';  // 날짜 프리셋 필터
+  const endDateTime = searchParams.get('endDateTime') || '';  // 날짜 범위 상한
+  const startDate   = searchParams.get('startDate')   || '';  // 달력 날짜 오버라이드 (YYYY-MM-DD)
 
   const classificationName = TAB_MAP[tab] || 'Arts & Theatre';
 
-  // 오늘 00:00:00 UTC 기준 — 과거 이벤트 자동 제외
-  const todayISO = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
+  // 오늘 00:00:00 UTC 기준 — 과거 이벤트 자동 제외 (달력 선택 시 해당 날짜로 오버라이드)
+  const todayISO    = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
+  const startDtISO  = startDate ? `${startDate}T00:00:00Z` : todayISO;
 
   const params = new URLSearchParams({
     apikey: API_KEY,
@@ -72,12 +74,12 @@ export async function GET(req: NextRequest) {
     page,
     sort: 'date,asc',
     locale: '*',
-    startDateTime: todayISO,  // 오늘 이후 이벤트만
+    startDateTime: startDtISO,
   });
 
   if (countryCode) params.set('countryCode', countryCode);
   if (keyword)     params.set('keyword', keyword);
-  if (endDateTime) params.set('endDateTime', endDateTime);  // 날짜 범위 상한
+  if (endDateTime) params.set('endDateTime', endDateTime);
 
   // 필터 우선순위: league(sports) > genre(music/arts) > classificationName
   if (tab === 'sports' && league && LEAGUE_SUBGENRE[league]) {
