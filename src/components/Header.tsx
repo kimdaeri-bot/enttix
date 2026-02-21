@@ -372,10 +372,13 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {openDropdown === 'shows' && <DropdownMenu items={showsItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
           </div>
 
-          {/* Music - no navigation */}
-          <span className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] cursor-default select-none">
+          {/* Music */}
+          <Link
+            href="/music"
+            className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
+          >
             Music
-          </span>
+          </Link>
 
           {/* Attractions dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('attractions')} onMouseLeave={handleLeave}>
@@ -548,7 +551,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
             {/* 기타 링크 */}
             <Link href="/popular" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🔥 Popular</Link>
-            <span className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8">🎵 Music</span>
+            <Link href="/music" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎵 Music</Link>
             <Link href="/entertainment" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎬 Entertainment</Link>
             <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
