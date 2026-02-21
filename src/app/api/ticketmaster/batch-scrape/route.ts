@@ -49,7 +49,7 @@ async function fetchTmEvents(genre: string, countryCode: string, page: number) {
     .filter((e: Record<string, unknown>) => {
       const url = e.url as string || '';
       const dateStr = ((e.dates as Record<string, unknown>)?.start as Record<string, string>)?.localDate || '';
-      return url.includes('ticketmaster.com') && (!dateStr || dateStr >= today2);
+      return url.includes('ticketmaster') && (!dateStr || dateStr >= today2);
     })
     .map((e: Record<string, unknown>) => {
       const images = (e.images as Array<Record<string, unknown>>) || [];
