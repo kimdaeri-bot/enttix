@@ -242,6 +242,56 @@ const CITY_IMG: Record<string, string> = {
   '72955':  'photo-1594322436404-5a0526db4d13', // Phnom Penh
 };
 
+/* ─── 국가별 도시 그룹 (인기 순) ──────────────────────────────────── */
+const COUNTRY_GROUPS = [
+  { code: 'US', name: 'USA',          flag: '🇺🇸', cityIds: ['260932','82073','1772','81810','79868','80816','80874','80162','79751'] },
+  { code: 'IT', name: 'Italy',        flag: '🇮🇹', cityIds: ['71631','71854','71510','71749','71720','71428','71506','71534','71986'] },
+  { code: 'ES', name: 'Spain',        flag: '🇪🇸', cityIds: ['66342','66254','65870'] },
+  { code: 'FR', name: 'France',       flag: '🇫🇷', cityIds: ['66746','66770','67101'] },
+  { code: 'GB', name: 'UK',           flag: '🇬🇧', cityIds: ['67458','21'] },
+  { code: 'AE', name: 'UAE',          flag: '🇦🇪', cityIds: ['60005','60013'] },
+  { code: 'NL', name: 'Netherlands',  flag: '🇳🇱', cityIds: ['75061'] },
+  { code: 'TR', name: 'Turkey',       flag: '🇹🇷', cityIds: ['79079'] },
+  { code: 'AU', name: 'Australia',    flag: '🇦🇺', cityIds: ['60400','60426','60466','60442'] },
+  { code: 'DE', name: 'Germany',      flag: '🇩🇪', cityIds: ['65144','31','64886','64765','65042'] },
+  { code: 'GR', name: 'Greece',       flag: '🇬🇷', cityIds: ['99239','264570'] },
+  { code: 'PT', name: 'Portugal',     flag: '🇵🇹', cityIds: ['76528','76573'] },
+  { code: 'TH', name: 'Thailand',     flag: '🇹🇭', cityIds: ['78586','78451','78479'] },
+  { code: 'CZ', name: 'Czech Rep.',   flag: '🇨🇿', cityIds: ['64162'] },
+  { code: 'AT', name: 'Austria',      flag: '🇦🇹', cityIds: ['60335','60346','60358'] },
+  { code: 'HU', name: 'Hungary',      flag: '🇭🇺', cityIds: ['68199'] },
+  { code: 'MX', name: 'Mexico',       flag: '🇲🇽', cityIds: ['74040','109113','73927'] },
+  { code: 'SG', name: 'Singapore',    flag: '🇸🇬', cityIds: ['78125'] },
+  { code: 'JP', name: 'Japan',        flag: '🇯🇵', cityIds: ['72181','28','72420'] },
+  { code: 'CA', name: 'Canada',       flag: '🇨🇦', cityIds: ['62496','62492','25'] },
+  { code: 'BE', name: 'Belgium',      flag: '🇧🇪', cityIds: ['60843','60844'] },
+  { code: 'EG', name: 'Egypt',        flag: '🇪🇬', cityIds: ['65792','44','65786'] },
+  { code: 'PL', name: 'Poland',       flag: '🇵🇱', cityIds: ['46','485'] },
+  { code: 'ID', name: 'Indonesia',    flag: '🇮🇩', cityIds: ['267738'] },
+  { code: 'IE', name: 'Ireland',      flag: '🇮🇪', cityIds: ['68616'] },
+  { code: 'VN', name: 'Vietnam',      flag: '🇻🇳', cityIds: ['272460','82689'] },
+  { code: 'KH', name: 'Cambodia',     flag: '🇰🇭', cityIds: ['72961','72955'] },
+  { code: 'MY', name: 'Malaysia',     flag: '🇲🇾', cityIds: ['74416'] },
+  { code: 'CH', name: 'Switzerland',  flag: '🇨🇭', cityIds: ['20','62662'] },
+  { code: 'IS', name: 'Iceland',      flag: '🇮🇸', cityIds: ['22'] },
+  { code: 'SE', name: 'Sweden',       flag: '🇸🇪', cityIds: ['1638'] },
+  { code: 'DK', name: 'Denmark',      flag: '🇩🇰', cityIds: ['113'] },
+  { code: 'FI', name: 'Finland',      flag: '🇫🇮', cityIds: ['66544'] },
+  { code: 'NO', name: 'Norway',       flag: '🇳🇴', cityIds: ['75084'] },
+  { code: 'EE', name: 'Estonia',      flag: '🇪🇪', cityIds: ['65702'] },
+  { code: 'LT', name: 'Lithuania',    flag: '🇱🇹', cityIds: ['73352'] },
+  { code: 'MT', name: 'Malta',        flag: '🇲🇹', cityIds: ['73787'] },
+  { code: 'MA', name: 'Morocco',      flag: '🇲🇦', cityIds: ['73471'] },
+  { code: 'QA', name: 'Qatar',        flag: '🇶🇦', cityIds: ['76635'] },
+  { code: 'ZA', name: 'South Africa', flag: '🇿🇦', cityIds: ['82923'] },
+  { code: 'AR', name: 'Argentina',    flag: '🇦🇷', cityIds: ['60189'] },
+  { code: 'BR', name: 'Brazil',       flag: '🇧🇷', cityIds: ['61535'] },
+  { code: 'PE', name: 'Peru',         flag: '🇵🇪', cityIds: ['75323'] },
+  { code: 'KR', name: 'South Korea',  flag: '🇰🇷', cityIds: ['73067'] },
+];
+
+
+
 /* 메인 카테고리 6개 (tag_id 기반) */
 const MAIN_CATEGORIES = [
   { id: '',     label: 'All',                  icon: '✨' },
@@ -408,6 +458,7 @@ function ProductCard({ product, cityId, citySlug }: {
    메인 클라이언트 컴포넌트
 ───────────────────────────────────────── */
 export default function AttractionsClient() {
+  const [activeCountry, setActiveCountry] = useState('GB');
   const [activeCity, setActiveCity] = useState('67458');
   const [activeCategory, setActiveCategory] = useState(''); // tag_id
   const [showMoreModal, setShowMoreModal] = useState(false);
@@ -457,6 +508,19 @@ export default function AttractionsClient() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const selectCountry = (code: string) => {
+    setActiveCountry(code);
+    if (code === '') {
+      setActiveCity('');
+    } else {
+      const group = COUNTRY_GROUPS.find(g => g.code === code);
+      if (group && group.cityIds.length > 0) {
+        setActiveCity(group.cityIds[0]);
+      }
+    }
+    setCurrentPage(1);
+  };
+
   const activeCityObj = CITIES.find(c => c.id === activeCity) || CITIES[0];
   const allCats = [...MAIN_CATEGORIES, ...ALL_CATEGORIES];
   const activeCatObj = allCats.find(c => c.id === activeCategory) || MAIN_CATEGORIES[0];
@@ -499,26 +563,77 @@ export default function AttractionsClient() {
         </div>
       </div>
 
-      {/* ── Sticky 도시 필터 바 ── */}
+      {/* ── Sticky 2단 필터 (국가 → 도시) ── */}
       <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+        {/* 1단: 국가 탭 */}
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
-            {CITIES.map(city => (
-              <button
-                key={city.id || 'all'}
-                onClick={() => { setActiveCity(city.id); setCurrentPage(1); }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
-                  activeCity === city.id
-                    ? 'bg-[#2B7FFF] text-white shadow-sm'
-                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
-                }`}
-              >
-                <span className="text-[14px]">{city.flag}</span>
-                <span>{city.name}</span>
-              </button>
-            ))}
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-2.5 items-center">
+            {/* All Destinations */}
+            <button
+              onClick={() => selectCountry('')}
+              className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${
+                activeCountry === ''
+                  ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                  : 'bg-[#F1F5F9] text-[#374151] border-transparent hover:bg-[#E2E8F0]'
+              }`}
+            >
+              <span className="text-[14px]">🌍</span>
+              <span>All</span>
+            </button>
+            {COUNTRY_GROUPS.map(country => {
+              const isActive = activeCountry === country.code;
+              return (
+                <button
+                  key={country.code}
+                  onClick={() => selectCountry(country.code)}
+                  className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all border ${
+                    isActive
+                      ? 'bg-[#2B7FFF] text-white border-[#2B7FFF] shadow-sm'
+                      : 'bg-[#F1F5F9] text-[#374151] border-transparent hover:bg-[#E2E8F0]'
+                  }`}
+                >
+                  <span className="text-[14px]">{country.flag}</span>
+                  <span>{country.name}</span>
+                  {country.cityIds.length > 1 && (
+                    <span className={`text-[10px] font-bold px-1 rounded-full ${isActive ? 'bg-white/25 text-white' : 'bg-[#E2E8F0] text-[#64748B]'}`}>
+                      {country.cityIds.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
+
+        {/* 2단: 선택된 국가의 도시 탭 (도시가 2개 이상인 경우) */}
+        {activeCountry !== '' && (() => {
+          const group = COUNTRY_GROUPS.find(g => g.code === activeCountry);
+          if (!group || group.cityIds.length <= 1) return null;
+          const countryCities = group.cityIds.map(id => CITIES.find(c => c.id === id)).filter(Boolean) as typeof CITIES;
+          return (
+            <div className="border-t border-[#F1F5F9] bg-[#FAFBFC]">
+              <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide py-2 items-center">
+                  <span className="flex-shrink-0 text-[10px] font-bold text-[#94A3B8] tracking-[1px] uppercase mr-1">City</span>
+                  {countryCities.map(city => city && (
+                    <button
+                      key={city.id}
+                      onClick={() => { setActiveCity(city.id); setCurrentPage(1); }}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full text-[12px] font-semibold transition-all ${
+                        activeCity === city.id
+                          ? 'bg-[#2B7FFF] text-white shadow-sm'
+                          : 'bg-white text-[#374151] border border-[#E5E7EB] hover:border-[#2B7FFF]/40 hover:text-[#2B7FFF]'
+                      }`}
+                    >
+                      <span className="text-[12px]">{city.flag}</span>
+                      <span>{city.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── 서브카테고리 필터 바 ── */}
