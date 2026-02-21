@@ -29,6 +29,50 @@ const attractionItems = [
   'All Destinations',
 ];
 
+const popularDropdownItems = [
+  { key: 'premier-league', label: 'Premier League',        flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+  { key: 'serie-a',        label: 'Italian Serie A',       flag: '🇮🇹' },
+  { key: 'la-liga',        label: 'Spanish La Liga',       flag: '🇪🇸' },
+  { key: 'bundesliga',     label: 'Bundesliga',            flag: '🇩🇪' },
+  { key: 'ucl',            label: 'Champions League',      flag: '🏆' },
+  { key: 'world-cup',      label: 'FIFA World Cup',        flag: '🌍' },
+  { key: 'mls',            label: 'MLS',                   flag: '🇺🇸' },
+  { key: 'mlb',            label: 'MLB',                   flag: '⚾' },
+  { key: 'nba',            label: 'NBA',                   flag: '🏀' },
+  { key: 'nfl',            label: 'NFL',                   flag: '🏈' },
+  { key: 'london-musical', label: 'London Musical',        flag: '🎭' },
+  { key: 'broadway',       label: 'Broadway Musical',      flag: '🗽' },
+];
+
+function PopularDropdown({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="absolute top-full left-0 mt-1 bg-white rounded-[12px] shadow-xl border border-[#E5E7EB] py-2 min-w-[280px] z-50">
+      <p className="px-4 py-1.5 text-[11px] text-[#9CA3AF] uppercase tracking-wider font-semibold">Popular Categories</p>
+      <div className="grid grid-cols-2">
+        {popularDropdownItems.map(item => (
+          <Link
+            key={item.key}
+            href={`/popular#${item.key}`}
+            className="flex items-center gap-2 px-4 py-2 text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
+            onClick={onClose}
+          >
+            <span>{item.flag}</span> {item.label}
+          </Link>
+        ))}
+      </div>
+      <div className="border-t border-[#E5E7EB] mt-1 pt-1">
+        <Link
+          href="/popular"
+          className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold text-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors"
+          onClick={onClose}
+        >
+          🔥 View All Popular →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function toSlug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
@@ -86,13 +130,17 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {/* Popular */}
-          <Link
-            href="/popular"
-            className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
-          >
-            🔥 Popular
-          </Link>
+          {/* Popular dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('popular')} onMouseLeave={handleLeave}>
+            <Link
+              href="/popular"
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            >
+              🔥 Popular
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
+            </Link>
+            {openDropdown === 'popular' && <PopularDropdown onClose={() => setOpenDropdown(null)} />}
+          </div>
 
           {/* Sports dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('sports')} onMouseLeave={handleLeave}>

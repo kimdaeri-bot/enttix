@@ -50,6 +50,22 @@ interface Category {
   sport?: string;
 }
 
+// ── Category images (Unsplash) ────────────────────────────────────
+const CAT_IMG: Record<string, string> = {
+  'premier-league': 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=200&fit=crop',
+  'serie-a':        'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=400&h=200&fit=crop',
+  'la-liga':        'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=400&h=200&fit=crop',
+  'bundesliga':     'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&h=200&fit=crop',
+  'ucl':            'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&h=200&fit=crop',
+  'world-cup':      'https://images.unsplash.com/photo-1540747913346-19212a4e6d27?w=400&h=200&fit=crop',
+  'mls':            'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=400&h=200&fit=crop',
+  'mlb':            'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=400&h=200&fit=crop',
+  'nba':            'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=200&fit=crop',
+  'nfl':            'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&h=200&fit=crop',
+  'london-musical': 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=400&h=200&fit=crop',
+  'broadway':       'https://images.unsplash.com/photo-1490157175177-71e8789e0f44?w=400&h=200&fit=crop',
+};
+
 // ── Category config (사장님 지정 순서) ────────────────────────────
 const CATEGORIES: Category[] = [
   { key: 'premier-league', label: 'Premier League',       flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', source: 'tixstock',     fetchKey: 'Football',    competition: 'Premier League',    viewAllHref: '/sport/football', sport: '⚽' },
@@ -75,17 +91,21 @@ function SourceBadge({ source }: { source: Source }) {
 }
 
 // ── Tixstock event card ───────────────────────────────────────────
-function TxCard({ event, sport }: { event: TxEvent; sport?: string }) {
-  const price = event.min_ticket_price || event.startingPrice;
-  const date  = event.datetime ? new Date(event.datetime) : null;
-  const venue = event.venue?.name || '';
-  const city  = event.venue?.city || '';
+function TxCard({ event, catKey }: { event: TxEvent; catKey: string }) {
+  const price  = event.min_ticket_price || event.startingPrice;
+  const date   = event.datetime ? new Date(event.datetime) : null;
+  const venue  = event.venue?.name || '';
+  const city   = event.venue?.city || '';
+  const bgImg  = CAT_IMG[catKey];
 
   return (
     <Link href={`/event/${event.id}`}
-      className="flex-none w-[190px] bg-[#1E293B] rounded-[12px] overflow-hidden hover:bg-[#263548] transition-colors group flex flex-col">
-      <div className="h-[100px] bg-gradient-to-br from-[#0F172A] to-[#1E3A5F] flex items-center justify-center relative">
-        <span className="text-[44px]">{sport || '⚽'}</span>
+      className="flex-none w-[190px] bg-[#1E293B] rounded-[12px] overflow-hidden hover:scale-[1.02] transition-transform group flex flex-col">
+      <div className="h-[110px] relative overflow-hidden">
+        {bgImg
+          ? <img src={bgImg} alt="" className="w-full h-full object-cover brightness-75 group-hover:brightness-90 transition-all" />
+          : <div className="w-full h-full bg-gradient-to-br from-[#0F172A] to-[#1E3A5F]" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         {price ? (
           <span className="absolute bottom-2 right-2 bg-[#2B7FFF] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
             from ${price}
@@ -204,18 +224,29 @@ function PopularSection({
   const isEmpty = !loading && total === 0;
   const isTbd = cat.source === 'tbd';
 
+  const sectionBg = CAT_IMG[cat.key];
+
   return (
-    <section className="mb-12">
-      {/* Section header */}
-      <div className="flex items-center justify-between mb-4 px-4 md:px-10 max-w-[1280px] mx-auto">
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{cat.flag}</span>
-          <h2 className="text-white text-[18px] md:text-[22px] font-bold">{cat.label}</h2>
-          <SourceBadge source={cat.source} />
+    <section id={cat.key} className="mb-12 scroll-mt-24">
+      {/* Section header with background image */}
+      <div className="relative mb-4 overflow-hidden">
+        {sectionBg && (
+          <div
+            className="absolute inset-0 bg-cover bg-center brightness-30"
+            style={{ backgroundImage: `url(${sectionBg})` }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A]/95 to-[#0F172A]/60" />
+        <div className="relative flex items-center justify-between px-4 md:px-10 max-w-[1280px] mx-auto py-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{cat.flag}</span>
+            <h2 className="text-white text-[20px] md:text-[24px] font-bold">{cat.label}</h2>
+            <SourceBadge source={cat.source} />
+          </div>
+          <Link href={cat.viewAllHref} className="text-[#60A5FA] text-[13px] font-semibold hover:text-white flex items-center gap-1 transition-colors">
+            View All <span>→</span>
+          </Link>
         </div>
-        <Link href={cat.viewAllHref} className="text-[#2B7FFF] text-[13px] font-semibold hover:underline flex items-center gap-1">
-          View All <span>→</span>
-        </Link>
       </div>
 
       {/* Horizontal scroll */}
@@ -234,7 +265,7 @@ function PopularSection({
           </div>
         ) : (
           <>
-            {txEvents.map(e => <TxCard key={e.id} event={e} sport={cat.sport} />)}
+            {txEvents.map(e => <TxCard key={e.id} event={e} catKey={cat.key} />)}
             {tmEvents.map(e => <TmCard key={e.id} event={e} />)}
             {ltdEvents.map(e => <LtdCard key={e.EventId} show={e} />)}
             {/* View all card */}
