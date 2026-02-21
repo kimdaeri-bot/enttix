@@ -467,27 +467,52 @@ export default function CityAttractionsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   const [dbAttractions, setDbAttractions] = useState<AttractionItem[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false); // 백그라운드 전체 로딩 중 표시
 
   const fetchProducts = useCallback(async () => {
     if (!cityInfo) return;
     setLoading(true);
+
+    const apiBase = `/api/tiqets/city-with-images?city_id=${cityInfo.id}&city_url=${encodeURIComponent(cityInfo.tiqetsSlug)}`;
+
     try {
-      const res = await fetch(
-        `/api/tiqets/city-with-images?city_id=${cityInfo.id}&city_url=${encodeURIComponent(cityInfo.tiqetsSlug)}`
-      );
-      const data = await res.json();
-      const tiqetsProducts = data.products || [];
-      setProducts(tiqetsProducts);
-      // If Tiqets returns no products, load from local DB
-      if (tiqetsProducts.length === 0) {
-        const normalizedSlug = citySlug.replace(/-/g, ' ');
-        setDbAttractions(getAttractionsByCity(normalizedSlug));
+      if (citySlug === 'rome') {
+        // ── Rome: 2단계 프로그레시브 로딩 ──────────────────
+        // 1단계: quick=true → 50개 즉시 렌더링
+        const quickRes = await fetch(`${apiBase}&quick=true`);
+        const quickData = await quickRes.json();
+        const quickProducts = quickData.products || [];
+        setProducts(quickProducts);
+        setLoading(false); // 즉시 페이지 보여줌
+
+        if (!quickData.fromCache) {
+          // 2단계: 백그라운드에서 전체 로드 (캐시 웜업)
+          setLoadingMore(true);
+          fetch(apiBase)
+            .then(r => r.json())
+            .then(d => {
+              const all = d.products || [];
+              if (all.length > 0) setProducts(all);
+            })
+            .catch(() => {}) // 실패해도 기존 50개 유지
+            .finally(() => setLoadingMore(false));
+        }
+      } else {
+        // ── 기타 도시: 기존 전체 로딩 ──────────────────────
+        const res = await fetch(apiBase);
+        const data = await res.json();
+        const tiqetsProducts = data.products || [];
+        setProducts(tiqetsProducts);
+        if (tiqetsProducts.length === 0) {
+          const normalizedSlug = citySlug.replace(/-/g, ' ');
+          setDbAttractions(getAttractionsByCity(normalizedSlug));
+        }
+        setLoading(false);
       }
     } catch {
       setProducts([]);
       const normalizedSlug = citySlug.replace(/-/g, ' ');
       setDbAttractions(getAttractionsByCity(normalizedSlug));
-    } finally {
       setLoading(false);
     }
   }, [cityInfo, citySlug]);
@@ -699,13 +724,19 @@ export default function CityAttractionsPage() {
       <div ref={resultsRef} className="bg-white border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4">
           <div className="flex items-center justify-between py-3">
-            <div>
-              <h2 className="text-[16px] font-extrabold text-[#0F172A] inline mr-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-[16px] font-extrabold text-[#0F172A]">
                 All experiences in {cityInfo.name}
               </h2>
               <span className="text-[13px] text-[#64748B]">
                 {loading ? 'Loading…' : `${sorted.length} experiences found`}
               </span>
+              {loadingMore && (
+                <span className="flex items-center gap-1.5 text-[12px] text-[#94A3B8]">
+                  <span className="w-3 h-3 rounded-full border-2 border-[#94A3B8] border-t-transparent animate-spin inline-block" />
+                  Loading more…
+                </span>
+              )}
             </div>
             <select
               value={sort}

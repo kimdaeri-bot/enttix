@@ -120,6 +120,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const city_id = searchParams.get('city_id') || '';
   const city_url = searchParams.get('city_url') || '';
+  const quick = searchParams.get('quick') === 'true'; // 첫 50개만 빠르게 반환
 
   if (!city_id) {
     return NextResponse.json({ error: 'city_id required' }, { status: 400 });
@@ -128,10 +129,23 @@ export async function GET(req: NextRequest) {
   const cacheKey = `${city_id}:${city_url}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() < cached.expires) {
-    return NextResponse.json({ products: cached.data });
+    return NextResponse.json({ products: cached.data, fromCache: true });
   }
 
-  // Fetch products + image map in parallel
+  // quick=true: page 1(50개)만 즉시 반환 (캐시 미저장)
+  if (quick) {
+    const params = new URLSearchParams({ currency: 'USD', lang: 'en', page: '1', page_size: '50', city_id });
+    const res = await fetch(`${BASE_URL}/products?${params}`, { headers: TIQETS_HEADERS });
+    if (!res.ok) return NextResponse.json({ products: [] });
+    const data = await res.json();
+    const products: TiqetsProductWithImages[] = (data.products || []).filter((p: TiqetsProductWithImages) => {
+      const text = ((p.title || '') + ' ' + (p.tagline || '') + ' ' + (p.summary || '')).toLowerCase();
+      return !['musical','west end','broadway','the lion king','hamilton','phantom of the opera','wicked','les misérables','les miserables','mamma mia','moulin rouge','matilda','book of mormon','harry potter and the cursed child','six the musical','back to the future the musical','hadestown','opera house','ballet','opera ticket','theatre ticket','theater ticket'].some(kw => text.includes(kw));
+    });
+    return NextResponse.json({ products, fromCache: false, quick: true });
+  }
+
+  // 전체 로드 (기존 로직)
   const [products, imageMap] = await Promise.all([
     fetchAllProducts(city_id),
     city_url ? fetchImageMap(city_url) : Promise.resolve(new Map<string, string[]>()),
