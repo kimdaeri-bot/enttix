@@ -26,8 +26,8 @@ interface PageInfo {
 
 const TABS = [
   { key: 'arts',   label: '🎭 Arts & Theatre' },
-  { key: 'sports', label: '🏆 Sports' },
   { key: 'music',  label: '🎵 Music' },
+  { key: 'sports', label: '🏆 Sports' },
 ];
 
 // Sports 리그 필터

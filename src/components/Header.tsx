@@ -12,14 +12,14 @@ const sportsItems = [
   'American Football', 'Winter Games', 'Athletics', 'Cycling',
 ];
 
-const concertItems = [
-  'Pop', 'Rock', 'Rap/Hip-hop', 'R&B', 'Country', 'Latin',
-  'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
-];
-
-const musicalItems = [
+const showsItems = [
   'West End', 'Broadway', 'Opera', 'Ballet', 'Comedy', 'Drama',
   'Family Shows', 'Dance', 'Circus', 'Magic Shows',
+];
+
+const musicItems = [
+  'Pop', 'Rock', 'Rap/Hip-hop', 'R&B', 'Country', 'Latin',
+  'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
 ];
 
 const attractionItems = [
@@ -86,6 +86,14 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
+          {/* Popular */}
+          <Link
+            href="/popular"
+            className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
+          >
+            🔥 Popular
+          </Link>
+
           {/* Sports dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('sports')} onMouseLeave={handleLeave}>
             <Link
@@ -98,28 +106,28 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {openDropdown === 'sports' && <DropdownMenu items={sportsItems} basePath="/sport" onClose={() => setOpenDropdown(null)} />}
           </div>
 
-          {/* Concerts dropdown */}
-          <div className="relative" onMouseEnter={() => handleEnter('concerts')} onMouseLeave={handleLeave}>
+          {/* Shows dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('shows')} onMouseLeave={handleLeave}>
             <Link
-              href="/concert/pop"
+              href="/shows"
               className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
             >
-              Concerts
+              Shows
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
-            {openDropdown === 'concerts' && <DropdownMenu items={concertItems} basePath="/concert" onClose={() => setOpenDropdown(null)} />}
+            {openDropdown === 'shows' && <DropdownMenu items={showsItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
           </div>
 
-          {/* Musical dropdown */}
-          <div className="relative" onMouseEnter={() => handleEnter('musical')} onMouseLeave={handleLeave}>
+          {/* Music dropdown */}
+          <div className="relative" onMouseEnter={() => handleEnter('music')} onMouseLeave={handleLeave}>
             <Link
-              href="/musical/west-end"
+              href="/music"
               className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
             >
-              Musical
+              Music
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
-            {openDropdown === 'musical' && <DropdownMenu items={musicalItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
+            {openDropdown === 'music' && <DropdownMenu items={musicItems} basePath="/concert" onClose={() => setOpenDropdown(null)} />}
           </div>
 
           {/* Attractions dropdown */}
@@ -160,12 +168,6 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
           <Link href="/entertainment" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
             Entertainment
-          </Link>
-          <Link href="/cities" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors">
-            Cities
-          </Link>
-          <Link href="/venues" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1">
-            🏟️ Venues
           </Link>
           <Link href="/planner" className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1">
             ✨ Planner
@@ -270,10 +272,10 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
           {/* ── 카테고리 (접기/펼치기) ── */}
           <div className="mt-2 px-2">
             {[
-              { key: 'sports', label: '🏆 Sports', emoji: '🏆', items: sportsItems, basePath: '/sport' },
-              { key: 'concerts', label: '🎵 Concerts', emoji: '🎵', items: concertItems, basePath: '/concert' },
-              { key: 'musical', label: '🎭 Musical', emoji: '🎭', items: musicalItems, basePath: '/musical' },
-              { key: 'attractions', label: '🗺️ Attractions', emoji: '🗺️', items: attractionItems, basePath: '/attractions' },
+              { key: 'sports',      label: '🏆 Sports',      items: sportsItems,     basePath: '/sport' },
+              { key: 'shows',       label: '🎭 Shows',       items: showsItems,      basePath: '/musical' },
+              { key: 'music',       label: '🎵 Music',       items: musicItems,      basePath: '/concert' },
+              { key: 'attractions', label: '🗺️ Attractions', items: attractionItems, basePath: '/attractions' },
             ].map(({ key, label, items, basePath }) => (
               <div key={key} className="border-b border-white/8">
                 <button
@@ -311,9 +313,9 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             ))}
 
             {/* 기타 링크 */}
+            <Link href="/popular" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🔥 Popular</Link>
             <Link href="/entertainment" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎬 Entertainment</Link>
-            <Link href="/cities" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>Cities</Link>
-            <Link href="/venues" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>🏟️ Venues</Link>
+            <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
 
           <div className="px-4 mt-4">
