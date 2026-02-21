@@ -91,11 +91,14 @@ async function saveToDb(rows: Array<{ event_id: string; image_url: string; event
     headers: {
       'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=minimal',
+      'Prefer': 'resolution=merge-duplicates,return=representation',
     },
     body: JSON.stringify(rows),
   });
-  if (!res.ok) throw new Error(`DB save failed: ${await res.text()}`);
+  const body = await res.text();
+  if (!res.ok) throw new Error(`DB save failed (${res.status}): ${body}`);
+  // 실제 저장된 rows 개수 반환
+  try { return (JSON.parse(body) as unknown[]).length; } catch { return rows.length; }
 }
 
 /* ── 핸들러 ── */
@@ -120,12 +123,17 @@ export async function GET(req: NextRequest) {
     }
 
     let saved = 0;
+    let dbError = '';
     if (allRows.length > 0) {
-      await saveToDb(allRows);
-      saved = allRows.length;
+      try {
+        const actualSaved = await saveToDb(allRows);
+        saved = actualSaved ?? allRows.length;
+      } catch (e) {
+        dbError = String(e);
+      }
     }
 
-    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved });
+    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved, dbError: dbError || undefined });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
