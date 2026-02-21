@@ -1,78 +1,58 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/Header';
 
-function toSlug(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-const destinations = [
-  { name: 'London',    slug: 'london',      photo: 'photo-1513635269975-59663e0ac1ad', count: 200 },
-  { name: 'Paris',     slug: 'paris',       photo: 'photo-1502602898657-3e91760cbb34', count: 180 },
-  { name: 'Barcelona', slug: 'barcelona',   photo: 'photo-1583422409516-2895a77efded', count: 150 },
-  { name: 'Rome',      slug: 'rome',        photo: 'photo-1552832230-c0197dd311b5',    count: 160 },
-  { name: 'Amsterdam', slug: 'amsterdam',   photo: 'photo-1534351590666-13e3e96b5017', count: 130 },
-  { name: 'Dubai',     slug: 'dubai',       photo: 'photo-1512453979798-5ea266f8880c', count: 120 },
-  { name: 'Singapore', slug: 'singapore',   photo: 'photo-1525625293386-3f8f99389edd', count: 110 },
-  { name: 'Prague',    slug: 'prague',      photo: 'photo-1541849546-216549ae216d',    count: 100 },
-  { name: 'Madrid',    slug: 'madrid',      photo: 'photo-1539037116277-4db20889f2d4', count: 90  },
-  { name: 'Vienna',    slug: 'vienna',      photo: 'photo-1516550893923-42d28e5677af', count: 85  },
-  { name: 'New York',  slug: 'new-york',    photo: 'photo-1496442226666-8d4d0e62e6e9', count: 220 },
-  { name: 'Tokyo',     slug: 'tokyo',       photo: 'photo-1540959733332-eab4deabeeaf', count: 140 },
+/* ─────────────────────────────────────────
+   Tiqets city IDs (from tiqets.com/en/city-cXX/ URL pattern)
+───────────────────────────────────────── */
+const CITIES = [
+  { id: '',   name: 'All Cities',   flag: '🌍', slug: '' },
+  { id: '24', name: 'London',       flag: '🇬🇧', slug: 'london' },
+  { id: '30', name: 'Paris',        flag: '🇫🇷', slug: 'paris' },
+  { id: '38', name: 'Barcelona',    flag: '🇪🇸', slug: 'barcelona' },
+  { id: '12', name: 'Rome',         flag: '🇮🇹', slug: 'rome' },
+  { id: '53', name: 'Amsterdam',    flag: '🇳🇱', slug: 'amsterdam' },
+  { id: '39', name: 'New York',     flag: '🇺🇸', slug: 'new-york' },
+  { id: '86', name: 'Dubai',        flag: '🇦🇪', slug: 'dubai' },
+  { id: '77', name: 'Tokyo',        flag: '🇯🇵', slug: 'tokyo' },
+  { id: '78', name: 'Singapore',    flag: '🇸🇬', slug: 'singapore' },
+  { id: '71', name: 'Hong Kong',    flag: '🇭🇰', slug: 'hong-kong' },
+  { id: '72', name: 'Istanbul',     flag: '🇹🇷', slug: 'istanbul' },
 ];
 
-const popularCategories = [
-  { icon: '🏛️', name: 'Museums',         slug: 'museums'    },
-  { icon: '⚡', name: 'Skip the Line',   slug: 'skip-line'  },
-  { icon: '🚌', name: 'Day Trips',        slug: 'day-trips'  },
-  { icon: '🌿', name: 'Outdoor',          slug: 'outdoor'    },
-  { icon: '🎭', name: 'Performing Arts',  slug: 'performing' },
-  { icon: '🍽️', name: 'Food & Drink',    slug: 'food-drink' },
-  { icon: '🗺️', name: 'Tours',           slug: 'tours'      },
-  { icon: '🎨', name: 'Art & Culture',   slug: 'art'        },
+/* City 배경 이미지 (Unsplash) */
+const CITY_IMG: Record<string, string> = {
+  '24': 'photo-1513635269975-59663e0ac1ad',
+  '30': 'photo-1502602898657-3e91760cbb34',
+  '38': 'photo-1583422409516-2895a77efded',
+  '12': 'photo-1552832230-c0197dd311b5',
+  '53': 'photo-1534351590666-13e3e96b5017',
+  '39': 'photo-1496442226666-8d4d0e62e6e9',
+  '86': 'photo-1512453979798-5ea266f8880c',
+  '77': 'photo-1540959733332-eab4deabeeaf',
+  '78': 'photo-1525625293386-3f8f99389edd',
+  '71': 'photo-1617788138017-80ad40651399',
+  '72': 'photo-1541432901042-2d8bd64b4a9b',
+};
+
+/* 서브 카테고리 */
+const CATEGORIES = [
+  { key: '',           label: 'All Experiences', icon: '✨' },
+  { key: 'museum',     label: 'Museums',          icon: '🏛️' },
+  { key: 'tour',       label: 'Tours',            icon: '🗺️' },
+  { key: 'outdoor',    label: 'Outdoor',          icon: '🌿' },
+  { key: 'day trip',   label: 'Day Trips',        icon: '🚌' },
+  { key: 'show',       label: 'Performing Arts',  icon: '🎭' },
+  { key: 'food',       label: 'Food & Drink',     icon: '🍽️' },
+  { key: 'art',        label: 'Art & Culture',    icon: '🎨' },
+  { key: 'skip the line', label: 'Skip the Line', icon: '⚡' },
+  { key: 'cruise',     label: 'Cruises',          icon: '🚢' },
+  { key: 'night',      label: 'Nightlife',        icon: '🌙' },
 ];
 
-const countries = [
-  { flag: '🇪🇸', name: 'Spain',                slug: 'spain',                cities: 3 },
-  { flag: '🇫🇷', name: 'France',               slug: 'france',               cities: 2 },
-  { flag: '🇮🇹', name: 'Italy',                slug: 'italy',                cities: 3 },
-  { flag: '🇬🇧', name: 'United Kingdom',       slug: 'united-kingdom',       cities: 2 },
-  { flag: '🇳🇱', name: 'Netherlands',          slug: 'netherlands',          cities: 1 },
-  { flag: '🇩🇪', name: 'Germany',              slug: 'germany',              cities: 2 },
-  { flag: '🇦🇹', name: 'Austria',              slug: 'austria',              cities: 1 },
-  { flag: '🇨🇿', name: 'Czech Republic',       slug: 'czech-republic',       cities: 1 },
-  { flag: '🇺🇸', name: 'United States',        slug: 'united-states',        cities: 1 },
-  { flag: '🇯🇵', name: 'Japan',                slug: 'japan',                cities: 2 },
-  { flag: '🇸🇬', name: 'Singapore',            slug: 'singapore',            cities: 1 },
-  { flag: '🇦🇪', name: 'United Arab Emirates', slug: 'united-arab-emirates', cities: 1 },
-];
-
-const whyEnttix = [
-  {
-    icon: '✅',
-    title: 'Instant Confirmation',
-    desc: 'Get your tickets instantly — no waiting, no hassle.',
-  },
-  {
-    icon: '↩️',
-    title: 'Free Cancellation',
-    desc: 'Change of plans? Cancel for free up to 24 hours before.',
-  },
-  {
-    icon: '🔒',
-    title: 'Secure Booking',
-    desc: 'Your payment is fully protected with SSL encryption.',
-  },
-  {
-    icon: '🌍',
-    title: '200+ Destinations',
-    desc: 'Thousands of experiences across 200+ cities worldwide.',
-  },
-];
-
+/* Tiqets 제품 타입 */
 interface TiqetsProduct {
   id: number;
   title: string;
@@ -81,311 +61,390 @@ interface TiqetsProduct {
   ratings?: { total: number; average: number };
   promo_label?: string;
   instant_ticket_delivery?: boolean;
-  cancellation?: string;
-  duration?: string;
   skip_line?: boolean;
+  duration?: string;
   city_name?: string;
   product_url?: string;
+  cancellation?: string;
+}
+
+/* 도시별 Unsplash 폴백 */
+function getCityFallback(cityId: string) {
+  const photo = CITY_IMG[cityId] || 'photo-1502602898657-3e91760cbb34';
+  return `https://images.unsplash.com/${photo}?w=800&h=600&fit=crop`;
 }
 
 function StarRating({ avg }: { avg: number }) {
+  const full = Math.round(avg);
   return (
-    <span className="text-amber-400 text-[13px]">
-      {'★'.repeat(Math.round(avg))}{'☆'.repeat(5 - Math.round(avg))}
+    <span className="text-amber-400 text-[12px]">
+      {'★'.repeat(full)}{'☆'.repeat(5 - full)}
     </span>
   );
 }
 
-function ProductCard({ product }: { product: TiqetsProduct }) {
-  const fallbackCity = product.city_name?.toLowerCase() || 'london';
-  const fallbackSlug = toSlug(fallbackCity);
-  const fallbackDest = destinations.find(d => d.slug === fallbackSlug) || destinations[0];
-  const fallbackUrl = `https://images.unsplash.com/${fallbackDest.photo}?w=400&h=300&fit=crop`;
-
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [imgLoading, setImgLoading] = useState(true);
-
-  useEffect(() => {
-    if (product.images && product.images.length > 0) {
-      setImageUrl(product.images[0]);
-      setImgLoading(false);
-      return;
-    }
-    if (product.product_url) {
-      fetch(`/api/tiqets/product-image?product_url=${encodeURIComponent(product.product_url)}`)
-        .then(r => r.json())
-        .then(data => {
-          setImageUrl(data.imageUrl || fallbackUrl);
-          setImgLoading(false);
-        })
-        .catch(() => {
-          setImageUrl(fallbackUrl);
-          setImgLoading(false);
-        });
-    } else {
-      setImageUrl(fallbackUrl);
-      setImgLoading(false);
-    }
-  }, [product.product_url, product.images, fallbackUrl]);
+function ProductCard({ product, cityId }: { product: TiqetsProduct; cityId: string }) {
+  const [imgSrc, setImgSrc] = useState<string>(
+    product.images?.[0] || getCityFallback(cityId)
+  );
+  const outLink = product.product_url || 'https://www.tiqets.com/en/';
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden group cursor-pointer hover:shadow-md transition-shadow">
-      <Link href={`/attractions/${fallbackSlug}/${product.id}`} className="block">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
-          {imgLoading ? (
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200" />
-          ) : imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={product.title}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-              unoptimized
-            />
-          ) : null}
-          {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {product.promo_label === 'bestseller' && (
-              <span className="bg-[#FF6B35] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
-                🏆 Bestseller
-              </span>
-            )}
-            {product.skip_line && (
-              <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                ⚡ Skip Line
-              </span>
-            )}
-            {product.instant_ticket_delivery && (
-              <span className="bg-[#2B7FFF] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                ✓ Instant
-              </span>
-            )}
-          </div>
+    <a
+      href={outLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col"
+    >
+      {/* 이미지 */}
+      <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imgSrc}
+          alt={product.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={() => setImgSrc(getCityFallback(cityId))}
+        />
+        {/* 배지 */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1">
+          {product.promo_label === 'bestseller' && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#FF6B35]">
+              🏆 Bestseller
+            </span>
+          )}
+          {product.skip_line && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-green-500">
+              ⚡ Skip Line
+            </span>
+          )}
+          {product.instant_ticket_delivery && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#2B7FFF]">
+              ✓ Instant
+            </span>
+          )}
         </div>
-        <div className="p-3">
-          <h3 className="text-[13px] font-semibold text-[#0F172A] line-clamp-2 mb-1.5 leading-snug">
-            {product.title}
-          </h3>
+        {/* 도시 태그 */}
+        {product.city_name && (
+          <div className="absolute top-3 right-3">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-black/60 backdrop-blur-sm">
+              {product.city_name}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* 콘텐츠 */}
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="text-[14px] font-bold text-[#171717] leading-[20px] mb-2 line-clamp-2 group-hover:text-[#2B7FFF] transition-colors">
+          {product.title}
+        </h3>
+
+        <div className="flex flex-col gap-1 mb-3 flex-1">
           {product.ratings && product.ratings.total > 0 && (
-            <div className="flex items-center gap-1 mb-1.5">
+            <div className="flex items-center gap-1">
               <StarRating avg={product.ratings.average} />
-              <span className="text-[11px] text-[#64748B]">
+              <span className="text-[11px] text-[#6B7280]">
                 {product.ratings.average.toFixed(1)} ({product.ratings.total.toLocaleString()})
               </span>
             </div>
           )}
           {product.duration && (
-            <p className="text-[11px] text-[#94A3B8] mb-1.5">⏱ {product.duration}</p>
+            <p className="text-[12px] text-[#6B7280]">⏱ {product.duration}</p>
           )}
-          <p className="text-[#0F172A] font-bold text-[14px]">
-            From ${Math.round(product.price || 0)}
-          </p>
+          {product.cancellation && (
+            <p className="text-[12px] text-green-600">↩️ {product.cancellation}</p>
+          )}
         </div>
-      </Link>
-    </div>
+
+        <div className="flex items-center justify-between mt-auto">
+          <span className="text-[14px] font-bold text-[#171717]">
+            {product.price && product.price > 0
+              ? `From $${Math.round(product.price)}`
+              : 'See prices'}
+          </span>
+          <span className="flex items-center gap-1 text-[12px] font-semibold text-[#2B7FFF] group-hover:gap-2 transition-all">
+            Book Now
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </a>
   );
 }
 
+/* ─────────────────────────────────────────
+   메인 컴포넌트
+───────────────────────────────────────── */
 export default function AttractionsPage() {
-  const [query, setQuery] = useState('');
+  const [activeCity, setActiveCity] = useState('24'); // 기본: London
+  const [activeCategory, setActiveCategory] = useState('');
   const [products, setProducts] = useState<TiqetsProduct[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetch('/api/tiqets/products?page_size=8')
-      .then(r => r.json())
-      .then(data => {
-        setProducts(data.products || []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+  const PAGE_SIZE = 20;
+
+  const fetchProducts = useCallback(async (cityId: string, category: string, page: number) => {
+    setLoading(true);
+    setError('');
+    try {
+      const params = new URLSearchParams({
+        page_size: String(PAGE_SIZE),
+        page: String(page),
+      });
+      if (cityId) params.set('city_id', cityId);
+      if (category) params.set('query', category);
+
+      const res = await fetch(`/api/tiqets/products?${params}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      setProducts(data.products || []);
+      const total = data.total_results || data.count || (data.products?.length || 0);
+      setTotalCount(total);
+      setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+    } catch (e) {
+      setError('어트랙션을 불러오는데 실패했습니다.');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      window.location.href = `/attractions?q=${encodeURIComponent(query.trim())}`;
-    }
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchProducts(activeCity, activeCategory, 1);
+  }, [activeCity, activeCategory, fetchProducts]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchProducts(activeCity, activeCategory, page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const activeCityObj = CITIES.find(c => c.id === activeCity) || CITIES[0];
+  const activeCatObj  = CATEGORIES.find(c => c.key === activeCategory) || CATEGORIES[0];
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#F5F7FA]">
       <Header hideSearch />
 
-      {/* Hero */}
-      <section
-        className="relative flex flex-col items-center justify-center text-center px-4"
-        style={{
-          minHeight: 440,
-          background: 'linear-gradient(135deg, #0F172A 0%, #1a2f5a 60%, #2B7FFF 100%)',
-        }}
-      >
-        {/* Decorative circles */}
-        <div className="absolute top-10 left-10 w-32 h-32 rounded-full bg-[#2B7FFF]/10 blur-2xl" />
-        <div className="absolute bottom-10 right-16 w-48 h-48 rounded-full bg-[#FF6B35]/10 blur-3xl" />
+      {/* ── 히어로 ── */}
+      <div className="bg-[#0F172A]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-0">
+          {/* 브레드크럼 */}
+          <div className="flex items-center gap-2 mb-2">
+            <Link href="/" className="text-[12px] font-bold text-[#2B7FFF] tracking-[1.5px] hover:text-[#60A5FA]">HOME</Link>
+            <span className="text-[12px] text-[#475569]">·</span>
+            <span className="text-[12px] text-[#475569]">ATTRACTIONS</span>
+          </div>
+          <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">
+            Attractions & Experiences
+          </h1>
+          <p className="text-[14px] text-[#94A3B8] mb-6">
+            200+ Destinations · Powered by Tiqets — Instant ticket delivery
+          </p>
+        </div>
 
-        <p className="text-[#FF6B35] font-semibold text-[14px] tracking-widest uppercase mb-3">
-          Explore the World
-        </p>
-        <h1 className="text-white text-[52px] font-extrabold leading-tight mb-4 tracking-tight max-w-[720px]">
-          Discover Amazing<br />Experiences
-        </h1>
-        <p className="text-[#94A3B8] text-[18px] mb-10 max-w-[480px]">
-          Book tickets, tours & attractions worldwide — instantly confirmed
-        </p>
-        <form onSubmit={handleSearch} className="w-full max-w-[580px]">
-          <div className="relative flex items-center">
-            <svg
-              className="absolute left-4 text-[#94A3B8] pointer-events-none"
-              width="20" height="20" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2"
+        {/* 카테고리 탭 (히어로 하단, 서브카테고리 역할) */}
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            {CATEGORIES.slice(0, 6).map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => { setActiveCategory(cat.key); setCurrentPage(1); }}
+                className={`flex-shrink-0 px-5 py-3 text-[14px] font-semibold rounded-t-[10px] transition-colors ${
+                  activeCategory === cat.key
+                    ? 'bg-[#F5F7FA] text-[#171717]'
+                    : 'text-[#94A3B8] hover:text-white'
+                }`}
+              >
+                {cat.icon} {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Sticky 도시 필터 바 ── */}
+      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
+            {CITIES.map(city => (
+              <button
+                key={city.id}
+                onClick={() => { setActiveCity(city.id); setCurrentPage(1); }}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
+                  activeCity === city.id
+                    ? 'bg-[#2B7FFF] text-white shadow-sm'
+                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
+                }`}
+              >
+                <span className="text-[14px]">{city.flag}</span>
+                <span>{city.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 서브카테고리 필터 바 ── */}
+      <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => { setActiveCategory(cat.key); setCurrentPage(1); }}
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${
+                  activeCategory === cat.key
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
+                }`}
+              >
+                <span className="text-[15px]">{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 컨텐츠 영역 ── */}
+      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
+
+        {/* 상단 정보 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-[13px] text-[#6B7280]">
+            {!loading && (
+              <>
+                <span className="font-semibold text-[#171717]">
+                  {activeCityObj.flag} {activeCityObj.name}
+                </span>
+                {activeCategory && (
+                  <> · <span className="font-semibold text-[#171717]">{activeCatObj.label}</span></>
+                )}
+                {totalCount > 0 && (
+                  <> · 총 <span className="font-semibold text-[#171717]">{totalCount.toLocaleString()}</span>개</>
+                )}
+                {totalPages > 1 && (
+                  <> · 페이지 <span className="font-semibold text-[#171717]">{currentPage}</span> / {totalPages}</>
+                )}
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-[#94A3B8]">
+            <span>Powered by</span>
+            <a
+              href="https://www.tiqets.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-[#E84343] hover:underline"
             >
-              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input
-              ref={inputRef}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Search city or attraction..."
-              className="w-full pl-12 pr-36 py-4 rounded-2xl bg-white text-[#0F172A] text-[16px] shadow-2xl outline-none border-2 border-transparent focus:border-[#2B7FFF] transition-colors"
-            />
+              Tiqets
+            </a>
+          </div>
+        </div>
+
+        {/* 로딩 스켈레톤 */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 20 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] animate-pulse">
+                <div className="aspect-[16/9] bg-[#E5E7EB]" />
+                <div className="p-4 space-y-2">
+                  <div className="h-4 bg-[#E5E7EB] rounded w-3/4" />
+                  <div className="h-3 bg-[#E5E7EB] rounded w-1/2" />
+                  <div className="h-3 bg-[#E5E7EB] rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 에러 */}
+        {!loading && error && (
+          <div className="text-center py-20 text-[#EF4444]">{error}</div>
+        )}
+
+        {/* 제품 그리드 */}
+        {!loading && !error && products.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {products.map(product => (
+              <ProductCard key={product.id} product={product} cityId={activeCity} />
+            ))}
+          </div>
+        )}
+
+        {/* 빈 결과 */}
+        {!loading && !error && products.length === 0 && (
+          <div className="text-center py-20">
+            <p className="text-[48px] mb-4">🎟️</p>
+            <p className="text-[#374151] font-semibold text-[16px] mb-2">이 도시의 어트랙션이 없습니다</p>
+            <p className="text-[#94A3B8] text-[13px]">다른 도시나 카테고리를 선택해보세요</p>
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-10">
             <button
-              type="submit"
-              className="absolute right-2 px-5 py-2.5 rounded-xl bg-[#2B7FFF] text-white text-[14px] font-semibold hover:bg-[#1D6AE5] transition-colors"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="px-3 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[12px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              Search
+              «
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+              Prev
+            </button>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+              const p = start + i;
+              return (
+                <button
+                  key={p}
+                  onClick={() => handlePageChange(p)}
+                  className={`w-9 h-9 rounded-[8px] text-[13px] font-semibold transition-colors ${
+                    p === currentPage
+                      ? 'bg-[#2B7FFF] text-white'
+                      : 'border border-[#E5E7EB] text-[#374151] hover:bg-[#F1F5F9]'
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            >
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage >= totalPages}
+              className="px-3 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[12px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              »
             </button>
           </div>
-        </form>
-        {/* Stats */}
-        <div className="flex items-center gap-8 mt-10 text-white/60 text-[13px]">
-          <span>🎫 1M+ tickets sold</span>
-          <span>🌍 200+ cities</span>
-          <span>⭐ 4.8 avg rating</span>
-        </div>
-      </section>
-
-      {/* Popular Categories */}
-      <section className="max-w-[1280px] mx-auto px-4 py-14">
-        <h2 className="text-[26px] font-bold text-[#0F172A] mb-1">Popular Categories</h2>
-        <p className="text-[#64748B] text-[15px] mb-7">Find exactly what you&apos;re looking for</p>
-        <div className="flex flex-wrap gap-3">
-          {popularCategories.map(cat => (
-            <Link
-              key={cat.slug}
-              href={`/attractions/london?category=${cat.slug}`}
-              className="flex items-center gap-2 px-5 py-3 rounded-full border-2 border-[#E5E7EB] hover:border-[#2B7FFF] hover:bg-[#EFF6FF] text-[14px] font-semibold text-[#374151] hover:text-[#2B7FFF] transition-all"
-            >
-              <span className="text-[18px]">{cat.icon}</span>
-              {cat.name}
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Popular Destinations */}
-      <section className="max-w-[1280px] mx-auto px-4 pb-14">
-        <h2 className="text-[26px] font-bold text-[#0F172A] mb-1">Popular Destinations</h2>
-        <p className="text-[#64748B] text-[15px] mb-7">Explore top cities around the world</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {destinations.map(dest => (
-            <Link
-              key={dest.slug}
-              href={`/attractions/${dest.slug}`}
-              className="group relative rounded-xl overflow-hidden cursor-pointer"
-              style={{ paddingBottom: '75%', position: 'relative', display: 'block' }}
-            >
-              <div className="absolute inset-0">
-                <Image
-                  src={`https://images.unsplash.com/${dest.photo}?w=500&h=375&fit=crop`}
-                  alt={dest.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  unoptimized
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                  <span className="text-[17px] font-bold block drop-shadow">{dest.name}</span>
-                  <span className="text-[12px] text-white/75">{dest.count}+ Experiences</span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Browse by Country */}
-      <section id="browse-countries" className="max-w-[1280px] mx-auto px-4 pb-14">
-        <h2 className="text-[26px] font-bold text-[#0F172A] mb-1">Browse by Country</h2>
-        <p className="text-[#64748B] text-[15px] mb-7">Explore experiences across entire countries</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {countries.map(country => (
-            <Link
-              key={country.slug}
-              href={`/attractions/country/${country.slug}`}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-xl border border-[#E5E7EB] bg-white hover:border-[#2B7FFF] hover:bg-[#EFF6FF] hover:shadow-sm transition-all group"
-            >
-              <span className="text-[26px]">{country.flag}</span>
-              <div className="min-w-0">
-                <p className="text-[14px] font-semibold text-[#0F172A] group-hover:text-[#2B7FFF] transition-colors truncate">
-                  {country.name}
-                </p>
-                <p className="text-[11px] text-[#94A3B8]">{country.cities} {country.cities === 1 ? 'city' : 'cities'}</p>
-              </div>
-              <svg className="ml-auto flex-shrink-0 text-[#CBD5E1] group-hover:text-[#2B7FFF] transition-colors" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Experiences */}
-      <section className="bg-[#F8FAFC] py-14">
-        <div className="max-w-[1280px] mx-auto px-4">
-          <h2 className="text-[26px] font-bold text-[#0F172A] mb-1">Featured Experiences</h2>
-          <p className="text-[#64748B] text-[15px] mb-7">Handpicked top-rated attractions worldwide</p>
-
-          {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl animate-pulse overflow-hidden">
-                  <div className="aspect-[4/3] bg-gray-200" />
-                  <div className="p-3 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-full" />
-                    <div className="h-3 bg-gray-200 rounded w-2/3" />
-                    <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : products.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-[#94A3B8] text-center py-12">No experiences available right now.</p>
-          )}
-        </div>
-      </section>
-
-      {/* Why Enttix */}
-      <section className="max-w-[1280px] mx-auto px-4 py-16">
-        <h2 className="text-[26px] font-bold text-[#0F172A] mb-1 text-center">Why Choose Enttix?</h2>
-        <p className="text-[#64748B] text-[15px] mb-10 text-center">Everything you need for a perfect experience</p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {whyEnttix.map(item => (
-            <div key={item.title} className="text-center p-6 rounded-2xl bg-[#F8FAFC] hover:bg-white hover:shadow-md transition-all">
-              <div className="text-[40px] mb-4">{item.icon}</div>
-              <h3 className="text-[15px] font-bold text-[#0F172A] mb-2">{item.title}</h3>
-              <p className="text-[13px] text-[#64748B] leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+        )}
+      </div>
     </div>
   );
 }
