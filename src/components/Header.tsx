@@ -24,119 +24,67 @@ const musicItems = [
 
 const ATTRACTION_REGIONS = [
   {
-    id: 'europe',
-    label: '🌍 Europe',
-    cities: [
-      { name: 'London',     slug: 'london',       flag: '🇬🇧' },
-      { name: 'Paris',      slug: 'paris',         flag: '🇫🇷' },
-      { name: 'Barcelona',  slug: 'barcelona',     flag: '🇪🇸' },
-      { name: 'Rome',       slug: 'rome',          flag: '🇮🇹' },
-      { name: 'Amsterdam',  slug: 'amsterdam',     flag: '🇳🇱' },
-      { name: 'Naples',     slug: 'naples',        flag: '🇮🇹' },
-      { name: 'Florence',   slug: 'florence',      flag: '🇮🇹' },
-      { name: 'Venice',     slug: 'venice',        flag: '🇮🇹' },
-      { name: 'Vienna',     slug: 'vienna',        flag: '🇦🇹' },
-      { name: 'Porto',      slug: 'porto',         flag: '🇵🇹' },
-      { name: 'Reykjavik',  slug: 'reykjavik',     flag: '🇮🇸' },
-      { name: 'Prague',     slug: 'prague',        flag: '🇨🇿' },
-      { name: 'Madrid',     slug: 'madrid',        flag: '🇪🇸' },
-      { name: 'Berlin',     slug: 'berlin',        flag: '🇩🇪' },
-      { name: 'Athens',     slug: 'athens',        flag: '🇬🇷' },
-      { name: 'Lisbon',     slug: 'lisbon',        flag: '🇵🇹' },
-      { name: 'Budapest',   slug: 'budapest',      flag: '🇭🇺' },
-      { name: 'Seville',    slug: 'seville',       flag: '🇪🇸' },
-      { name: 'Milan',      slug: 'milan',         flag: '🇮🇹' },
-      { name: 'Brussels',   slug: 'brussels',      flag: '🇧🇪' },
-      { name: 'Edinburgh',  slug: 'edinburgh',     flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
-      { name: 'Hamburg',    slug: 'hamburg',       flag: '🇩🇪' },
-      { name: 'Dublin',     slug: 'dublin',        flag: '🇮🇪' },
-      { name: 'Munich',     slug: 'munich',        flag: '🇩🇪' },
-      { name: 'Copenhagen', slug: 'copenhagen',    flag: '🇩🇰' },
-      { name: 'Krakow',     slug: 'krakow',        flag: '🇵🇱' },
-      { name: 'Palermo',    slug: 'palermo',       flag: '🇮🇹' },
-      { name: 'Stockholm',  slug: 'stockholm',     flag: '🇸🇪' },
-      { name: 'Bruges',     slug: 'bruges',        flag: '🇧🇪' },
-      { name: 'Verona',     slug: 'verona',        flag: '🇮🇹' },
-      { name: 'Nice',       slug: 'nice',          flag: '🇫🇷' },
-      { name: 'Turin',      slug: 'turin',         flag: '🇮🇹' },
-      { name: 'Helsinki',   slug: 'helsinki',      flag: '🇫🇮' },
-      { name: 'Bologna',    slug: 'bologna',       flag: '🇮🇹' },
-      { name: 'Warsaw',     slug: 'warsaw',        flag: '🇵🇱' },
-      { name: 'Rhodes',     slug: 'rhodes',        flag: '🇬🇷' },
-      { name: 'Bordeaux',   slug: 'bordeaux',      flag: '🇫🇷' },
-      { name: 'Cologne',    slug: 'cologne',       flag: '🇩🇪' },
-      { name: 'Valletta',   slug: 'valletta',      flag: '🇲🇹' },
-      { name: 'Dresden',    slug: 'dresden',       flag: '🇩🇪' },
-      { name: 'Salzburg',   slug: 'salzburg',      flag: '🇦🇹' },
-      { name: 'Zurich',     slug: 'zurich',        flag: '🇨🇭' },
-      { name: 'Oslo',       slug: 'oslo',          flag: '🇳🇴' },
-      { name: 'Innsbruck',  slug: 'innsbruck',     flag: '🇦🇹' },
-      { name: 'Tallinn',    slug: 'tallinn',       flag: '🇪🇪' },
-      { name: 'Vilnius',    slug: 'vilnius',       flag: '🇱🇹' },
-      { name: 'Lucerne',    slug: 'lucerne',       flag: '🇨🇭' },
+    id: 'europe', label: '🌍 Europe',
+    countries: [
+      { code:'IT', name:'Italy',        flag:'🇮🇹', cities:[{name:'Rome',slug:'rome'},{name:'Florence',slug:'florence'},{name:'Venice',slug:'venice'},{name:'Milan',slug:'milan'},{name:'Naples',slug:'naples'},{name:'Palermo',slug:'palermo'},{name:'Verona',slug:'verona'},{name:'Turin',slug:'turin'},{name:'Bologna',slug:'bologna'}] },
+      { code:'GB', name:'UK',           flag:'🇬🇧', cities:[{name:'London',slug:'london'},{name:'Edinburgh',slug:'edinburgh'}] },
+      { code:'FR', name:'France',       flag:'🇫🇷', cities:[{name:'Paris',slug:'paris'},{name:'Nice',slug:'nice'},{name:'Bordeaux',slug:'bordeaux'}] },
+      { code:'ES', name:'Spain',        flag:'🇪🇸', cities:[{name:'Barcelona',slug:'barcelona'},{name:'Madrid',slug:'madrid'},{name:'Seville',slug:'seville'}] },
+      { code:'DE', name:'Germany',      flag:'🇩🇪', cities:[{name:'Berlin',slug:'berlin'},{name:'Munich',slug:'munich'},{name:'Hamburg',slug:'hamburg'},{name:'Cologne',slug:'cologne'},{name:'Dresden',slug:'dresden'}] },
+      { code:'PT', name:'Portugal',     flag:'🇵🇹', cities:[{name:'Lisbon',slug:'lisbon'},{name:'Porto',slug:'porto'}] },
+      { code:'GR', name:'Greece',       flag:'🇬🇷', cities:[{name:'Athens',slug:'athens'},{name:'Rhodes',slug:'rhodes'}] },
+      { code:'NL', name:'Netherlands',  flag:'🇳🇱', cities:[{name:'Amsterdam',slug:'amsterdam'}] },
+      { code:'AT', name:'Austria',      flag:'🇦🇹', cities:[{name:'Vienna',slug:'vienna'},{name:'Salzburg',slug:'salzburg'},{name:'Innsbruck',slug:'innsbruck'}] },
+      { code:'HU', name:'Hungary',      flag:'🇭🇺', cities:[{name:'Budapest',slug:'budapest'}] },
+      { code:'CZ', name:'Czech Rep.',   flag:'🇨🇿', cities:[{name:'Prague',slug:'prague'}] },
+      { code:'BE', name:'Belgium',      flag:'🇧🇪', cities:[{name:'Brussels',slug:'brussels'},{name:'Bruges',slug:'bruges'}] },
+      { code:'IE', name:'Ireland',      flag:'🇮🇪', cities:[{name:'Dublin',slug:'dublin'}] },
+      { code:'PL', name:'Poland',       flag:'🇵🇱', cities:[{name:'Krakow',slug:'krakow'},{name:'Warsaw',slug:'warsaw'}] },
+      { code:'SE', name:'Sweden',       flag:'🇸🇪', cities:[{name:'Stockholm',slug:'stockholm'}] },
+      { code:'DK', name:'Denmark',      flag:'🇩🇰', cities:[{name:'Copenhagen',slug:'copenhagen'}] },
+      { code:'CH', name:'Switzerland',  flag:'🇨🇭', cities:[{name:'Zurich',slug:'zurich'},{name:'Lucerne',slug:'lucerne'}] },
+      { code:'IS', name:'Iceland',      flag:'🇮🇸', cities:[{name:'Reykjavik',slug:'reykjavik'}] },
+      { code:'NO', name:'Norway',       flag:'🇳🇴', cities:[{name:'Oslo',slug:'oslo'}] },
+      { code:'FI', name:'Finland',      flag:'🇫🇮', cities:[{name:'Helsinki',slug:'helsinki'}] },
+      { code:'EE', name:'Estonia',      flag:'🇪🇪', cities:[{name:'Tallinn',slug:'tallinn'}] },
+      { code:'LT', name:'Lithuania',    flag:'🇱🇹', cities:[{name:'Vilnius',slug:'vilnius'}] },
+      { code:'MT', name:'Malta',        flag:'🇲🇹', cities:[{name:'Valletta',slug:'valletta'}] },
     ],
   },
   {
-    id: 'emea',
-    label: '🕌 Middle East & Africa',
-    cities: [
-      { name: 'Dubai',      slug: 'dubai',         flag: '🇦🇪' },
-      { name: 'Abu Dhabi',  slug: 'abu-dhabi',     flag: '🇦🇪' },
-      { name: 'Istanbul',   slug: 'istanbul',      flag: '🇹🇷' },
-      { name: 'Marrakesh',  slug: 'marrakesh',     flag: '🇲🇦' },
-      { name: 'Cairo',      slug: 'cairo',         flag: '🇪🇬' },
-      { name: 'Hurghada',   slug: 'hurghada',      flag: '🇪🇬' },
-      { name: 'Luxor',      slug: 'luxor',         flag: '🇪🇬' },
-      { name: 'Doha',       slug: 'doha',          flag: '🇶🇦' },
-      { name: 'Cape Town',  slug: 'cape-town',     flag: '🇿🇦' },
+    id: 'americas', label: '🗽 Americas',
+    countries: [
+      { code:'US', name:'USA',          flag:'🇺🇸', cities:[{name:'New York',slug:'new-york'},{name:'Las Vegas',slug:'las-vegas'},{name:'San Francisco',slug:'san-francisco'},{name:'Los Angeles',slug:'los-angeles'},{name:'Miami',slug:'miami'},{name:'Chicago',slug:'chicago'},{name:'Boston',slug:'boston'},{name:'New Orleans',slug:'new-orleans'},{name:'Washington DC',slug:'washington-dc'}] },
+      { code:'CA', name:'Canada',       flag:'🇨🇦', cities:[{name:'Vancouver',slug:'vancouver'},{name:'Toronto',slug:'toronto'},{name:'Montreal',slug:'montreal'}] },
+      { code:'MX', name:'Mexico',       flag:'🇲🇽', cities:[{name:'Mexico City',slug:'mexico-city'},{name:'Tulum',slug:'tulum'},{name:'Playa del Carmen',slug:'playa-del-carmen'}] },
+      { code:'AR', name:'Argentina',    flag:'🇦🇷', cities:[{name:'Buenos Aires',slug:'buenos-aires'}] },
+      { code:'BR', name:'Brazil',       flag:'🇧🇷', cities:[{name:'Rio de Janeiro',slug:'rio-de-janeiro'}] },
+      { code:'PE', name:'Peru',         flag:'🇵🇪', cities:[{name:'Cusco',slug:'cusco'}] },
     ],
   },
   {
-    id: 'americas',
-    label: '🗽 North & South America',
-    cities: [
-      { name: 'New York',         slug: 'new-york',          flag: '🇺🇸' },
-      { name: 'Las Vegas',        slug: 'las-vegas',         flag: '🇺🇸' },
-      { name: 'San Francisco',    slug: 'san-francisco',     flag: '🇺🇸' },
-      { name: 'Los Angeles',      slug: 'los-angeles',       flag: '🇺🇸' },
-      { name: 'Miami',            slug: 'miami',             flag: '🇺🇸' },
-      { name: 'Chicago',          slug: 'chicago',           flag: '🇺🇸' },
-      { name: 'Vancouver',        slug: 'vancouver',         flag: '🇨🇦' },
-      { name: 'Boston',           slug: 'boston',            flag: '🇺🇸' },
-      { name: 'Tulum',            slug: 'tulum',             flag: '🇲🇽' },
-      { name: 'Toronto',          slug: 'toronto',           flag: '🇨🇦' },
-      { name: 'New Orleans',      slug: 'new-orleans',       flag: '🇺🇸' },
-      { name: 'Playa del Carmen', slug: 'playa-del-carmen',  flag: '🇲🇽' },
-      { name: 'Mexico City',      slug: 'mexico-city',       flag: '🇲🇽' },
-      { name: 'Washington DC',    slug: 'washington-dc',     flag: '🇺🇸' },
-      { name: 'Buenos Aires',     slug: 'buenos-aires',      flag: '🇦🇷' },
-      { name: 'Montreal',         slug: 'montreal',          flag: '🇨🇦' },
-      { name: 'Rio de Janeiro',   slug: 'rio-de-janeiro',    flag: '🇧🇷' },
-      { name: 'Cusco',            slug: 'cusco',             flag: '🇵🇪' },
+    id: 'emea', label: '🕌 Middle East & Africa',
+    countries: [
+      { code:'AE', name:'UAE',          flag:'🇦🇪', cities:[{name:'Dubai',slug:'dubai'},{name:'Abu Dhabi',slug:'abu-dhabi'}] },
+      { code:'TR', name:'Turkey',       flag:'🇹🇷', cities:[{name:'Istanbul',slug:'istanbul'}] },
+      { code:'EG', name:'Egypt',        flag:'🇪🇬', cities:[{name:'Cairo',slug:'cairo'},{name:'Hurghada',slug:'hurghada'},{name:'Luxor',slug:'luxor'}] },
+      { code:'MA', name:'Morocco',      flag:'🇲🇦', cities:[{name:'Marrakesh',slug:'marrakesh'}] },
+      { code:'QA', name:'Qatar',        flag:'🇶🇦', cities:[{name:'Doha',slug:'doha'}] },
+      { code:'ZA', name:'South Africa', flag:'🇿🇦', cities:[{name:'Cape Town',slug:'cape-town'}] },
     ],
   },
   {
-    id: 'apac',
-    label: '🌏 Asia-Pacific',
-    cities: [
-      { name: 'Singapore',   slug: 'singapore',     flag: '🇸🇬' },
-      { name: 'Melbourne',   slug: 'melbourne',     flag: '🇦🇺' },
-      { name: 'Bangkok',     slug: 'bangkok',       flag: '🇹🇭' },
-      { name: 'Phuket',      slug: 'phuket',        flag: '🇹🇭' },
-      { name: 'Bali',        slug: 'bali',          flag: '🇮🇩' },
-      { name: 'Cairns',      slug: 'cairns',        flag: '🇦🇺' },
-      { name: 'Tokyo',       slug: 'tokyo',         flag: '🇯🇵' },
-      { name: 'Sydney',      slug: 'sydney',        flag: '🇦🇺' },
-      { name: 'Gold Coast',  slug: 'gold-coast',    flag: '🇦🇺' },
-      { name: 'Osaka',       slug: 'osaka',         flag: '🇯🇵' },
-      { name: 'Ho Chi Minh', slug: 'ho-chi-minh',   flag: '🇻🇳' },
-      { name: 'Kuala Lumpur',slug: 'kuala-lumpur',  flag: '🇲🇾' },
-      { name: 'Seoul',       slug: 'seoul',         flag: '🇰🇷' },
-      { name: 'Kyoto',       slug: 'kyoto',         flag: '🇯🇵' },
-      { name: 'Siem Reap',   slug: 'siem-reap',     flag: '🇰🇭' },
-      { name: 'Chiang Mai',  slug: 'chiang-mai',    flag: '🇹🇭' },
-      { name: 'Hanoi',       slug: 'hanoi',         flag: '🇻🇳' },
-      { name: 'Phnom Penh',  slug: 'phnom-penh',    flag: '🇰🇭' },
+    id: 'apac', label: '🌏 Asia-Pacific',
+    countries: [
+      { code:'JP', name:'Japan',        flag:'🇯🇵', cities:[{name:'Tokyo',slug:'tokyo'},{name:'Osaka',slug:'osaka'},{name:'Kyoto',slug:'kyoto'}] },
+      { code:'AU', name:'Australia',    flag:'🇦🇺', cities:[{name:'Sydney',slug:'sydney'},{name:'Melbourne',slug:'melbourne'},{name:'Cairns',slug:'cairns'},{name:'Gold Coast',slug:'gold-coast'}] },
+      { code:'TH', name:'Thailand',     flag:'🇹🇭', cities:[{name:'Bangkok',slug:'bangkok'},{name:'Phuket',slug:'phuket'},{name:'Chiang Mai',slug:'chiang-mai'}] },
+      { code:'SG', name:'Singapore',    flag:'🇸🇬', cities:[{name:'Singapore',slug:'singapore'}] },
+      { code:'ID', name:'Indonesia',    flag:'🇮🇩', cities:[{name:'Bali',slug:'bali'}] },
+      { code:'VN', name:'Vietnam',      flag:'🇻🇳', cities:[{name:'Ho Chi Minh',slug:'ho-chi-minh'},{name:'Hanoi',slug:'hanoi'}] },
+      { code:'KH', name:'Cambodia',     flag:'🇰🇭', cities:[{name:'Siem Reap',slug:'siem-reap'},{name:'Phnom Penh',slug:'phnom-penh'}] },
+      { code:'MY', name:'Malaysia',     flag:'🇲🇾', cities:[{name:'Kuala Lumpur',slug:'kuala-lumpur'}] },
+      { code:'KR', name:'South Korea',  flag:'🇰🇷', cities:[{name:'Seoul',slug:'seoul'}] },
     ],
   },
 ];
@@ -207,41 +155,151 @@ function DropdownMenu({ items, basePath, onClose }: { items: string[]; basePath:
   );
 }
 
-function AttractionsDropdown({ onClose }: { onClose: () => void }) {
+function MobileAttractionsMenu({ onClose }: { onClose: () => void }) {
+  const [expandedCountry, setExpandedCountry] = useState<string | null>(null);
   return (
-    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-[14px] shadow-2xl border border-[#E5E7EB] py-3 w-[560px] z-50 max-h-[80vh] overflow-y-auto">
-      {ATTRACTION_REGIONS.map((region, ri) => (
-        <div key={region.id}>
-          {ri > 0 && <div className="mx-4 my-1.5 border-t border-[#F1F5F9]" />}
-          {/* Region header */}
-          <p className="px-4 pt-1 pb-1.5 text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+    <div className="pb-3">
+      {ATTRACTION_REGIONS.map(region => (
+        <div key={region.id} className="mb-1">
+          <p className="px-5 pt-3 pb-1.5 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
             {region.label}
           </p>
-          {/* City grid */}
-          <div className="grid grid-cols-3 px-1">
-            {region.cities.map(city => (
-              <Link
-                key={city.slug}
-                href={`/attractions/${city.slug}`}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] text-[#374151] hover:bg-[#F1F5F9] hover:text-[#2B7FFF] transition-colors"
-                onClick={onClose}
+          {region.countries.map(country => (
+            <div key={country.code}>
+              <button
+                onClick={() => setExpandedCountry(expandedCountry === country.code ? null : country.code)}
+                className="w-full flex items-center gap-2 px-5 py-2 text-[13px] text-[#93C5FD] hover:text-white"
               >
-                <span className="text-[14px] leading-none flex-shrink-0">{city.flag}</span>
-                <span className="truncate">{city.name}</span>
-              </Link>
-            ))}
-          </div>
+                <span className="text-[14px]">{country.flag}</span>
+                <span className="flex-1 text-left font-medium">{country.name}</span>
+                <span className="text-[10px] text-[#64748B]">
+                  {country.cities.length > 1 ? `${country.cities.length} cities` : ''}
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  className={`transition-transform duration-150 ${expandedCountry === country.code ? 'rotate-180' : ''}`}>
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </button>
+              {expandedCountry === country.code && (
+                <div className="grid grid-cols-2 pl-10 pr-4 pb-1">
+                  {country.cities.map(city => (
+                    <Link
+                      key={city.slug}
+                      href={`/attractions/${city.slug}`}
+                      className="flex items-center gap-1.5 py-1.5 text-[12px] text-[#7DD3FC] hover:text-white"
+                      onClick={onClose}
+                    >
+                      <span className="w-1 h-1 rounded-full bg-[#7DD3FC]/50" />
+                      {city.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       ))}
-      {/* All Destinations */}
-      <div className="mx-4 mt-2 pt-2 border-t border-[#E5E7EB]">
-        <Link
-          href="/attractions"
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] font-semibold text-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors"
-          onClick={onClose}
-        >
-          🌍 All Destinations →
-        </Link>
+      <Link
+        href="/attractions"
+        className="flex items-center gap-2 px-5 py-2 mt-2 text-[13px] font-semibold text-[#60A5FA]"
+        onClick={onClose}
+      >
+        🌍 All Destinations →
+      </Link>
+    </div>
+  );
+}
+
+function AttractionsDropdown({ onClose }: { onClose: () => void }) {
+  const [activeRegion, setActiveRegion] = useState('europe');
+  const [hoveredCountry, setHoveredCountry] = useState<string>('IT');
+
+  const region = ATTRACTION_REGIONS.find(r => r.id === activeRegion) || ATTRACTION_REGIONS[0];
+  const countryData = region.countries.find(c => c.code === hoveredCountry) || region.countries[0];
+
+  const handleRegionChange = (id: string) => {
+    setActiveRegion(id);
+    const newRegion = ATTRACTION_REGIONS.find(r => r.id === id);
+    if (newRegion?.countries[0]) setHoveredCountry(newRegion.countries[0].code);
+  };
+
+  return (
+    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-[14px] shadow-2xl border border-[#E5E7EB] z-50 w-[660px] overflow-hidden">
+      {/* 지역 탭 */}
+      <div className="flex border-b border-[#F1F5F9] bg-[#FAFBFC]">
+        {ATTRACTION_REGIONS.map(r => (
+          <button
+            key={r.id}
+            onClick={() => handleRegionChange(r.id)}
+            className={`flex-1 px-3 py-2.5 text-[12px] font-bold transition-colors ${
+              activeRegion === r.id
+                ? 'text-[#2B7FFF] border-b-2 border-[#2B7FFF] bg-white'
+                : 'text-[#64748B] hover:text-[#374151] hover:bg-white/60'
+            }`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 2패널: 국가 좌 / 도시 우 */}
+      <div className="flex" style={{ height: '300px' }}>
+        {/* 국가 리스트 */}
+        <div className="w-[185px] border-r border-[#F1F5F9] py-2 overflow-y-auto flex flex-col gap-0.5 px-1.5 flex-shrink-0">
+          {region.countries.map(c => (
+            <button
+              key={c.code}
+              onMouseEnter={() => setHoveredCountry(c.code)}
+              onClick={() => setHoveredCountry(c.code)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-[8px] text-[13px] font-medium transition-colors text-left w-full ${
+                (hoveredCountry || region.countries[0].code) === c.code
+                  ? 'bg-[#EFF6FF] text-[#2B7FFF]'
+                  : 'text-[#374151] hover:bg-[#F8FAFC]'
+              }`}
+            >
+              <span className="text-[16px] leading-none">{c.flag}</span>
+              <span className="flex-1 truncate">{c.name}</span>
+              {c.cities.length > 1 && (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="flex-shrink-0 opacity-50">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* 도시 그리드 */}
+        <div className="flex-1 p-4 overflow-y-auto">
+          {countryData && (
+            <>
+              <p className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider mb-3">
+                {countryData.flag} {countryData.name} &mdash; {countryData.cities.length} {countryData.cities.length === 1 ? 'City' : 'Cities'}
+              </p>
+              <div className="grid grid-cols-2 gap-0.5">
+                {countryData.cities.map(city => (
+                  <Link
+                    key={city.slug}
+                    href={`/attractions/${city.slug}`}
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-[8px] text-[13px] text-[#374151] hover:bg-[#EFF6FF] hover:text-[#2B7FFF] transition-colors"
+                    onClick={onClose}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#2B7FFF]/40 flex-shrink-0" />
+                    {city.name}
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-[#F1F5F9]">
+                <Link
+                  href="/attractions"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] text-[12px] font-semibold text-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors"
+                  onClick={onClose}
+                >
+                  🌍 Explore All Destinations →
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -498,35 +556,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
                 </svg>
               </button>
               {mobileExpanded === 'attractions' && (
-                <div className="pb-3">
-                  {ATTRACTION_REGIONS.map(region => (
-                    <div key={region.id} className="mb-2">
-                      <p className="px-5 pt-2 pb-1 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-                        {region.label}
-                      </p>
-                      <div className="grid grid-cols-2 gap-0">
-                        {region.cities.map(city => (
-                          <Link
-                            key={city.slug}
-                            href={`/attractions/${city.slug}`}
-                            className="flex items-center gap-1.5 px-5 py-1.5 text-[13px] text-[#93C5FD] hover:text-white"
-                            onClick={() => setMobileOpen(false)}
-                          >
-                            <span className="text-[12px]">{city.flag}</span>
-                            {city.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  <Link
-                    href="/attractions"
-                    className="flex items-center gap-2 px-5 py-2 mt-1 text-[13px] font-semibold text-[#60A5FA]"
-                    onClick={() => setMobileOpen(false)}
-                  >
-                    🌍 All Destinations →
-                  </Link>
-                </div>
+                <MobileAttractionsMenu onClose={() => setMobileOpen(false)} />
               )}
             </div>
 
