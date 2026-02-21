@@ -86,7 +86,8 @@ async function fetchTmEvents(genre: string, countryCode: string, page: number) {
 /* ── DB 저장 ── */
 async function saveToDb(rows: Array<{ event_id: string; image_url: string; event_name: string; genre: string; country: string }>) {
   if (!SERVICE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set');
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/music_images`, {
+  const url = `${SUPABASE_URL}/rest/v1/music_images`;
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY,
@@ -96,9 +97,12 @@ async function saveToDb(rows: Array<{ event_id: string; image_url: string; event
     body: JSON.stringify(rows),
   });
   const body = await res.text();
-  if (!res.ok) throw new Error(`DB save failed (${res.status}): ${body}`);
-  // 실제 저장된 rows 개수 반환
-  try { return (JSON.parse(body) as unknown[]).length; } catch { return rows.length; }
+  // 디버그: status + body 포함 에러 반환
+  if (!res.ok) throw new Error(`DB(${res.status}) url=${url} svcKey=${SERVICE_KEY.slice(0,12)}... err=${body.slice(0,200)}`);
+  try {
+    const parsed = JSON.parse(body) as unknown[];
+    return { count: parsed.length, sample: parsed.slice(0, 2) };
+  } catch { return { count: rows.length, sample: [] }; }
 }
 
 /* ── 핸들러 ── */
@@ -124,16 +128,19 @@ export async function GET(req: NextRequest) {
 
     let saved = 0;
     let dbError = '';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let dbDebug: any = undefined;
     if (allRows.length > 0) {
       try {
-        const actualSaved = await saveToDb(allRows);
-        saved = actualSaved ?? allRows.length;
+        const result = await saveToDb(allRows);
+        saved = result.count;
+        dbDebug = result.sample;
       } catch (e) {
         dbError = String(e);
       }
     }
 
-    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved, dbError: dbError || undefined });
+    return NextResponse.json({ genre, page, countries: targetCountries, collected: allRows.length, saved, dbError: dbError || undefined, dbDebug });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
