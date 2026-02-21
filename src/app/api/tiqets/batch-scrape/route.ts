@@ -1,17 +1,24 @@
 /**
- * POST/GET /api/tiqets/batch-scrape?city_id=71631&limit=50&offset=0
+ * GET /api/tiqets/batch-scrape?city_id=72181&offset=0
  *
- * 특정 도시의 Tiqets 상품 이미지 일괄 스크래핑 → Supabase tiqets_images 저장
- * Admin 페이지에서 도시별 호출
+ * 도시별 Tiqets 상품 이미지 일괄 스크래핑 → Supabase tiqets_images 저장
+ * - 기본 12개씩, concurrency 3 (Vercel free tier 10s 타임아웃 대응)
+ * - offset 파라미터로 페이지네이션
+ * - 이미지 추출 순서: JSON-LD > og:image > imgix CDN regex
  */
 import { NextRequest, NextResponse } from 'next/server';
 
-const TIQETS_TOKEN    = process.env.TIQETS_TOKEN!;
-const SUPABASE_URL    = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SERVICE_KEY     = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const SCRAPE_UA       = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const TIQETS_TOKEN = process.env.TIQETS_TOKEN!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SCRAPE_UA    = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-/* ── Tiqets 상품 목록 가져오기 ── */
+// Vercel free tier 최대 10초 → 12개 × 3 동시 = 4 라운드 × ~2s = ~8s
+const BATCH_LIMIT   = 12;
+const CONCURRENCY   = 3;
+const REQUEST_TIMEOUT = 5000; // 5초
+
+/* ── 상품 목록 ── */
 async function fetchProducts(city_id: string, page = 1, page_size = 50) {
   const params = new URLSearchParams({ currency: 'USD', lang: 'en', page: String(page), page_size: String(page_size), city_id });
   const res = await fetch(`https://api.tiqets.com/v2/products?${params}`, {
@@ -22,18 +29,35 @@ async function fetchProducts(city_id: string, page = 1, page_size = 50) {
   return { products: data.products || [], total: data.pagination?.total || 0 };
 }
 
-/* ── imgix CDN URL 추출 ── */
-function extractImgix(html: string): string | null {
-  const m = html.match(/https:\/\/aws-tiqets-cdn\.imgix\.net\/images\/content\/([a-f0-9]+\.[a-z]+)/i);
-  if (m) return `https://aws-tiqets-cdn.imgix.net/images/content/${m[1]}?w=800&h=600&fit=crop&auto=format,compress&q=80`;
+/* ── 이미지 URL 추출 (3단계) ── */
+function extractImage(html: string): string | null {
+  // 1순위: JSON-LD Product image (가장 신뢰성 높음)
+  const ldMatch = html.match(/"@type"\s*:\s*"Product"[^}]*"image"\s*:\s*"(https:\/\/aws-tiqets-cdn\.imgix\.net\/images\/content\/[^"?]+)/);
+  if (ldMatch) {
+    return `${ldMatch[1]}?w=800&h=600&fit=crop&auto=format,compress&q=80`;
+  }
+
+  // 2순위: og:image
+  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["'](https:\/\/[^"'?]+)/i)
+    || html.match(/<meta[^>]+content=["'](https:\/\/aws-tiqets-cdn\.imgix\.net[^"'?]+)[^>]+property=["']og:image["']/i);
+  if (ogMatch) {
+    const url = ogMatch[1];
+    if (url.includes('aws-tiqets-cdn')) return `${url}?w=800&h=600&fit=crop&auto=format,compress&q=80`;
+    return url;
+  }
+
+  // 3순위: imgix CDN regex
+  const cdnMatch = html.match(/https:\/\/aws-tiqets-cdn\.imgix\.net\/images\/content\/([a-zA-Z0-9]+\.[a-z]+)/);
+  if (cdnMatch) {
+    return `https://aws-tiqets-cdn.imgix.net/images/content/${cdnMatch[1]}?w=800&h=600&fit=crop&auto=format,compress&q=80`;
+  }
+
   return null;
 }
 
-/* ── 단일 상품 이미지 스크래핑 ── */
+/* ── 단일 상품 스크래핑 ── */
 async function scrapeOne(product_url: string): Promise<string | null> {
   try {
-    const idMatch = product_url.match(/-p(\d+)\/?/);
-    const productId = idMatch?.[1];
     const res = await fetch(product_url, {
       headers: {
         'User-Agent': SCRAPE_UA,
@@ -41,18 +65,17 @@ async function scrapeOne(product_url: string): Promise<string | null> {
         'Accept': 'text/html,application/xhtml+xml',
       },
       redirect: 'follow',
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT),
     });
     if (!res.ok) return null;
-    if (productId && !res.url.includes(productId)) return null; // 리다이렉트 감지
     const html = await res.text();
-    return extractImgix(html)
-      || html.match(/property=["']og:image["'][^>]+content=["']([^"']+)/i)?.[1]
-      || null;
-  } catch { return null; }
+    return extractImage(html);
+  } catch {
+    return null;
+  }
 }
 
-/* ── Supabase에 이미지 배치 upsert ── */
+/* ── DB upsert ── */
 async function saveToDb(rows: Array<{ product_id: number; image_url: string; city_id: number }>) {
   if (!SERVICE_KEY) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set');
   const res = await fetch(`${SUPABASE_URL}/rest/v1/tiqets_images`, {
@@ -71,7 +94,7 @@ async function saveToDb(rows: Array<{ product_id: number; image_url: string; cit
   }
 }
 
-/* ── 이미 DB에 있는 product_id 조회 ── */
+/* ── 이미 DB에 있는 ID 조회 ── */
 async function getExistingIds(city_id: string): Promise<Set<number>> {
   const key = SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   const res = await fetch(
@@ -83,68 +106,43 @@ async function getExistingIds(city_id: string): Promise<Set<number>> {
   return new Set(data.map(d => d.product_id));
 }
 
-/* ── GET / POST 핸들러 ── */
+/* ── 핸들러 ── */
 export async function GET(req: NextRequest) {
-  return handler(req);
-}
-export async function POST(req: NextRequest) {
-  return handler(req);
-}
-
-async function handler(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const city_id   = searchParams.get('city_id') || '';
-  const limitStr  = searchParams.get('limit')   || '50';
-  const offsetStr = searchParams.get('offset')  || '0';
-  const forceAll  = searchParams.get('force') === 'true'; // 이미 있는 것도 재스크래핑
+  const city_id  = searchParams.get('city_id') || '';
+  const offsetStr = searchParams.get('offset') || '0';
+  const forceAll  = searchParams.get('force') === 'true';
 
   if (!city_id) return NextResponse.json({ error: 'city_id required' }, { status: 400 });
   if (!SERVICE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY not configured' }, { status: 500 });
 
-  const limit  = Math.min(parseInt(limitStr) || 50, 100);
   const offset = parseInt(offsetStr) || 0;
+  const page   = Math.floor(offset / 50) + 1;
 
-  // 1. 이미 DB에 있는 ID 조회 (force=true면 무시)
+  // DB에 이미 있는 ID 조회
   const existingIds = forceAll ? new Set<number>() : await getExistingIds(city_id);
 
-  // 2. 상품 목록 가져오기 (offset은 page로 변환)
-  const page      = Math.floor(offset / 50) + 1;
+  // 상품 목록
   const { products, total } = await fetchProducts(city_id, page, 50);
+  const pageSlice = products.slice(offset % 50);
 
-  // 3. 이미지 없고 DB에도 없는 것만 스크래핑
-  const toScrape = products
-    .slice(offset % 50, (offset % 50) + limit)
-    .filter((p: { id: number; images?: string[]; product_url?: string }) =>
-      !existingIds.has(p.id) &&
-      p.product_url &&
-      !(p.images && p.images.length > 0)
-    );
-
-  // 기존 이미지 있는 것도 DB에 없으면 저장
-  const withExistingImg = products
-    .slice(offset % 50, (offset % 50) + limit)
-    .filter((p: { id: number; images?: string[]; product_url?: string }) =>
-      !existingIds.has(p.id) &&
-      p.images && p.images.length > 0
-    );
+  // 스크래핑 대상 필터
+  type Product = { id: number | string; images?: string[]; product_url?: string };
+  const toScrape: Product[] = pageSlice
+    .filter((p: Product) => !existingIds.has(Number(p.id)) && p.product_url)
+    .slice(0, BATCH_LIMIT);
 
   const results: Array<{ product_id: number; image_url: string; city_id: number }> = [];
-
-  // 4. 기존 이미지 있는 상품 먼저 저장
-  for (const p of withExistingImg) {
-    results.push({ product_id: p.id, image_url: p.images[0], city_id: parseInt(city_id) });
-  }
-
-  // 5. 스크래핑 (concurrency 8)
-  const CONCURRENCY = 8;
   let scraped = 0;
   let failed  = 0;
+
+  // CONCURRENCY 단위로 병렬 스크래핑
   for (let i = 0; i < toScrape.length; i += CONCURRENCY) {
-    const batch = toScrape.slice(i, i + CONCURRENCY);
-    await Promise.all(batch.map(async (p: { id: number; product_url: string }) => {
-      const img = await scrapeOne(p.product_url);
+    const chunk = toScrape.slice(i, i + CONCURRENCY);
+    await Promise.all(chunk.map(async (p: Product) => {
+      const img = await scrapeOne(p.product_url!);
       if (img) {
-        results.push({ product_id: p.id, image_url: img, city_id: parseInt(city_id) });
+        results.push({ product_id: Number(p.id), image_url: img, city_id: parseInt(city_id) });
         scraped++;
       } else {
         failed++;
@@ -152,22 +150,29 @@ async function handler(req: NextRequest) {
     }));
   }
 
-  // 6. DB 저장
+  // DB 저장
   let saved = 0;
   if (results.length > 0) {
     await saveToDb(results);
     saved = results.length;
   }
 
+  const processedUpTo = offset + toScrape.length;
+  const hasMore = processedUpTo < total;
+
   return NextResponse.json({
     city_id,
-    total_products: total,
-    processed: toScrape.length + withExistingImg.length,
-    scraped_new: scraped,
-    from_api: withExistingImg.length,
+    total,
+    offset,
+    processed: toScrape.length,
+    scraped,
     failed,
     saved,
     already_in_db: existingIds.size,
-    next_offset: offset + limit < total ? offset + limit : null,
+    next_offset: hasMore ? processedUpTo : null,
   });
+}
+
+export async function POST(req: NextRequest) {
+  return GET(req);
 }
