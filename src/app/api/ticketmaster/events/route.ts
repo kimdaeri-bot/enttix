@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_KEY = process.env.TICKETMASTER_API_KEY || '0HO8fB0w6EOt44tC4M4gHSFRkVTzFQ1D';
-const BASE_URL = 'https://app.ticketmaster.com/discovery/v2/events.json';
+const API_KEY      = process.env.TICKETMASTER_API_KEY || '0HO8fB0w6EOt44tC4M4gHSFRkVTzFQ1D';
+const BASE_URL     = 'https://app.ticketmaster.com/discovery/v2/events.json';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+/* ── DB 이미지 캐시 일괄 조회 ── */
+async function getDbImages(ids: string[]): Promise<Map<string, string>> {
+  if (!ids.length || !SUPABASE_URL || !SUPABASE_KEY) return new Map();
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/music_images?event_id=in.(${ids.map(id => `"${id}"`).join(',')})&select=event_id,image_url`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, next: { revalidate: 300 } }
+    );
+    if (!res.ok) return new Map();
+    const rows: Array<{ event_id: string; image_url: string }> = await res.json();
+    return new Map(rows.map(r => [r.event_id, r.image_url]));
+  } catch { return new Map(); }
+}
 
 // tab → classificationName mapping
 const TAB_MAP: Record<string, string> = {
@@ -161,8 +177,19 @@ export async function GET(req: NextRequest) {
 
     const pageInfo = data.page || {};
 
+    // Music 탭: DB 캐시 이미지 우선 적용
+    let finalEvents = events;
+    if (tab === 'music' && events.length > 0) {
+      const dbImgs = await getDbImages(events.map((e: { id: string }) => e.id));
+      if (dbImgs.size > 0) {
+        finalEvents = events.map((e: { id: string; imageUrl: string }) =>
+          dbImgs.has(e.id) ? { ...e, imageUrl: dbImgs.get(e.id) } : e
+        );
+      }
+    }
+
     return NextResponse.json({
-      events,
+      events: finalEvents,
       page: {
         number: pageInfo.number || 0,
         size: pageInfo.size || 20,
