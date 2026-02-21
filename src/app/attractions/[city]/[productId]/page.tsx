@@ -27,22 +27,48 @@ interface TiqetsProduct {
   tagline?: string;
   summary?: string;
   description?: string;
-  images?: string[];
-  price?: number;
-  ratings?: { total: number; average: number };
-  promo_label?: string;
-  instant_ticket_delivery?: boolean;
-  cancellation?: string;
-  duration?: string;
-  skip_line?: boolean;
-  smartphone_ticket?: boolean;
-  city_name?: string;
-  country_name?: string;
-  product_checkout_url?: string;
-  product_url?: string;
-  whats_included?: string[];
-  whats_excluded?: string[];
-  highlights?: string[];
+  images?: string[] | null;
+  price?: number | null;
+  ratings?: { total: number; average: number } | null;
+  promo_label?: string | null;
+  instant_ticket_delivery?: boolean | null;
+  cancellation?: { policy?: string; window?: number | null } | string | null;
+  duration?: string | null;
+  skip_line?: boolean | null;
+  smartphone_ticket?: boolean | null;
+  city_name?: string | null;
+  country_name?: string | null;
+  product_checkout_url?: string | null;
+  product_url?: string | null;
+  whats_included?: string[] | string | null;
+  whats_excluded?: string[] | string | null;
+  highlights?: string[] | string | null;
+}
+
+/* ── 유틸 함수 ── */
+
+/** "* item1\n* item2" 형식 문자열 또는 배열 → string[] */
+function parseBulletList(raw: string[] | string | null | undefined): string[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.filter(Boolean);
+  return raw
+    .split(/\r?\n/)
+    .map(line => line.replace(/^\*+\s*/, '').trim())
+    .filter(Boolean);
+}
+
+/** cancellation 객체/문자열 → 라벨 */
+function getCancelLabel(c: TiqetsProduct['cancellation']): string | null {
+  if (!c) return null;
+  if (typeof c === 'string') return c;
+  if (typeof c === 'object') {
+    const p = c.policy;
+    if (p === 'free' || p === 'always') return 'Free Cancellation';
+    if (p === 'before_timeslot' && c.window != null) return `Free cancellation ${c.window}h before`;
+    if (p === 'before_timeslot') return 'Free cancellation';
+    if (p === 'never') return null; // 환불 불가 → 표시 안 함
+  }
+  return null;
 }
 
 type TabKey = 'overview' | 'includes' | 'highlights' | 'reviews';
@@ -266,9 +292,9 @@ export default function ProductDetailPage() {
                     ✓ Instant Confirmation
                   </span>
                 )}
-                {product.cancellation && (
+                {getCancelLabel(product.cancellation) && (
                   <span className="bg-[#ECFDF5] text-emerald-700 text-[12px] font-semibold px-3 py-1 rounded-full border border-emerald-200">
-                    ↩ Free Cancellation
+                    ↩ {getCancelLabel(product.cancellation)}
                   </span>
                 )}
                 {product.smartphone_ticket && (
@@ -352,20 +378,23 @@ export default function ProductDetailPage() {
 
               {activeTab === 'highlights' && (
                 <div>
-                  {product.highlights && product.highlights.length > 0 ? (
-                    <ul className="space-y-3">
-                      {product.highlights.map((item, i) => (
-                        <li key={i} className="flex items-start gap-3 text-[14px] text-[#374151]">
-                          <span className="w-6 h-6 rounded-full bg-[#EFF6FF] text-[#2B7FFF] flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">
-                            {i + 1}
-                          </span>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-[#94A3B8]">No highlights available.</p>
-                  )}
+                  {(() => {
+                    const items = parseBulletList(product.highlights);
+                    return items.length > 0 ? (
+                      <ul className="space-y-3">
+                        {items.map((item, i) => (
+                          <li key={i} className="flex items-start gap-3 text-[14px] text-[#374151]">
+                            <span className="w-6 h-6 rounded-full bg-[#EFF6FF] text-[#2B7FFF] flex items-center justify-center text-[11px] font-bold flex-shrink-0 mt-0.5">
+                              {i + 1}
+                            </span>
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[#94A3B8]">No highlights available.</p>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -376,36 +405,42 @@ export default function ProductDetailPage() {
                       <span className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-[12px]">✓</span>
                       What&apos;s Included
                     </h3>
-                    {product.whats_included && product.whats_included.length > 0 ? (
-                      <ul className="space-y-2.5">
-                        {product.whats_included.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-[14px] text-[#374151]">
-                            <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-[#94A3B8] text-[13px]">Not specified.</p>
-                    )}
+                    {(() => {
+                      const items = parseBulletList(product.whats_included);
+                      return items.length > 0 ? (
+                        <ul className="space-y-2.5">
+                          {items.map((item, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-[14px] text-[#374151]">
+                              <span className="text-green-500 mt-0.5 flex-shrink-0">✓</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-[#94A3B8] text-[13px]">Not specified.</p>
+                      );
+                    })()}
                   </div>
                   <div>
                     <h3 className="text-[15px] font-bold text-[#0F172A] mb-4 flex items-center gap-2">
                       <span className="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-[12px]">✗</span>
                       What&apos;s Excluded
                     </h3>
-                    {product.whats_excluded && product.whats_excluded.length > 0 ? (
-                      <ul className="space-y-2.5">
-                        {product.whats_excluded.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-[14px] text-[#374151]">
-                            <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-[#94A3B8] text-[13px]">Not specified.</p>
-                    )}
+                    {(() => {
+                      const items = parseBulletList(product.whats_excluded);
+                      return items.length > 0 ? (
+                        <ul className="space-y-2.5">
+                          {items.map((item, i) => (
+                            <li key={i} className="flex items-start gap-2.5 text-[14px] text-[#374151]">
+                              <span className="text-red-400 mt-0.5 flex-shrink-0">✗</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-[#94A3B8] text-[13px]">Not specified.</p>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
@@ -436,7 +471,7 @@ export default function ProductDetailPage() {
                       </div>
 
                       <a
-                        href={product.product_url}
+                        href={product.product_url ?? '#'}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[#E5E7EB] text-[14px] font-semibold text-[#374151] hover:bg-[#F8FAFC] transition-colors"
@@ -513,10 +548,10 @@ export default function ProductDetailPage() {
                       <span className="w-5 h-5 rounded-full bg-[#EFF6FF] text-[#2B7FFF] flex items-center justify-center text-[10px] font-bold flex-shrink-0">✓</span>
                       Instant confirmation
                     </div>
-                    {product.cancellation && (
+                    {getCancelLabel(product.cancellation) && (
                       <div className="flex items-center gap-2.5 text-[13px] text-[#374151]">
                         <span className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-bold flex-shrink-0">↩</span>
-                        Free cancellation available
+                        {getCancelLabel(product.cancellation)}
                       </div>
                     )}
                     <div className="flex items-center gap-2.5 text-[13px] text-[#374151]">

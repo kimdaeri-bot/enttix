@@ -3,6 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 
+/* 도시 이름 → slug 변환 (All Cities 모드에서 product.city_name 기반) */
+function cityNameToSlug(name: string): string {
+  const MAP: Record<string, string> = {
+    'london': 'london', 'paris': 'paris', 'barcelona': 'barcelona',
+    'rome': 'rome', 'amsterdam': 'amsterdam', 'new york': 'new-york',
+    'dubai': 'dubai', 'tokyo': 'tokyo', 'singapore': 'singapore',
+    'hong kong': 'hong-kong', 'istanbul': 'istanbul',
+  };
+  return MAP[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
 /* ─────────────────────────────────────────
    Tiqets city IDs (from tiqets.com/en/city-cXX/ URL pattern)
 ───────────────────────────────────────── */
@@ -95,17 +106,19 @@ function StarRating({ avg }: { avg: number }) {
   );
 }
 
-function ProductCard({ product, cityId }: { product: TiqetsProduct; cityId: string }) {
+function ProductCard({ product, cityId, citySlug }: {
+  product: TiqetsProduct;
+  cityId: string;
+  citySlug: string;
+}) {
   const fallback = getCityFallback(cityId);
   const firstImage = product.images && product.images.length > 0 ? product.images[0] : '';
   const [imgSrc, setImgSrc] = useState<string>(firstImage || fallback);
-  const outLink = product.product_url || 'https://www.tiqets.com/en/';
+  const detailPath = `/attractions/${citySlug}/${product.id}`;
 
   return (
-    <a
-      href={outLink}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={detailPath}
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col"
     >
       <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
@@ -161,14 +174,14 @@ function ProductCard({ product, cityId }: { product: TiqetsProduct; cityId: stri
             {(product.price && product.price > 0) ? `From $${Math.round(product.price)}` : 'See prices'}
           </span>
           <span className="flex items-center gap-1 text-[12px] font-semibold text-[#2B7FFF] group-hover:gap-2 transition-all">
-            Book Now
+            View Details
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </span>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
 
@@ -364,9 +377,17 @@ export default function AttractionsClient() {
         {/* 제품 그리드 */}
         {!loading && !error && products.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {products.map(product => (
-              <ProductCard key={String(product.id)} product={product} cityId={activeCity} />
-            ))}
+            {products.map(product => {
+              const slug = activeCityObj.slug || cityNameToSlug(product.city_name ?? '');
+              return (
+                <ProductCard
+                  key={String(product.id)}
+                  product={product}
+                  cityId={activeCity}
+                  citySlug={slug}
+                />
+              );
+            })}
           </div>
         )}
 
