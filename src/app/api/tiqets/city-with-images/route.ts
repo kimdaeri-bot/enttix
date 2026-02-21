@@ -45,10 +45,10 @@ export interface TiqetsProductWithImages {
 async function getDbImages(city_id: string): Promise<Map<number, string>> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/tiqets_images?city_id=eq.${city_id}&select=product_id,image_url`,
+      `${SUPABASE_URL}/rest/v1/tiqets_images?city_id=eq.${city_id}&select=product_id,image_url&limit=5000`,
       {
         headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY },
-        next: { revalidate: 300 }, // 5분 캐시 (CDN/엣지 레이어)
+        cache: 'no-store', // 항상 최신 DB 이미지 조회
       },
     );
     if (!res.ok) return new Map();
