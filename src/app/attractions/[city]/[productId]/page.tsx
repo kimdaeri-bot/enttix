@@ -121,8 +121,12 @@ export default function ProductDetailPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
+  // Availability
+  const [availMap, setAvailMap] = useState<Record<string, { availability: number; timeslots: string[] }>>({});
+  const [availLoading, setAvailLoading] = useState(false);
 
   // ── Calendar helpers ──
   const MONTH_NAMES = ['January','February','March','April','May','June',
@@ -166,13 +170,15 @@ export default function ProductDetailPage() {
 
   function handleBook() {
     if (!selectedDate || !product?.product_checkout_url) return;
-    try {
-      const url = new URL(product.product_checkout_url);
-      url.searchParams.set('date', selectedDate);
-      window.open(url.toString(), '_blank', 'noopener,noreferrer');
-    } catch {
-      window.open(product.product_checkout_url, '_blank', 'noopener,noreferrer');
-    }
+    window.open(product.product_checkout_url, '_blank', 'noopener,noreferrer');
+  }
+
+  function getAvailLabel(iso: string): string | null {
+    const a = availMap[iso];
+    if (!a) return null;
+    if (a.availability <= 0) return 'sold-out';
+    if (a.availability <= 5) return `${a.availability} left`;
+    return 'available';
   }
 
   useEffect(() => {
@@ -208,6 +214,17 @@ export default function ProductDetailPage() {
         setLoading(false);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
+
+  // 가용성 데이터 로드
+  useEffect(() => {
+    if (!productId) return;
+    setAvailLoading(true);
+    fetch(`/api/tiqets/availability/${productId}`)
+      .then(r => r.json())
+      .then(data => setAvailMap(data.dateMap || {}))
+      .catch(() => {})
+      .finally(() => setAvailLoading(false));
   }, [productId]);
 
   if (loading) {
@@ -612,28 +629,69 @@ export default function ProductDetailPage() {
                           const past = isPast(d);
                           const isSelected = iso === selectedDate;
                           const isToday = iso === toIso(today.getDate()) && calYear === today.getFullYear() && calMonth === today.getMonth();
+                          const avail = availMap[iso];
+                          const soldOut = avail && avail.availability <= 0;
+                          const hasAvail = avail && avail.availability > 0;
+                          const disabled = past || !!soldOut;
                           return (
                             <button
                               key={i}
-                              disabled={past}
-                              onClick={() => setSelectedDate(iso)}
+                              disabled={disabled}
+                              onClick={() => { setSelectedDate(iso); setSelectedTime(''); }}
                               className={`
-                                w-full aspect-square flex items-center justify-center rounded-lg text-[12px] font-medium transition-all
-                                ${past ? 'text-[#CBD5E1] cursor-not-allowed' : 'hover:bg-[#EFF6FF] cursor-pointer'}
+                                w-full aspect-square flex flex-col items-center justify-center rounded-lg text-[11px] font-medium transition-all relative
+                                ${disabled ? 'text-[#CBD5E1] cursor-not-allowed' : 'hover:bg-[#EFF6FF] cursor-pointer'}
                                 ${isSelected ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6FF0] font-bold' : ''}
                                 ${isToday && !isSelected ? 'border border-[#2B7FFF] text-[#2B7FFF] font-bold' : ''}
-                                ${!isSelected && !isToday && !past ? 'text-[#374151]' : ''}
+                                ${!isSelected && !isToday && !disabled ? 'text-[#374151]' : ''}
+                                ${soldOut && !past ? 'line-through opacity-40' : ''}
                               `}
                             >
                               {d}
+                              {!past && hasAvail && !isSelected && (
+                                <span className={`absolute bottom-0.5 w-1 h-1 rounded-full ${avail.availability <= 5 ? 'bg-orange-400' : 'bg-green-400'}`} />
+                              )}
                             </button>
                           );
                         })}
                       </div>
+
+                      {/* 범례 */}
+                      {!availLoading && Object.keys(availMap).length > 0 && (
+                        <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-[#94A3B8]">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block"/>Available</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>Limited</span>
+                        </div>
+                      )}
+                      {availLoading && (
+                        <p className="text-center text-[10px] text-[#94A3B8] mt-1 animate-pulse">Loading availability…</p>
+                      )}
                     </div>
                   </div>
 
-                  {/* CTA — Check Availability */}
+                  {/* 타임슬롯 선택 */}
+                  {selectedDate && availMap[selectedDate]?.timeslots?.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-[11px] font-semibold text-[#374151] mb-2">Select a time:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {availMap[selectedDate].timeslots.map(t => (
+                          <button
+                            key={t}
+                            onClick={() => setSelectedTime(t)}
+                            className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold border transition-all ${
+                              selectedTime === t
+                                ? 'bg-[#2B7FFF] text-white border-[#2B7FFF]'
+                                : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#2B7FFF] hover:text-[#2B7FFF]'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA — Book on Tiqets */}
                   <button
                     onClick={handleBook}
                     disabled={!selectedDate || !product.product_checkout_url}
@@ -644,10 +702,15 @@ export default function ProductDetailPage() {
                     }`}
                   >
                     {selectedDate
-                      ? `Book for ${formatDisplayDate(selectedDate)} →`
+                      ? `Book ${formatDisplayDate(selectedDate)}${selectedTime ? ` at ${selectedTime}` : ''} →`
                       : 'Select a Date First'
                     }
                   </button>
+                  {selectedDate && (
+                    <p className="text-[10px] text-[#94A3B8] text-center -mt-2 mb-3">
+                      Redirects to Tiqets — re-select date on their site
+                    </p>
+                  )}
 
                   {/* Trust badges */}
                   <div className="space-y-2.5 pt-4 border-t border-[#F1F5F9]">
