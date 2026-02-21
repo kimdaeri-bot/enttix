@@ -101,7 +101,6 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
   const [aiResult, setAiResult] = useState<AISearchResult | null>(null);
   const [resultCollapsed, setResultCollapsed] = useState(false);
   const [activeDay, setActiveDay] = useState(1);
-  const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (query.trim()) setMode(isPlannerQuery(query) ? 'planner' : 'search');
@@ -117,15 +116,6 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [query]);
-
-  // Scroll to results when they appear (PC + mobile)
-  useEffect(() => {
-    if ((plannerResult || aiResult) && resultsRef.current && inline) {
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
-  }, [plannerResult, aiResult, inline]);
 
   // Scroll to active day card
   useEffect(() => {
@@ -309,7 +299,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* ====== INLINE PLANNER RESULT ====== */}
       {inline && plannerResult && !loading && (
-        <div ref={resultsRef} className="mt-4 relative z-[10]">
+        <div className="mt-4 relative z-[10]">
           {/* Header bar */}
           <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur rounded-t-2xl border border-[#E5E7EB] border-b-0">
             <div className="flex items-center gap-2">
@@ -469,7 +459,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
 
       {/* ====== INLINE AI RESULT ====== */}
       {inline && aiResult && !loading && (
-        <div ref={resultsRef} className="mt-4 relative z-[10]">
+        <div className="mt-4 relative z-[10]">
           <div className="flex items-center justify-between px-5 py-3 bg-white/95 backdrop-blur rounded-t-2xl border border-[#E5E7EB] border-b-0">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg></div>
