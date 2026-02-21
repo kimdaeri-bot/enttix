@@ -154,8 +154,8 @@ const CITY_IMG: Record<string, string> = {
   '72181':  'photo-1540959733332-eab4deabeeaf', // Tokyo
   '78125':  'photo-1525625293386-3f8f99389edd', // Singapore
   '79079':  'photo-1524231757912-21f4fe3a7200', // Istanbul
-  '71854':  'photo-1541370976299-4d24be63e9d7', // Florence
-  '76528':  'photo-1585208798174-6cedd4234ae0', // Lisbon
+  '71854':  'photo-1504433374832-4fcf45f40967', // Florence
+  '76528':  'photo-1563206767-5b18f218e8de', // Lisbon
   '71510':  'photo-1523906834658-6e24ef2386f9', // Venice
   '65144':  'photo-1560969184-10fe8719e047',    // Berlin
   '71749':  'photo-1520175480921-4edfa2983e0f', // Milan
@@ -163,14 +163,14 @@ const CITY_IMG: Record<string, string> = {
   '60400':  'photo-1506973035872-a4ec16b8e8d9', // Sydney
   '99239':  'photo-1555993539-1732b0258235',    // Athens
   '78586':  'photo-1508009603885-50cf7c579365', // Bangkok
-  '21':     'photo-1583195763991-f8a6b52de74d', // Edinburgh
-  '68616':  'photo-1549918864-48ac28d3be1b',    // Dublin
+  '21':     'photo-1580418827493-f2b22c0a76cb', // Edinburgh
+  '68616':  'photo-1555921015-5532091f6026',    // Dublin
   '74040':  'photo-1518105779142-d975f22f1b0a', // Mexico City
   '31':     'photo-1595867818082-083862f3d630', // Munich
-  '68199':  'photo-1541264643588-4927a7e47e2a', // Budapest
+  '68199':  'photo-1551867633-194f125bddfa', // Budapest
   '60843':  'photo-1491557345352-5929e343eb89', // Brussels
   '82923':  'photo-1580060839134-75a5edca2e99', // Cape Town
-  '65792':  'photo-1539650116574-75c0c6d73f6e', // Cairo
+  '65792':  'photo-1572252009286-268acec5ca0a', // Cairo
   '267738': 'photo-1537996194471-e657df975ab4', // Bali
   '60844':  'photo-1491557345352-5929e343eb89', // Bruges
   '64162':  'photo-1541849546-216549ae216d',    // Prague
@@ -183,62 +183,62 @@ const CITY_IMG: Record<string, string> = {
   '71720':  'photo-1534445867742-43195f401b6c', // Naples
   '76573':  'photo-1555881400-74d7acaacd8b',    // Porto
   '22':     'photo-1531971589569-0d9370cbe1e5', // Reykjavik
-  '65870':  'photo-1509899595012-e9c19cba1d57', // Seville
-  '64886':  'photo-1558618047-3c8c96f7d900',    // Hamburg
+  '65870':  'photo-1519125323398-675f0ddb6308', // Seville
+  '64886':  'photo-1504109586057-7a2ae83d1338',    // Hamburg
   '113':    'photo-1513622470522-26c3c8a854bc', // Copenhagen
-  '71428':  'photo-1589306969225-8b7f26f5e3c0', // Palermo
+  '71428':  'photo-1533929736458-ca588d08c8be', // Palermo
   '1638':   'photo-1509356843151-3e7d96241e11', // Stockholm
-  '71506':  'photo-1539966975862-1506e91e88c2', // Verona
-  '66770':  'photo-1493683803644-0e8d47c5ca69', // Nice
-  '71534':  'photo-1574804842743-74dc8f1d11f4', // Turin
+  '71506':  'photo-1534430480872-3498386e7856', // Verona
+  '66770':  'photo-1549144511-f099e773c147', // Nice
+  '71534':  'photo-1564501049412-61c2a3083791', // Turin
   '66544':  'photo-1548690312-e3b507d8c110',    // Helsinki
   '71986':  'photo-1558618666-fcd25c85cd64',    // Bologna
   '485':    'photo-1549144511-f099e773c147',     // Warsaw
   '264570': 'photo-1541364983171-a8ba01e95cfc', // Rhodes
-  '67101':  'photo-1576162429-b5c4e62e7e50',    // Bordeaux
+  '67101':  'photo-1464822759023-fed622ff2c3b',    // Bordeaux
   '64765':  'photo-1548248823-ce16a73b6d49',    // Cologne
-  '73787':  'photo-1595880576980-b29434a6d98e', // Valletta
+  '73787':  'photo-1548690312-e3b507d8c110', // Valletta
   '65042':  'photo-1562547256-2c5ee93b60b7',    // Dresden
-  '60346':  'photo-1599982890968-83e0acfbe35b', // Salzburg
+  '60346':  'photo-1543610892-0b1f7e6d8ac1', // Salzburg
   '20':     'photo-1515488042361-ee00e0ddd4e4', // Zurich
-  '75084':  'photo-1561015366-b8bc1b35bb1c',    // Oslo
+  '75084':  'photo-1562183241-b937e95585b6',    // Oslo
   '60358':  'photo-1507003211169-0a1dd7228f2d', // Innsbruck
-  '65702':  'photo-1548602088-9d12a4f9c10e',    // Tallinn
-  '73352':  'photo-1554929039-534f8a59e7f6',    // Vilnius
-  '62662':  'photo-1586500036706-41963de39e8c', // Lucerne
+  '65702':  'photo-1554118811-1e0d58224f24',    // Tallinn
+  '73352':  'photo-1507272931001-fc06c17e4f43',    // Vilnius
+  '62662':  'photo-1540959733332-eab4deabeeaf', // Lucerne
   // ── EMEA 신규
-  '60013':  'photo-1580672850367-a4a84d9cbc38', // Abu Dhabi
+  '60013':  'photo-1512632578888-169bbbc64f33', // Abu Dhabi
   '73471':  'photo-1487222477894-8943e31ef7b2', // Marrakesh
   '44':     'photo-1523805009345-7448845a9e53', // Hurghada
-  '65786':  'photo-1547523196-02ab8ebc8fbe',    // Luxor
+  '65786':  'photo-1552832230-c0197dd311b5',    // Luxor
   '76635':  'photo-1542816417-0983c9c9ad53',    // Doha
   // ── Americas 신규
-  '82073':  'photo-1588392382834-a891154bca4d', // Las Vegas
+  '82073':  'photo-1520209268518-aec60b8bb5ca', // Las Vegas
   '1772':   'photo-1506146332389-18140dc7b2fb', // San Francisco
-  '81810':  'photo-1543429258-b16fabe1d04e',    // Los Angeles
+  '81810':  'photo-1534190239940-9ba8944ea261',    // Los Angeles
   '79868':  'photo-1533106418989-88406c7cc8ca', // Miami
   '80816':  'photo-1477959858617-67f85cf4f1df', // Chicago
   '62496':  'photo-1559511260-66a654ae982a',    // Vancouver
-  '80874':  'photo-1570197571499-6d9e8e66c0e8', // Boston
-  '109113': 'photo-1533862963240-a6dac5ef7b61', // Tulum
+  '80874':  'photo-1498050108023-c5249f4df085', // Boston
+  '109113': 'photo-1547447134-cd3f5c716030', // Tulum
   '62492':  'photo-1517090504586-fde19ea6066f', // Toronto
-  '80162':  'photo-1577996394613-37a26fc7ba85', // New Orleans
-  '73927':  'photo-1552074284-83408e9e5020',    // Playa del Carmen
+  '80162':  'photo-1556702571-3e11dd2b1a92', // New Orleans
+  '73927':  'photo-1566073771259-6a8506099945',    // Playa del Carmen
   '79751':  'photo-1501466044931-62695aada8e9', // Washington DC
   '60189':  'photo-1612294037637-ec328d0e075e', // Buenos Aires
-  '25':     'photo-1555883006-0828a1db5814',    // Montreal
+  '25':     'photo-1534105615256-13940a56ff44',    // Montreal
   '61535':  'photo-1483729558449-99ef09a8c325', // Rio de Janeiro
-  '75323':  'photo-1589557059453-2d5bc0d7fb98', // Cusco
+  '75323':  'photo-1506905925346-21bda4d32df4', // Cusco
   // ── APAC 신규
   '60426':  'photo-1523482580672-f109ba8cb9be', // Melbourne
-  '78451':  'photo-1552685751-74e92c0acb7a',    // Phuket
+  '78451':  'photo-1519046904884-53103b34b206',    // Phuket
   '60466':  'photo-1518391846015-55a9cc003b25', // Cairns
-  '60442':  'photo-1577696680467-c9fe82c79c41', // Gold Coast
-  '272460': 'photo-1583418855642-d0a8bf2f7c64', // Ho Chi Minh
+  '60442':  'photo-1507525428034-b723cf961d3e', // Gold Coast
+  '272460': 'photo-1557804506-669a67965ba0', // Ho Chi Minh
   '74416':  'photo-1596422846543-75c6fc197f07', // Kuala Lumpur
-  '72961':  'photo-1552301726-9e19e23a1d99',    // Siem Reap
+  '72961':  'photo-1506197603052-3cc9c3a201bd',    // Siem Reap
   '78479':  'photo-1571003123894-1f0594d2b5d9', // Chiang Mai
-  '82689':  'photo-1555990881-0d3d3bc0ace1',    // Hanoi
+  '82689':  'photo-1528360983277-13d401cdc186',    // Hanoi
   '72955':  'photo-1594322436404-5a0526db4d13', // Phnom Penh
 };
 
