@@ -274,7 +274,7 @@ function EventCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
   return (
-    <a href={`/music/event/${event.id}`}
+    <a href={event.url} target="_blank" rel="noopener noreferrer"
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col">
       <div className="relative aspect-[16/9] overflow-hidden flex-shrink-0">
         {!imgErr && event.imageUrl ? (
@@ -383,7 +383,9 @@ export default function MusicClient() {
       const data = await res.json();
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const raw: TmEvent[] = (data.events || []).filter(
-        (e: TmEvent) => !e.date || e.date >= today  // 날짜 없는 것 포함, 지난 것 제외
+        (e: TmEvent) =>
+          (!e.date || e.date >= today) &&              // 지난 이벤트 제외
+          e.url && e.url.includes('ticketmaster.com')  // TM 직접링크 아닌 것 제외
       );
 
       // 같은 이미지 → 삭제 아님, 해당 이벤트만 venue 이미지로 교체
