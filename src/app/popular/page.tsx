@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function PopularPage() {
   return (
-    <main className="min-h-screen bg-[#F5F7FA]">
+    <main className="min-h-screen" style={{ background: '#0A0F1E' }}>
       <Header hideSearch />
       <PopularClient />
       <Footer />
