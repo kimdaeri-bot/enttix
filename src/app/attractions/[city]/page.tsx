@@ -29,16 +29,42 @@ const CITY_MAP: Record<string, {
   tokyo:      { id: 72181,  name: 'Tokyo',     tiqetsSlug: 'tokyo-attractions-c72181',      photo: 'photo-1540959733332-eab4deabeeaf', desc: 'Ancient temples, futuristic technology and endless culinary adventures.' },
 };
 
-/* ─── CATEGORIES ────────────────────────────────────────────── */
-const CATEGORIES = [
-  { label: 'All',             tagId: null  as number | null, icon: '✨' },
-  { label: 'Museums',         tagId: 1363,  icon: '🏛️' },
-  { label: 'Skip Line',       tagId: 1711,  icon: '⚡' },
-  { label: 'Tours',           tagId: null,  icon: '🗺️', key: 'tours' },
-  { label: 'Day Trips',       tagId: 1385,  icon: '🚌' },
-  { label: 'Outdoor',         tagId: 1191,  icon: '🌿' },
-  { label: 'Food & Drink',    tagId: 962,   icon: '🍽️' },
-  { label: 'Performing Arts', tagId: 665,   icon: '🎭' },
+/* ─── CATEGORIES (Tiqets tag_id 기반) ──────────────────────── */
+const MAIN_CATEGORIES = [
+  { id: '',     label: 'All',                  icon: '✨' },
+  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
+  { id: '709',  label: 'Archaeological Sites', icon: '⛏️' },
+  { id: '1040', label: 'City Tours',           icon: '🗺️' },
+  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
+  { id: '700',  label: 'Art Museums',          icon: '🎨' },
+  { id: '702',  label: 'History Museums',      icon: '📜' },
+];
+
+const ALL_CATEGORIES = [
+  { id: '700',  label: 'Art Museums',               icon: '🎨' },
+  { id: '709',  label: 'Archaeological Sites',       icon: '⛏️' },
+  { id: '725',  label: 'Botanical Gardens',          icon: '🌿' },
+  { id: '705',  label: 'Castles',                    icon: '🏰' },
+  { id: '1032', label: 'City Cards & Passes',        icon: '🎫' },
+  { id: '1040', label: 'City Tours',                 icon: '🗺️' },
+  { id: '1035', label: 'Cruises & Boat Tours',       icon: '🚢' },
+  { id: '1042', label: 'Day Trips',                  icon: '🚌' },
+  { id: '1034', label: 'Food & Drinks',              icon: '🍽️' },
+  { id: '708',  label: 'Historical Sites',           icon: '🏛️' },
+  { id: '702',  label: 'History Museums',            icon: '📜' },
+  { id: '701',  label: 'Interactive Museums',        icon: '🎭' },
+  { id: '706',  label: 'Palaces',                    icon: '👑' },
+  { id: '710',  label: 'Places of Worship',          icon: '⛪' },
+  { id: '1048', label: 'Public Transport',           icon: '🚇' },
+  { id: '1049', label: 'Rentals',                    icon: '🚲' },
+  { id: '703',  label: 'Science & Technology',       icon: '🔬' },
+  { id: '2596', label: 'Shows & Theatres',           icon: '🎭' },
+  { id: '712',  label: 'Theme Parks',                icon: '🎡' },
+  { id: '1840', label: 'Transfers',                  icon: '🚖' },
+  { id: '2597', label: 'Travel Services',            icon: '✈️' },
+  { id: '1942', label: 'Undergrounds',               icon: '🕳️' },
+  { id: '1033', label: 'Workshops & Classes',        icon: '🎓' },
+  { id: '723',  label: 'Zoos & Safari Parks',        icon: '🦁' },
 ];
 
 const AUDIENCE_CHIPS = [
@@ -77,7 +103,6 @@ interface TiqetsProduct {
 }
 
 type SortKey = 'popular' | 'price_asc' | 'price_desc' | 'rating';
-type CategoryFilter = number | null | 'tours';
 
 /* ─── SKELETON ───────────────────────────────────────────────── */
 function CardSkeleton() {
@@ -345,7 +370,8 @@ export default function CityAttractionsPage() {
   const [displayCount, setDisplayCount] = useState(24);
   const [sort, setSort] = useState<SortKey>('popular');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<CategoryFilter>(null);
+  const [activeCategory, setActiveCategory] = useState<string>(''); // tag_id string
+  const [showMoreModal, setShowMoreModal] = useState(false);
   const [dbAttractions, setDbAttractions] = useState<AttractionItem[]>([]);
 
   const fetchProducts = useCallback(async () => {
@@ -380,14 +406,10 @@ export default function CityAttractionsPage() {
   let filtered = products.filter(p =>
     !searchQuery || p.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  if (activeCategory !== null) {
-    if (activeCategory === 'tours') {
-      filtered = filtered.filter(p => p.title.toLowerCase().includes('tour'));
-    } else if (activeCategory === 1711) {
-      filtered = filtered.filter(p => p.skip_line || p.tag_ids?.includes(1711));
-    } else {
-      filtered = filtered.filter(p => p.tag_ids?.includes(activeCategory as number));
-    }
+  if (activeCategory) {
+    filtered = filtered.filter(p =>
+      p.tag_ids?.map(String).includes(activeCategory)
+    );
   }
   const sorted = [...filtered].sort((a, b) => {
     switch (sort) {
@@ -516,29 +538,28 @@ export default function CityAttractionsPage() {
         <div className="max-w-[1280px] mx-auto px-4">
           {/* Category chips */}
           <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-none">
-            {CATEGORIES.map(cat => {
-              const isActive =
-                (cat.key === 'tours' && activeCategory === 'tours') ||
-                (!cat.key && cat.tagId === activeCategory);
-              return (
-                <button
-                  key={cat.label}
-                  onClick={() => {
-                    if (cat.key === 'tours') setActiveCategory('tours');
-                    else setActiveCategory(cat.tagId);
-                    setDisplayCount(24);
-                  }}
-                  className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#0F172A] text-white'
-                      : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
-                  }`}
-                >
-                  <span>{cat.icon}</span>
-                  {cat.label}
-                </button>
-              );
-            })}
+            {MAIN_CATEGORIES.map(cat => (
+              <button
+                key={cat.id || 'all'}
+                onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold transition-all whitespace-nowrap ${
+                  activeCategory === cat.id
+                    ? 'bg-[#0F172A] text-white'
+                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                {cat.label}
+              </button>
+            ))}
+            {/* More categories */}
+            <button
+              onClick={() => setShowMoreModal(true)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white whitespace-nowrap"
+            >
+              More categories
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
 
           {/* Sort row */}
@@ -564,6 +585,44 @@ export default function CityAttractionsPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── More Categories 모달 ────────────────────────────── */}
+      {showMoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMoreModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] sticky top-0 bg-white">
+              <h3 className="text-[18px] font-bold text-[#0F172A]">All Categories</h3>
+              <button
+                onClick={() => setShowMoreModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#64748B] text-[20px] leading-none"
+              >×</button>
+            </div>
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <button
+                onClick={() => { setActiveCategory(''); setDisplayCount(24); setShowMoreModal(false); }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold border transition-all ${
+                  activeCategory === '' ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-[#F8FAFC] text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30'
+                }`}
+              >
+                <span>✨</span> All
+              </button>
+              {ALL_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); setShowMoreModal(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold border transition-all text-left ${
+                    activeCategory === cat.id ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-[#F8FAFC] text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30'
+                  }`}
+                >
+                  <span className="flex-shrink-0">{cat.icon}</span>
+                  <span className="leading-tight">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── 5. MAIN GRID ──────────────────────────────────── */}
       <main className="max-w-[1280px] mx-auto px-4 py-8">
@@ -615,7 +674,7 @@ export default function CityAttractionsPage() {
           <div className="text-center py-20">
             <p className="text-[#94A3B8] text-[18px] mb-3">No experiences found</p>
             <button
-              onClick={() => { setActiveCategory(null); setSearchQuery(''); }}
+              onClick={() => { setActiveCategory(''); setSearchQuery(''); }}
               className="text-[#2B7FFF] text-[14px] hover:underline"
             >
               Clear filters
