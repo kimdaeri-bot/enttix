@@ -57,15 +57,28 @@ interface TiqetsProduct {
   id: string | number;
   title: string;
   images?: string[];
-  price?: number;
-  ratings?: { total: number; average: number };
-  promo_label?: string;
-  instant_ticket_delivery?: boolean;
-  skip_line?: boolean;
-  duration?: string;
-  city_name?: string;
-  product_url?: string;
-  cancellation?: string;
+  price?: number | null;
+  display_price?: number | null;
+  ratings?: { total: number; average: number } | null;
+  promo_label?: string | null;
+  instant_ticket_delivery?: boolean | null;
+  skip_line?: boolean | null;
+  duration?: string | null;
+  city_name?: string | null;
+  product_url?: string | null;
+  cancellation?: { policy?: string; window?: string | null } | string | null;
+  tagline?: string | null;
+}
+
+function getCancellationLabel(c: TiqetsProduct['cancellation']): string | null {
+  if (!c) return null;
+  if (typeof c === 'string') return c;
+  if (typeof c === 'object' && c.policy) {
+    if (c.policy === 'free' || c.policy === 'always') return 'Free cancellation';
+    if (c.policy === 'never') return null; // non-refundable, don't display
+    return null;
+  }
+  return null;
 }
 
 function getCityFallback(cityId: string) {
@@ -136,16 +149,16 @@ function ProductCard({ product, cityId }: { product: TiqetsProduct; cityId: stri
               </span>
             </div>
           )}
-          {product.duration && (
+          {product.duration && typeof product.duration === 'string' && (
             <p className="text-[12px] text-[#6B7280]">⏱ {product.duration}</p>
           )}
-          {product.cancellation && (
-            <p className="text-[12px] text-green-600">↩️ {product.cancellation}</p>
+          {getCancellationLabel(product.cancellation) && (
+            <p className="text-[12px] text-green-600">↩️ {getCancellationLabel(product.cancellation)}</p>
           )}
         </div>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-[14px] font-bold text-[#171717]">
-            {product.price && product.price > 0 ? `From $${Math.round(product.price)}` : 'See prices'}
+            {(product.price && product.price > 0) ? `From $${Math.round(product.price)}` : 'See prices'}
           </span>
           <span className="flex items-center gap-1 text-[12px] font-semibold text-[#2B7FFF] group-hover:gap-2 transition-all">
             Book Now
