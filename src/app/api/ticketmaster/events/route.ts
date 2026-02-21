@@ -116,8 +116,8 @@ export async function GET(req: NextRequest) {
       const bestImage = [...pool].sort((a, b) => ((b.width as number) || 0) - ((a.width as number) || 0))[0];
       // 이벤트 이미지 없으면 venue 이미지 폴백
       const venueImages = (venue.images as Array<Record<string, unknown>>) || [];
-      const venueImg = venueImages[0]?.url as string || '';
-      const imageUrl = (bestImage?.url as string) || venueImg;
+      const venueImageUrl = (venueImages[0]?.url as string) || '';
+      const imageUrl = (bestImage?.url as string) || venueImageUrl;
 
       const priceRanges = (e.priceRanges as Array<Record<string, unknown>>) || [];
       const minPrice = (priceRanges[0]?.min as number) || null;
@@ -144,6 +144,7 @@ export async function GET(req: NextRequest) {
         currency,
         genre,
         subGenre,
+        venueImageUrl,
       };
     });
 
