@@ -476,38 +476,32 @@ export default function CityAttractionsPage() {
     const apiBase = `/api/tiqets/city-with-images?city_id=${cityInfo.id}&city_url=${encodeURIComponent(cityInfo.tiqetsSlug)}`;
 
     try {
-      if (citySlug === 'rome') {
-        // ── Rome: 2단계 프로그레시브 로딩 ──────────────────
-        // 1단계: quick=true → 50개 즉시 렌더링
-        const quickRes = await fetch(`${apiBase}&quick=true`);
-        const quickData = await quickRes.json();
-        const quickProducts = quickData.products || [];
-        setProducts(quickProducts);
-        setLoading(false); // 즉시 페이지 보여줌
+      // ── 전 도시: 2단계 프로그레시브 로딩 ──────────────────
+      // 1단계: quick=true → 50개 즉시 렌더링
+      const quickRes = await fetch(`${apiBase}&quick=true`);
+      const quickData = await quickRes.json();
+      const quickProducts = quickData.products || [];
+      setProducts(quickProducts);
+      if (quickProducts.length === 0) {
+        const normalizedSlug = citySlug.replace(/-/g, ' ');
+        setDbAttractions(getAttractionsByCity(normalizedSlug));
+      }
+      setLoading(false); // 즉시 페이지 보여줌
 
-        if (!quickData.fromCache) {
-          // 2단계: 백그라운드에서 전체 로드 (캐시 웜업)
-          setLoadingMore(true);
-          fetch(apiBase)
-            .then(r => r.json())
-            .then(d => {
-              const all = d.products || [];
-              if (all.length > 0) setProducts(all);
-            })
-            .catch(() => {}) // 실패해도 기존 50개 유지
-            .finally(() => setLoadingMore(false));
-        }
-      } else {
-        // ── 기타 도시: 기존 전체 로딩 ──────────────────────
-        const res = await fetch(apiBase);
-        const data = await res.json();
-        const tiqetsProducts = data.products || [];
-        setProducts(tiqetsProducts);
-        if (tiqetsProducts.length === 0) {
-          const normalizedSlug = citySlug.replace(/-/g, ' ');
-          setDbAttractions(getAttractionsByCity(normalizedSlug));
-        }
-        setLoading(false);
+      if (!quickData.fromCache) {
+        // 2단계: 백그라운드에서 전체 로드 (캐시 웜업)
+        setLoadingMore(true);
+        fetch(apiBase)
+          .then(r => r.json())
+          .then(d => {
+            const all = d.products || [];
+            if (all.length > 0) {
+              setProducts(all);
+              setDbAttractions([]); // DB fallback 해제
+            }
+          })
+          .catch(() => {})
+          .finally(() => setLoadingMore(false));
       }
     } catch {
       setProducts([]);
@@ -539,9 +533,10 @@ export default function CityAttractionsPage() {
     }
   });
 
-  /* ─── Top 10 (rating sorted, best first) ─ */
+  /* ─── Top 10 (인기순: 리뷰 수 기준) ──────── */
   const top10 = [...products]
-    .sort((a, b) => (b.ratings?.average || 0) - (a.ratings?.average || 0))
+    .filter(p => (p.ratings?.total || 0) > 0)
+    .sort((a, b) => (b.ratings?.total || 0) - (a.ratings?.total || 0))
     .slice(0, 10);
 
   /* ─── Points of Interest (venues) ────────── */
