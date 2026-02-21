@@ -10,30 +10,29 @@ interface TmEvent {
 interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
 
 
-// 장르별 폴백 이미지 (이미지 없거나 로드 실패 시)
-const GENRE_FALLBACKS: Record<string, string> = {
-  'rock':           'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&h=450&fit=crop',
-  'pop':            'https://images.unsplash.com/photo-1501386761578-eaa54b05e553?w=800&h=450&fit=crop',
-  'country':        'https://images.unsplash.com/photo-1508973379184-7517410fb0bc?w=800&h=450&fit=crop',
-  'alternative':    'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&h=450&fit=crop',
-  'hiphop':         'https://images.unsplash.com/photo-1571609860748-64c68498ba5c?w=800&h=450&fit=crop',
-  'metal':          'https://images.unsplash.com/photo-1563841930606-67e2bce48b78?w=800&h=450&fit=crop',
-  'folk':           'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&h=450&fit=crop',
-  'jazz':           'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&h=450&fit=crop',
-  'classical':      'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800&h=450&fit=crop',
-  'soul':           'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
-  'electronic':     'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=450&fit=crop',
-  'dance':          'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=450&fit=crop',
-  'latin':          'https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?w=800&h=450&fit=crop',
-  'default':        'https://images.unsplash.com/photo-1501386761578-eaa54b05e553?w=800&h=450&fit=crop',
+// 장르별 플레이스홀더 (이미지 없거나 로드 실패 시 CSS 그라데이션)
+const GENRE_PLACEHOLDER: Record<string, { bg: string; icon: string }> = {
+  'rock':        { bg: 'linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)', icon: '🎸' },
+  'pop':         { bg: 'linear-gradient(135deg,#6a11cb 0%,#2575fc 100%)',             icon: '🎤' },
+  'country':     { bg: 'linear-gradient(135deg,#8B6914 0%,#C4902C 50%,#6B4F12 100%)', icon: '🤠' },
+  'alternative': { bg: 'linear-gradient(135deg,#2d3436 0%,#636e72 100%)',             icon: '🎶' },
+  'hiphop':      { bg: 'linear-gradient(135deg,#000000 0%,#434343 100%)',             icon: '🎧' },
+  'metal':       { bg: 'linear-gradient(135deg,#200122 0%,#6f0000 100%)',             icon: '🤘' },
+  'folk':        { bg: 'linear-gradient(135deg,#56ab2f 0%,#a8e063 100%)',             icon: '🪕' },
+  'jazz':        { bg: 'linear-gradient(135deg,#1a0533 0%,#2d1b69 50%,#11998e 100%)', icon: '🎷' },
+  'classical':   { bg: 'linear-gradient(135deg,#2c3e50 0%,#4a5568 100%)',             icon: '🎻' },
+  'soul':        { bg: 'linear-gradient(135deg,#833ab4 0%,#fd1d1d 50%,#fcb045 100%)', icon: '🎼' },
+  'electronic':  { bg: 'linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%)', icon: '🎛️' },
+  'latin':       { bg: 'linear-gradient(135deg,#f7971e 0%,#ffd200 100%)',             icon: '💃' },
+  'default':     { bg: 'linear-gradient(135deg,#1E3A8A 0%,#2B7FFF 100%)',             icon: '🎵' },
 };
 
-function getGenreFallback(genre: string, subGenre: string): string {
+function getGenrePlaceholder(genre: string, subGenre: string) {
   const key = (genre || subGenre || '').toLowerCase().replace(/[^a-z]/g, '');
-  for (const [k, v] of Object.entries(GENRE_FALLBACKS)) {
+  for (const [k, v] of Object.entries(GENRE_PLACEHOLDER)) {
     if (key.includes(k)) return v;
   }
-  return GENRE_FALLBACKS['default'];
+  return GENRE_PLACEHOLDER['default'];
 }
 
 const HERO_PHOTO = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&h=800&fit=crop';
@@ -118,20 +117,33 @@ function ScrollRow({ children, className = '' }: { children: React.ReactNode; cl
 
 /* ── 이벤트 카드 ── */
 function EventCard({ event }: { event: TmEvent }) {
-  const fallbackImg = getGenreFallback(event.genre, event.subGenre);
-  const [src, setSrc] = useState(event.imageUrl || fallbackImg);
+  const placeholder = getGenrePlaceholder(event.genre, event.subGenre);
+  const [imgErr, setImgErr] = useState(false);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
   return (
-    <a href={`/music/event/${event.id}`}
+    <a href={event.url || '#'} target="_blank" rel="noopener noreferrer"
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col">
-      <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
-        <img
-          src={src}
-          alt={event.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setSrc(fallbackImg)}
-        />
-        {event.subGenre && event.subGenre !== 'Undefined' && (
+      <div className="relative aspect-[16/9] overflow-hidden flex-shrink-0">
+        {!imgErr && event.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={event.imageUrl}
+            alt={event.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={() => setImgErr(true)}
+          />
+        ) : (
+          <div
+            className="w-full h-full flex flex-col items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-300"
+            style={{ background: placeholder.bg }}
+          >
+            <span className="text-3xl opacity-80">{placeholder.icon}</span>
+            <span className="text-[11px] font-semibold text-white/70 tracking-wide uppercase">
+              {event.subGenre && event.subGenre !== 'Undefined' ? event.subGenre : (event.genre || 'Music')}
+            </span>
+          </div>
+        )}
+        {event.subGenre && event.subGenre !== 'Undefined' && !imgErr && event.imageUrl && (
           <div className="absolute top-3 left-3">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-black/60 backdrop-blur-sm">{event.subGenre}</span>
           </div>
