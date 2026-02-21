@@ -363,33 +363,28 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
           {/* Shows dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('shows')} onMouseLeave={handleLeave}>
-            <Link
-              href="/shows"
-              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            <span
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1 cursor-default select-none"
             >
               Shows
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
+            </span>
             {openDropdown === 'shows' && <DropdownMenu items={showsItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
           </div>
 
-          {/* Music - direct link */}
-          <Link
-            href="/music"
-            className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
-          >
+          {/* Music - no navigation */}
+          <span className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] cursor-default select-none">
             Music
-          </Link>
+          </span>
 
           {/* Attractions dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('attractions')} onMouseLeave={handleLeave}>
-            <Link
-              href="/attractions"
-              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
+            <span
+              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1 cursor-default select-none"
             >
               Attractions
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
+            </span>
             {openDropdown === 'attractions' && <AttractionsDropdown onClose={() => setOpenDropdown(null)} />}
           </div>
 
@@ -553,7 +548,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
             {/* 기타 링크 */}
             <Link href="/popular" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🔥 Popular</Link>
-            <Link href="/music" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎵 Music</Link>
+            <span className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8">🎵 Music</span>
             <Link href="/entertainment" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎬 Entertainment</Link>
             <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
