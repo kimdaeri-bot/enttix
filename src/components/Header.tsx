@@ -146,7 +146,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
           {/* Sports dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('sports')} onMouseLeave={handleLeave}>
             <Link
-              href="/sport/football"
+              href="/sport"
               className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
             >
               Sports
