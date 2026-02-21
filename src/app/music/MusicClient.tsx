@@ -169,7 +169,7 @@ export default function MusicClient() {
   ) => {
     setLoading(true);
     try {
-      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '20' });
+      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '30' }); // 필터 여유분 포함, 최종 24개 표시
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       if (keyword) p.set('keyword', keyword);
@@ -193,8 +193,8 @@ export default function MusicClient() {
         if (normUrl) seenImg.add(normUrl);
         return e;
       });
-      setEvents(fixed);
-      setPageInfo(data.page || { number: 0, size: 20, totalElements: 0, totalPages: 0 });
+      setEvents(fixed.slice(0, 24)); // 최대 24개 표시
+      setPageInfo(data.page || { number: 0, size: 24, totalElements: 0, totalPages: 0 });
     } catch {
       setEvents([]);
     } finally {
@@ -388,7 +388,7 @@ export default function MusicClient() {
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 20 }).map((_, i) => (
+            {Array.from({ length: 24 }).map((_, i) => (
               <div key={i} className="bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] animate-pulse">
                 <div className="aspect-[16/9] bg-[#E5E7EB]" />
                 <div className="p-4 space-y-2"><div className="h-4 bg-[#E5E7EB] rounded w-3/4" /><div className="h-3 bg-[#E5E7EB] rounded w-1/2" /></div>
