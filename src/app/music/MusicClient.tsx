@@ -10,22 +10,6 @@ interface TmEvent {
 }
 interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
 
-const MUSIC_GENRES = [
-  { key: '',            label: 'All Music',     icon: '🎵', count: 76601 },
-  { key: 'rock',        label: 'Rock',           icon: '🎸', count: 20250 },
-  { key: 'pop',         label: 'Pop',            icon: '🎤', count: 7873  },
-  { key: 'country',     label: 'Country',        icon: '🤠', count: 3551  },
-  { key: 'alternative', label: 'Alternative',    icon: '🎶', count: 3186  },
-  { key: 'hiphop',      label: 'Hip-Hop/Rap',    icon: '🎧', count: 2794  },
-  { key: 'metal',       label: 'Metal',          icon: '🤘', count: 2194  },
-  { key: 'folk',        label: 'Folk',           icon: '🪕', count: 1826  },
-  { key: 'jazz',        label: 'Jazz',           icon: '🎷', count: 1789  },
-  { key: 'electronic',  label: 'Electronic',     icon: '🎛️', count: 1749  },
-  { key: 'blues',       label: 'Blues',          icon: '🎺', count: 1179  },
-  { key: 'latin',       label: 'Latin',          icon: '💃', count: 1027  },
-  { key: 'classical',   label: 'Classical',      icon: '🎻', count: 900   },
-  { key: 'reggae',      label: 'Reggae',         icon: '🌴', count: 486   },
-];
 
 const COUNTRIES = [
   { code: '',   name: 'All',           flag: '🌏', count: 76601 },
@@ -93,18 +77,16 @@ function EventCard({ event }: { event: TmEvent }) {
 }
 
 export default function MusicClient() {
-  const [activeGenre,   setActiveGenre]   = useState('');
   const [activeCountry, setActiveCountry] = useState('GB');
   const [events,        setEvents]        = useState<TmEvent[]>([]);
   const [pageInfo,      setPageInfo]      = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading,       setLoading]       = useState(true);
   const [currentPage,   setCurrentPage]   = useState(0);
 
-  const fetchEvents = useCallback(async (genre: string, country: string, page: number) => {
+  const fetchEvents = useCallback(async (country: string, page: number) => {
     setLoading(true);
     try {
       const p = new URLSearchParams({ tab: 'music', page: String(page), size: '20' });
-      if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       const res = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
@@ -113,9 +95,9 @@ export default function MusicClient() {
     } catch { setEvents([]); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { setCurrentPage(0); fetchEvents(activeGenre, activeCountry, 0); }, [activeGenre, activeCountry, fetchEvents]);
+  useEffect(() => { setCurrentPage(0); fetchEvents(activeCountry, 0); }, [activeCountry, fetchEvents]);
 
-  const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeGenre, activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
 
   return (
@@ -130,17 +112,6 @@ export default function MusicClient() {
           </div>
           <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">🎵 Music</h1>
           <p className="text-[14px] text-[#94A3B8] mb-6">30개국 · 76K+ 이벤트 — 실시간 Ticketmaster 데이터</p>
-        </div>
-        {/* Genre tabs */}
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-            {MUSIC_GENRES.slice(0, 7).map(g => (
-              <button key={g.key} onClick={() => { setActiveGenre(g.key); setCurrentPage(0); }}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-5 py-3 text-[14px] font-semibold rounded-t-[10px] transition-colors ${activeGenre === g.key ? 'bg-[#F5F7FA] text-[#171717]' : 'text-[#94A3B8] hover:text-white'}`}>
-                {g.icon} {g.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -159,20 +130,7 @@ export default function MusicClient() {
         </div>
       </div>
 
-      {/* Genre sub-filter */}
-      <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
-            {MUSIC_GENRES.map(g => (
-              <button key={g.key} onClick={() => { setActiveGenre(g.key); setCurrentPage(0); }}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${activeGenre === g.key ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm' : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'}`}>
-                <span>{g.icon}</span><span>{g.label}</span>
-                <span className={`text-[10px] font-medium ${activeGenre === g.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>{formatCount(g.count)}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+
 
       {/* Content */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
