@@ -16,6 +16,25 @@ function cityNameToSlug(name: string): string {
     'brussels':'brussels','cape town':'cape-town','cairo':'cairo','bali':'bali',
     'bruges':'bruges','osaka':'osaka','kyoto':'kyoto','seoul':'seoul',
     'prague':'prague','madrid':'madrid','vienna':'vienna',
+    'naples':'naples','porto':'porto','reykjavik':'reykjavik','seville':'seville',
+    'hamburg':'hamburg','copenhagen':'copenhagen','palermo':'palermo','stockholm':'stockholm',
+    'verona':'verona','nice':'nice','turin':'turin','helsinki':'helsinki',
+    'bologna':'bologna','warsaw':'warsaw','rhodes':'rhodes','bordeaux':'bordeaux',
+    'cologne':'cologne','valletta':'valletta','dresden':'dresden','salzburg':'salzburg',
+    'zurich':'zurich','oslo':'oslo','innsbruck':'innsbruck','tallinn':'tallinn',
+    'vilnius':'vilnius','lucerne':'lucerne',
+    'abu dhabi':'abu-dhabi','marrakesh':'marrakesh','hurghada':'hurghada',
+    'luxor':'luxor','doha':'doha',
+    'las vegas':'las-vegas','san francisco':'san-francisco','los angeles':'los-angeles',
+    'miami':'miami','chicago':'chicago','vancouver':'vancouver','boston':'boston',
+    'tulum':'tulum','toronto':'toronto','new orleans':'new-orleans',
+    'playa del carmen':'playa-del-carmen','washington dc':'washington-dc',
+    'buenos aires':'buenos-aires','montreal':'montreal','rio de janeiro':'rio-de-janeiro',
+    'cusco':'cusco',
+    'melbourne':'melbourne','phuket':'phuket','cairns':'cairns','gold coast':'gold-coast',
+    'ho chi minh city':'ho-chi-minh','ho chi minh':'ho-chi-minh',
+    'kuala lumpur':'kuala-lumpur','siem reap':'siem-reap','chiang mai':'chiang-mai',
+    'hanoi':'hanoi','phnom penh':'phnom-penh',
   };
   return MAP[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
@@ -60,6 +79,67 @@ const CITIES = [
   { id: '28',     name: 'Osaka',       flag: '🇯🇵', slug: 'osaka'        },
   { id: '72420',  name: 'Kyoto',       flag: '🇯🇵', slug: 'kyoto'        },
   { id: '73067',  name: 'Seoul',       flag: '🇰🇷', slug: 'seoul'        },
+  // ── Europe 신규
+  { id: '71720',  name: 'Naples',          flag: '🇮🇹', slug: 'naples'          },
+  { id: '76573',  name: 'Porto',           flag: '🇵🇹', slug: 'porto'           },
+  { id: '22',     name: 'Reykjavik',       flag: '🇮🇸', slug: 'reykjavik'       },
+  { id: '65870',  name: 'Seville',         flag: '🇪🇸', slug: 'seville'         },
+  { id: '64886',  name: 'Hamburg',         flag: '🇩🇪', slug: 'hamburg'         },
+  { id: '113',    name: 'Copenhagen',      flag: '🇩🇰', slug: 'copenhagen'      },
+  { id: '71428',  name: 'Palermo',         flag: '🇮🇹', slug: 'palermo'         },
+  { id: '1638',   name: 'Stockholm',       flag: '🇸🇪', slug: 'stockholm'       },
+  { id: '71506',  name: 'Verona',          flag: '🇮🇹', slug: 'verona'          },
+  { id: '66770',  name: 'Nice',            flag: '🇫🇷', slug: 'nice'            },
+  { id: '71534',  name: 'Turin',           flag: '🇮🇹', slug: 'turin'           },
+  { id: '66544',  name: 'Helsinki',        flag: '🇫🇮', slug: 'helsinki'        },
+  { id: '71986',  name: 'Bologna',         flag: '🇮🇹', slug: 'bologna'         },
+  { id: '485',    name: 'Warsaw',          flag: '🇵🇱', slug: 'warsaw'          },
+  { id: '264570', name: 'Rhodes',          flag: '🇬🇷', slug: 'rhodes'          },
+  { id: '67101',  name: 'Bordeaux',        flag: '🇫🇷', slug: 'bordeaux'        },
+  { id: '64765',  name: 'Cologne',         flag: '🇩🇪', slug: 'cologne'         },
+  { id: '73787',  name: 'Valletta',        flag: '🇲🇹', slug: 'valletta'        },
+  { id: '65042',  name: 'Dresden',         flag: '🇩🇪', slug: 'dresden'         },
+  { id: '60346',  name: 'Salzburg',        flag: '🇦🇹', slug: 'salzburg'        },
+  { id: '20',     name: 'Zurich',          flag: '🇨🇭', slug: 'zurich'          },
+  { id: '75084',  name: 'Oslo',            flag: '🇳🇴', slug: 'oslo'            },
+  { id: '60358',  name: 'Innsbruck',       flag: '🇦🇹', slug: 'innsbruck'       },
+  { id: '65702',  name: 'Tallinn',         flag: '🇪🇪', slug: 'tallinn'         },
+  { id: '73352',  name: 'Vilnius',         flag: '🇱🇹', slug: 'vilnius'         },
+  { id: '62662',  name: 'Lucerne',         flag: '🇨🇭', slug: 'lucerne'         },
+  // ── EMEA 신규
+  { id: '60013',  name: 'Abu Dhabi',       flag: '🇦🇪', slug: 'abu-dhabi'       },
+  { id: '73471',  name: 'Marrakesh',       flag: '🇲🇦', slug: 'marrakesh'       },
+  { id: '44',     name: 'Hurghada',        flag: '🇪🇬', slug: 'hurghada'        },
+  { id: '65786',  name: 'Luxor',           flag: '🇪🇬', slug: 'luxor'           },
+  { id: '76635',  name: 'Doha',            flag: '🇶🇦', slug: 'doha'            },
+  // ── Americas 신규
+  { id: '82073',  name: 'Las Vegas',       flag: '🇺🇸', slug: 'las-vegas'       },
+  { id: '1772',   name: 'San Francisco',   flag: '🇺🇸', slug: 'san-francisco'   },
+  { id: '81810',  name: 'Los Angeles',     flag: '🇺🇸', slug: 'los-angeles'     },
+  { id: '79868',  name: 'Miami',           flag: '🇺🇸', slug: 'miami'           },
+  { id: '80816',  name: 'Chicago',         flag: '🇺🇸', slug: 'chicago'         },
+  { id: '62496',  name: 'Vancouver',       flag: '🇨🇦', slug: 'vancouver'       },
+  { id: '80874',  name: 'Boston',          flag: '🇺🇸', slug: 'boston'          },
+  { id: '109113', name: 'Tulum',           flag: '🇲🇽', slug: 'tulum'           },
+  { id: '62492',  name: 'Toronto',         flag: '🇨🇦', slug: 'toronto'         },
+  { id: '80162',  name: 'New Orleans',     flag: '🇺🇸', slug: 'new-orleans'     },
+  { id: '73927',  name: 'Playa del Carmen',flag: '🇲🇽', slug: 'playa-del-carmen'},
+  { id: '79751',  name: 'Washington DC',   flag: '🇺🇸', slug: 'washington-dc'   },
+  { id: '60189',  name: 'Buenos Aires',    flag: '🇦🇷', slug: 'buenos-aires'    },
+  { id: '25',     name: 'Montreal',        flag: '🇨🇦', slug: 'montreal'        },
+  { id: '61535',  name: 'Rio de Janeiro',  flag: '🇧🇷', slug: 'rio-de-janeiro'  },
+  { id: '75323',  name: 'Cusco',           flag: '🇵🇪', slug: 'cusco'           },
+  // ── APAC 신규
+  { id: '60426',  name: 'Melbourne',       flag: '🇦🇺', slug: 'melbourne'       },
+  { id: '78451',  name: 'Phuket',          flag: '🇹🇭', slug: 'phuket'          },
+  { id: '60466',  name: 'Cairns',          flag: '🇦🇺', slug: 'cairns'          },
+  { id: '60442',  name: 'Gold Coast',      flag: '🇦🇺', slug: 'gold-coast'      },
+  { id: '272460', name: 'Ho Chi Minh',     flag: '🇻🇳', slug: 'ho-chi-minh'     },
+  { id: '74416',  name: 'Kuala Lumpur',    flag: '🇲🇾', slug: 'kuala-lumpur'    },
+  { id: '72961',  name: 'Siem Reap',       flag: '🇰🇭', slug: 'siem-reap'       },
+  { id: '78479',  name: 'Chiang Mai',      flag: '🇹🇭', slug: 'chiang-mai'      },
+  { id: '82689',  name: 'Hanoi',           flag: '🇻🇳', slug: 'hanoi'           },
+  { id: '72955',  name: 'Phnom Penh',      flag: '🇰🇭', slug: 'phnom-penh'      },
 ];
 
 /* City 배경 이미지 (Unsplash) */
@@ -99,6 +179,67 @@ const CITY_IMG: Record<string, string> = {
   '28':     'photo-1589308078059-be1415eab4c3', // Osaka
   '72420':  'photo-1528360983277-13d401cdc186', // Kyoto
   '73067':  'photo-1538485399081-7191377e8241', // Seoul
+  // ── Europe 신규
+  '71720':  'photo-1534445867742-43195f401b6c', // Naples
+  '76573':  'photo-1555881400-74d7acaacd8b',    // Porto
+  '22':     'photo-1531971589569-0d9370cbe1e5', // Reykjavik
+  '65870':  'photo-1509899595012-e9c19cba1d57', // Seville
+  '64886':  'photo-1558618047-3c8c96f7d900',    // Hamburg
+  '113':    'photo-1513622470522-26c3c8a854bc', // Copenhagen
+  '71428':  'photo-1589306969225-8b7f26f5e3c0', // Palermo
+  '1638':   'photo-1509356843151-3e7d96241e11', // Stockholm
+  '71506':  'photo-1539966975862-1506e91e88c2', // Verona
+  '66770':  'photo-1493683803644-0e8d47c5ca69', // Nice
+  '71534':  'photo-1574804842743-74dc8f1d11f4', // Turin
+  '66544':  'photo-1548690312-e3b507d8c110',    // Helsinki
+  '71986':  'photo-1558618666-fcd25c85cd64',    // Bologna
+  '485':    'photo-1549144511-f099e773c147',     // Warsaw
+  '264570': 'photo-1541364983171-a8ba01e95cfc', // Rhodes
+  '67101':  'photo-1576162429-b5c4e62e7e50',    // Bordeaux
+  '64765':  'photo-1548248823-ce16a73b6d49',    // Cologne
+  '73787':  'photo-1595880576980-b29434a6d98e', // Valletta
+  '65042':  'photo-1562547256-2c5ee93b60b7',    // Dresden
+  '60346':  'photo-1599982890968-83e0acfbe35b', // Salzburg
+  '20':     'photo-1515488042361-ee00e0ddd4e4', // Zurich
+  '75084':  'photo-1561015366-b8bc1b35bb1c',    // Oslo
+  '60358':  'photo-1507003211169-0a1dd7228f2d', // Innsbruck
+  '65702':  'photo-1548602088-9d12a4f9c10e',    // Tallinn
+  '73352':  'photo-1554929039-534f8a59e7f6',    // Vilnius
+  '62662':  'photo-1586500036706-41963de39e8c', // Lucerne
+  // ── EMEA 신규
+  '60013':  'photo-1580672850367-a4a84d9cbc38', // Abu Dhabi
+  '73471':  'photo-1487222477894-8943e31ef7b2', // Marrakesh
+  '44':     'photo-1523805009345-7448845a9e53', // Hurghada
+  '65786':  'photo-1547523196-02ab8ebc8fbe',    // Luxor
+  '76635':  'photo-1542816417-0983c9c9ad53',    // Doha
+  // ── Americas 신규
+  '82073':  'photo-1588392382834-a891154bca4d', // Las Vegas
+  '1772':   'photo-1506146332389-18140dc7b2fb', // San Francisco
+  '81810':  'photo-1543429258-b16fabe1d04e',    // Los Angeles
+  '79868':  'photo-1533106418989-88406c7cc8ca', // Miami
+  '80816':  'photo-1477959858617-67f85cf4f1df', // Chicago
+  '62496':  'photo-1559511260-66a654ae982a',    // Vancouver
+  '80874':  'photo-1570197571499-6d9e8e66c0e8', // Boston
+  '109113': 'photo-1533862963240-a6dac5ef7b61', // Tulum
+  '62492':  'photo-1517090504586-fde19ea6066f', // Toronto
+  '80162':  'photo-1577996394613-37a26fc7ba85', // New Orleans
+  '73927':  'photo-1552074284-83408e9e5020',    // Playa del Carmen
+  '79751':  'photo-1501466044931-62695aada8e9', // Washington DC
+  '60189':  'photo-1612294037637-ec328d0e075e', // Buenos Aires
+  '25':     'photo-1555883006-0828a1db5814',    // Montreal
+  '61535':  'photo-1483729558449-99ef09a8c325', // Rio de Janeiro
+  '75323':  'photo-1589557059453-2d5bc0d7fb98', // Cusco
+  // ── APAC 신규
+  '60426':  'photo-1523482580672-f109ba8cb9be', // Melbourne
+  '78451':  'photo-1552685751-74e92c0acb7a',    // Phuket
+  '60466':  'photo-1518391846015-55a9cc003b25', // Cairns
+  '60442':  'photo-1577696680467-c9fe82c79c41', // Gold Coast
+  '272460': 'photo-1583418855642-d0a8bf2f7c64', // Ho Chi Minh
+  '74416':  'photo-1596422846543-75c6fc197f07', // Kuala Lumpur
+  '72961':  'photo-1552301726-9e19e23a1d99',    // Siem Reap
+  '78479':  'photo-1571003123894-1f0594d2b5d9', // Chiang Mai
+  '82689':  'photo-1555990881-0d3d3bc0ace1',    // Hanoi
+  '72955':  'photo-1594322436404-5a0526db4d13', // Phnom Penh
 };
 
 /* 메인 카테고리 6개 (tag_id 기반) */
