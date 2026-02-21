@@ -513,22 +513,33 @@ export default function CityAttractionsPage() {
         </section>
       )}
 
-      {/* ─── 3. RECOMMENDED FOR ───────────────────────────── */}
-      <section className="bg-white py-8 border-b border-[#E5E7EB]">
+      {/* ─── 3. CATEGORY FILTER (인라인) ─────────────────── */}
+      <section className="bg-white py-6 border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4">
-          <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
-            Experiences in {cityInfo.name} recommended for
+          <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">
+            Browse by category
           </h2>
-          <div className="flex flex-wrap gap-3">
-            {AUDIENCE_CHIPS.map(chip => (
-              <div
-                key={chip.label}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[#374151] text-[14px] font-semibold cursor-pointer hover:border-[#2B7FFF] hover:text-[#2B7FFF] transition-colors select-none"
+          <div className="flex flex-wrap gap-2">
+            {MAIN_CATEGORIES.map(cat => (
+              <button
+                key={cat.id || 'all'}
+                onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                  activeCategory === cat.id
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                }`}
               >
-                <span className="text-[18px]">{chip.icon}</span>
-                {chip.label}
-              </div>
+                <span className="text-[16px]">{cat.icon}</span>
+                {cat.label}
+              </button>
             ))}
+            <button
+              onClick={() => setShowMoreModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
+            >
+              More categories ↓
+            </button>
           </div>
         </div>
       </section>
