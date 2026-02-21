@@ -366,6 +366,9 @@ function getCityFallback(cityId: string) {
   return `https://images.unsplash.com/${photo}?w=800&h=600&fit=crop`;
 }
 
+/* 이미지 완전 실패 시 그라데이션 플레이스홀더 */
+const ATTRACTION_FALLBACK_STYLE = 'linear-gradient(135deg,#1E3A8A 0%,#2B7FFF 100%)';
+
 function StarRating({ avg }: { avg: number }) {
   const full = Math.min(5, Math.max(0, Math.round(avg)));
   return (
@@ -383,7 +386,16 @@ function ProductCard({ product, cityId, citySlug }: {
   const fallback = getCityFallback(cityId);
   const firstImage = product.images && product.images.length > 0 ? product.images[0] : '';
   const [imgSrc, setImgSrc] = useState<string>(firstImage || fallback);
+  const [allFailed, setAllFailed] = useState(false);
   const detailPath = `/attractions/${citySlug}/${product.id}`;
+
+  const handleImgError = () => {
+    if (imgSrc === fallback) {
+      setAllFailed(true); // 1차(product)+2차(fallback) 모두 실패 → CSS 그라데이션
+    } else {
+      setImgSrc(fallback); // 1차 실패 → 2차(city fallback) 시도
+    }
+  };
 
   return (
     <Link
@@ -391,13 +403,22 @@ function ProductCard({ product, cityId, citySlug }: {
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col"
     >
       <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imgSrc || fallback}
-          alt={product.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={() => setImgSrc(fallback)}
-        />
+        {!allFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imgSrc || fallback}
+            alt={product.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={handleImgError}
+          />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center group-hover:scale-105 transition-transform duration-300"
+            style={{ background: ATTRACTION_FALLBACK_STYLE }}
+          >
+            <span className="text-4xl opacity-70">🎫</span>
+          </div>
+        )}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {product.promo_label === 'bestseller' && (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white bg-[#FF6B35]">🏆 Bestseller</span>

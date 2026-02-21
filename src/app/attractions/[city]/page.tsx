@@ -249,6 +249,38 @@ const AUDIENCE_CHIPS = [
 ];
 
 /* ─── TAG 기반 Unsplash 폴백 이미지 ────────────────────────── */
+/* ─── 카테고리별 플레이스홀더 (이미지 없거나 완전 실패 시) ─── */
+const TAG_PLACEHOLDER: Record<number, { bg: string; icon: string }> = {
+  708:  { bg: 'linear-gradient(135deg,#78350f 0%,#b45309 100%)',  icon: '🏰' }, // Historical Sites
+  709:  { bg: 'linear-gradient(135deg,#6b7280 0%,#9ca3af 100%)',  icon: '🗿' }, // Archaeological
+  700:  { bg: 'linear-gradient(135deg,#4338ca 0%,#6366f1 100%)',  icon: '🎨' }, // Art Museums
+  701:  { bg: 'linear-gradient(135deg,#0891b2 0%,#22d3ee 100%)',  icon: '🔬' }, // Interactive Museums
+  702:  { bg: 'linear-gradient(135deg,#92400e 0%,#d97706 100%)',  icon: '🏛️' }, // History Museums
+  703:  { bg: 'linear-gradient(135deg,#1e3a5f 0%,#3b82f6 100%)',  icon: '🔭' }, // Science
+  705:  { bg: 'linear-gradient(135deg,#374151 0%,#6b7280 100%)',  icon: '🏯' }, // Castles
+  706:  { bg: 'linear-gradient(135deg,#7c2d12 0%,#dc2626 100%)',  icon: '👑' }, // Palaces
+  710:  { bg: 'linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%)',  icon: '⛪' }, // Places of Worship
+  712:  { bg: 'linear-gradient(135deg,#dc2626 0%,#f97316 100%)',  icon: '🎡' }, // Theme Parks
+  723:  { bg: 'linear-gradient(135deg,#166534 0%,#16a34a 100%)',  icon: '🦁' }, // Zoos
+  725:  { bg: 'linear-gradient(135deg,#14532d 0%,#4ade80 100%)',  icon: '🌿' }, // Botanical
+  1034: { bg: 'linear-gradient(135deg,#c2410c 0%,#f59e0b 100%)', icon: '🍽️' }, // Food
+  1035: { bg: 'linear-gradient(135deg,#0c4a6e 0%,#0284c7 100%)', icon: '⛵' }, // Cruises
+  1040: { bg: 'linear-gradient(135deg,#0f766e 0%,#14b8a6 100%)', icon: '🗺️' }, // City Tours
+  1042: { bg: 'linear-gradient(135deg,#1d4ed8 0%,#60a5fa 100%)', icon: '🌍' }, // Day Trips
+  2596: { bg: 'linear-gradient(135deg,#7c3aed 0%,#c084fc 100%)', icon: '🎭' }, // Shows
+  1033: { bg: 'linear-gradient(135deg,#0e7490 0%,#06b6d4 100%)', icon: '🎓' }, // Workshops
+};
+const DEFAULT_TAG_PLACEHOLDER = { bg: 'linear-gradient(135deg,#1E3A8A 0%,#2B7FFF 100%)', icon: '🎫' };
+
+function getTagPlaceholder(tag_ids?: number[]): { bg: string; icon: string } {
+  if (tag_ids && tag_ids.length > 0) {
+    for (const tid of tag_ids) {
+      if (TAG_PLACEHOLDER[tid]) return TAG_PLACEHOLDER[tid];
+    }
+  }
+  return DEFAULT_TAG_PLACEHOLDER;
+}
+
 const TAG_FALLBACKS: Record<number, string[]> = {
   708:  ['photo-1552832230-c0197dd311b5','photo-1519197924294-4ba991a11128','photo-1555993539-1732b0258235'],  // Historical Sites
   709:  ['photo-1572252009286-268acec5ca0a','photo-1568322445389-f64ac2515020','photo-1601625828018-98d796de1fd3'],  // Archaeological
@@ -410,8 +442,10 @@ function ProductCard({
   citySlug: string;
 }) {
   const tagFallback = `https://images.unsplash.com/${getTagFallback(product.tag_ids, product.id)}?w=560&h=420&fit=crop`;
+  const placeholder = getTagPlaceholder(product.tag_ids);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imgLoading, setImgLoading] = useState(true);
+  const [imgErr, setImgErr] = useState(false);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -451,15 +485,24 @@ function ProductCard({
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         {imgLoading ? (
           <div className="absolute inset-0 animate-pulse bg-gray-200" />
-        ) : imageUrl ? (
+        ) : !imgErr && imageUrl ? (
           <Image
             src={imageUrl}
             alt={product.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"
             unoptimized
+            onError={() => setImgErr(true)}
           />
-        ) : null}
+        ) : (
+          /* 이미지 없거나 로드 실패 → 카테고리 그라데이션 플레이스홀더 */
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-300"
+            style={{ background: placeholder.bg }}
+          >
+            <span className="text-3xl opacity-80">{placeholder.icon}</span>
+          </div>
+        )}
         {isBestseller && (
           <span className="absolute top-2 left-2 bg-[#FF6B35] text-white text-[11px] font-bold px-2 py-0.5 rounded uppercase">
             Bestseller
