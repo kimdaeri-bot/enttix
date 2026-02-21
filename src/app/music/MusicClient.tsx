@@ -94,7 +94,7 @@ function EventCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
   return (
-    <a href={event.url} target="_blank" rel="noopener noreferrer"
+    <a href={`/music/event/${event.id}`}
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col">
       <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
         {!imgErr && event.imageUrl
@@ -123,7 +123,7 @@ function EventCard({ event }: { event: TmEvent }) {
             {event.minPrice ? `From ${sym}${event.minPrice.toFixed(0)}` : 'See prices'}
           </span>
           <span className="flex items-center gap-1 text-[12px] font-semibold text-[#2B7FFF] group-hover:gap-2 transition-all">
-            Buy Tickets
+            View Details
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </span>
         </div>
@@ -175,7 +175,10 @@ export default function MusicClient() {
       if (keyword) p.set('keyword', keyword);
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
-      const raw: TmEvent[] = data.events || [];
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const raw: TmEvent[] = (data.events || []).filter(
+        (e: TmEvent) => !e.date || e.date >= today  // 날짜 없는 것 포함, 지난 것 제외
+      );
 
       // 같은 이미지 → 삭제 아님, 해당 이벤트만 venue 이미지로 교체
       // Ticketmaster _RETINA_PORTRAIT 등 suffix 제거해 "기본 이미지 ID" 추출

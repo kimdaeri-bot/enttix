@@ -114,10 +114,17 @@ export async function GET(req: NextRequest) {
       const ratio169 = images.filter(img => (img.ratio as string) === '16_9');
       const pool = ratio169.length > 0 ? ratio169 : images;
       const bestImage = [...pool].sort((a, b) => ((b.width as number) || 0) - ((a.width as number) || 0))[0];
-      // 이벤트 이미지 없으면 venue 이미지 폴백
+
+      // 아티스트(attractions) 이미지 → venue 이미지 순 폴백
+      const attractions = (embedded.attractions as Array<Record<string, unknown>>) || [];
+      const artistImgs = (attractions[0]?.images as Array<Record<string, unknown>>) || [];
+      const artistImg169 = artistImgs.filter(img => (img.ratio as string) === '16_9');
+      const artistPool = artistImg169.length > 0 ? artistImg169 : artistImgs;
+      const bestArtistImg = [...artistPool].sort((a, b) => ((b.width as number) || 0) - ((a.width as number) || 0))[0];
+
       const venueImages = (venue.images as Array<Record<string, unknown>>) || [];
       const venueImageUrl = (venueImages[0]?.url as string) || '';
-      const imageUrl = (bestImage?.url as string) || venueImageUrl;
+      const imageUrl = (bestImage?.url as string) || (bestArtistImg?.url as string) || venueImageUrl;
 
       const priceRanges = (e.priceRanges as Array<Record<string, unknown>>) || [];
       const minPrice = (priceRanges[0]?.min as number) || null;
