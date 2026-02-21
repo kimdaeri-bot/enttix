@@ -1,6 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
-
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface TmEvent {
   id: string; name: string; url: string; imageUrl: string;
@@ -25,32 +24,63 @@ const COUNTRIES = [
   { code: 'SE', name: 'Sweden',         flag: '🇸🇪', count: 300   },
   { code: 'NO', name: 'Norway',         flag: '🇳🇴', count: 200   },
   { code: 'DK', name: 'Denmark',        flag: '🇩🇰', count: 180   },
+  { code: 'NZ', name: 'New Zealand',    flag: '🇳🇿', count: 150   },
+  { code: 'MX', name: 'Mexico',         flag: '🇲🇽', count: 120   },
+  { code: 'BR', name: 'Brazil',         flag: '🇧🇷', count: 100   },
 ];
 
-const MUSIC_GENRES_MAIN = [
-  { key: '',           label: 'All Music',   icon: '🎵' },
-  { key: 'rock',       label: 'Rock',        icon: '🎸' },
-  { key: 'pop',        label: 'Pop',         icon: '🎤' },
-  { key: 'country',    label: 'Country',     icon: '🤠' },
-  { key: 'alternative',label: 'Alternative', icon: '🎶' },
-  { key: 'hiphop',     label: 'Hip-Hop/Rap', icon: '🎧' },
-  { key: 'metal',      label: 'Metal',       icon: '🤘' },
+const MUSIC_GENRES = [
+  { key: '',            label: 'All Music',   icon: '🎵', count: 77000 },
+  { key: 'rock',        label: 'Rock',        icon: '🎸', count: 20000 },
+  { key: 'pop',         label: 'Pop',         icon: '🎤', count: 8000  },
+  { key: 'country',     label: 'Country',     icon: '🤠', count: 4000  },
+  { key: 'alternative', label: 'Alternative', icon: '🎶', count: 3000  },
+  { key: 'hiphop',      label: 'Hip-Hop/Rap', icon: '🎧', count: 3000  },
+  { key: 'metal',       label: 'Metal',       icon: '🤘', count: 2000  },
+  { key: 'folk',        label: 'Folk',        icon: '🪕', count: 2000  },
+  { key: 'jazz',        label: 'Jazz',        icon: '🎷', count: 2000  },
+  { key: 'classical',   label: 'Classical',   icon: '🎻', count: 1500  },
+  { key: 'soul',        label: 'R&B / Soul',  icon: '🎼', count: 1200  },
+  { key: 'electronic',  label: 'Electronic',  icon: '🎛️', count: 1000  },
+  { key: 'latin',       label: 'Latin',       icon: '💃', count: 800   },
 ];
-const MUSIC_GENRES_MORE = [
-  { key: 'folk',        label: 'Folk',        icon: '🪕' },
-  { key: 'jazz',        label: 'Jazz',        icon: '🎷' },
-  { key: 'classical',   label: 'Classical',   icon: '🎻' },
-  { key: 'soul',        label: 'R&B / Soul',  icon: '🎼' },
-  { key: 'electronic',  label: 'Electronic',  icon: '🎛️' },
-  { key: 'latin',       label: 'Latin',       icon: '💃' },
-];
-const ALL_GENRES = [...MUSIC_GENRES_MAIN, ...MUSIC_GENRES_MORE];
 
 function formatDate(d: string) {
   if (!d) return 'TBA';
   return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 function formatCount(n: number) { return n >= 1000 ? `${(n/1000).toFixed(0)}K` : String(n); }
+
+function ScrollRow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const scroll = (dir: 'left' | 'right') => {
+    if (ref.current) ref.current.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
+  };
+  return (
+    <div className={`relative group/scroll ${className}`}>
+      {/* Left arrow */}
+      <button
+        onClick={() => scroll('left')}
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
+        aria-label="Scroll left"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      {/* Scrollable content */}
+      <div ref={ref} className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
+        {children}
+      </div>
+      {/* Right arrow */}
+      <button
+        onClick={() => scroll('right')}
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
+        aria-label="Scroll right"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  );
+}
 
 function EventCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
@@ -97,7 +127,6 @@ function EventCard({ event }: { event: TmEvent }) {
 export default function MusicClient() {
   const [activeGenre,   setActiveGenre]   = useState('');
   const [activeCountry, setActiveCountry] = useState('GB');
-  const [showMoreGenres, setShowMoreGenres] = useState(false);
   const [events,        setEvents]        = useState<TmEvent[]>([]);
   const [pageInfo,      setPageInfo]      = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading,       setLoading]       = useState(true);
@@ -119,13 +148,12 @@ export default function MusicClient() {
   useEffect(() => { setCurrentPage(0); fetchEvents(activeGenre, activeCountry, 0); }, [activeGenre, activeCountry, fetchEvents]);
   const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeGenre, activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
-  const displayedGenres = showMoreGenres ? ALL_GENRES : MUSIC_GENRES_MAIN;
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
       {/* Hero */}
       <div className="bg-[#0F172A]">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-8">
+        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-6">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[12px] font-bold text-[#2B7FFF] tracking-[1.5px]">TICKETMASTER</span>
             <span className="text-[12px] text-[#475569]">·</span>
@@ -136,62 +164,55 @@ export default function MusicClient() {
         </div>
       </div>
 
-      {/* ── Browse by country ──────────────────────────── */}
-      <section className="bg-white py-6 border-b border-[#E5E7EB]">
+      {/* ── Country filter row ── */}
+      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">Browse by country</h2>
-          <div className="flex flex-wrap gap-2">
+          <ScrollRow className="py-3">
             {COUNTRIES.map(c => (
               <button
                 key={c.code}
                 onClick={() => { setActiveCountry(c.code); setCurrentPage(0); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
                   activeCountry === c.code
-                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                    ? 'bg-[#0F172A] text-white shadow-sm'
+                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
                 }`}
               >
-                <span className="text-[16px]">{c.flag}</span>
+                <span>{c.flag}</span>
                 <span>{c.name}</span>
-                <span className={`text-[11px] font-medium ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
+                <span className={`text-[10px] ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
                   {formatCount(c.count)}
                 </span>
               </button>
             ))}
-          </div>
+          </ScrollRow>
         </div>
-      </section>
+      </div>
 
-      {/* ── Browse by genre ────────────────────────────── */}
-      <section className="bg-white py-6 border-b border-[#E5E7EB]">
+      {/* ── Genre filter row ── */}
+      <div className="bg-white border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <h2 className="text-[18px] font-extrabold text-[#0F172A] mb-4">Browse by genre</h2>
-          <div className="flex flex-wrap gap-2">
-            {displayedGenres.map(g => (
+          <ScrollRow className="py-3">
+            {MUSIC_GENRES.map(g => (
               <button
                 key={g.key}
                 onClick={() => { setActiveGenre(g.key); setCurrentPage(0); }}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border transition-all ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${
                   activeGenre === g.key
-                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
-                    : 'bg-[#F8FAFC] text-[#374151] border-[#E2E8F0] hover:border-[#0F172A] hover:text-[#0F172A]'
+                    ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                    : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
                 }`}
               >
-                <span className="text-[16px]">{g.icon}</span>
-                {g.label}
+                <span>{g.icon}</span>
+                <span>{g.label}</span>
+                <span className={`text-[10px] font-medium ${activeGenre === g.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
+                  {formatCount(g.count)}
+                </span>
               </button>
             ))}
-            {!showMoreGenres && (
-              <button
-                onClick={() => setShowMoreGenres(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[14px] font-semibold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
-              >
-                More genres ↓
-              </button>
-            )}
-          </div>
+          </ScrollRow>
         </div>
-      </section>
+      </div>
 
       {/* Content */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
