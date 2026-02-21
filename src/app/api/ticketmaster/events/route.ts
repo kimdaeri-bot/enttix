@@ -62,12 +62,16 @@ export async function GET(req: NextRequest) {
 
   const classificationName = TAB_MAP[tab] || 'Arts & Theatre';
 
+  // 오늘 00:00:00 UTC 기준 — 과거 이벤트 자동 제외
+  const todayISO = new Date().toISOString().slice(0, 10) + 'T00:00:00Z';
+
   const params = new URLSearchParams({
     apikey: API_KEY,
     size,
     page,
     sort: 'date,asc',
     locale: '*',
+    startDateTime: todayISO,  // 오늘 이후 이벤트만
   });
 
   if (countryCode) params.set('countryCode', countryCode);
