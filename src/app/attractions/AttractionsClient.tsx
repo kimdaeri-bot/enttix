@@ -47,19 +47,43 @@ const CITY_IMG: Record<string, string> = {
   '79079':  'photo-1541432901042-2d8bd64b4a9b', // Istanbul
 };
 
-/* 서브 카테고리 */
-const CATEGORIES = [
-  { key: '',              label: 'All Experiences', icon: '✨' },
-  { key: 'museum',        label: 'Museums',          icon: '🏛️' },
-  { key: 'tour',          label: 'Tours',            icon: '🗺️' },
-  { key: 'outdoor',       label: 'Outdoor',          icon: '🌿' },
-  { key: 'day trip',      label: 'Day Trips',        icon: '🚌' },
-  { key: 'show',          label: 'Performing Arts',  icon: '🎭' },
-  { key: 'food',          label: 'Food & Drink',     icon: '🍽️' },
-  { key: 'art',           label: 'Art & Culture',    icon: '🎨' },
-  { key: 'skip the line', label: 'Skip the Line',   icon: '⚡' },
-  { key: 'cruise',        label: 'Cruises',          icon: '🚢' },
-  { key: 'night',         label: 'Nightlife',        icon: '🌙' },
+/* 메인 카테고리 6개 (tag_id 기반) */
+const MAIN_CATEGORIES = [
+  { id: '',     label: 'All',                  icon: '✨' },
+  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
+  { id: '709',  label: 'Archaeological Sites', icon: '⛏️' },
+  { id: '1040', label: 'City Tours',           icon: '🗺️' },
+  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
+  { id: '700',  label: 'Art Museums',          icon: '🎨' },
+  { id: '702',  label: 'History Museums',      icon: '📜' },
+];
+
+/* 전체 카테고리 (모달용) */
+const ALL_CATEGORIES = [
+  { id: '700',  label: 'Art Museums',               icon: '🎨' },
+  { id: '709',  label: 'Archaeological Sites',       icon: '⛏️' },
+  { id: '725',  label: 'Botanical Gardens',          icon: '🌿' },
+  { id: '705',  label: 'Castles',                    icon: '🏰' },
+  { id: '1032', label: 'City Cards & Passes',        icon: '🎫' },
+  { id: '1040', label: 'City Tours',                 icon: '🗺️' },
+  { id: '1035', label: 'Cruises & Boat Tours',       icon: '🚢' },
+  { id: '1042', label: 'Day Trips',                  icon: '🚌' },
+  { id: '1034', label: 'Food & Drinks',              icon: '🍽️' },
+  { id: '708',  label: 'Historical Sites',           icon: '🏛️' },
+  { id: '702',  label: 'History Museums',            icon: '📜' },
+  { id: '701',  label: 'Interactive Museums',        icon: '🎭' },
+  { id: '706',  label: 'Palaces',                    icon: '👑' },
+  { id: '710',  label: 'Places of Worship',          icon: '⛪' },
+  { id: '1048', label: 'Public Transport',           icon: '🚇' },
+  { id: '1049', label: 'Rentals',                    icon: '🚲' },
+  { id: '703',  label: 'Science & Technology',       icon: '🔬' },
+  { id: '2596', label: 'Shows & Theatres',           icon: '🎭' },
+  { id: '712',  label: 'Theme Parks',                icon: '🎡' },
+  { id: '1840', label: 'Transfers',                  icon: '🚖' },
+  { id: '2597', label: 'Travel Services',            icon: '✈️' },
+  { id: '1942', label: 'Undergrounds',               icon: '🕳️' },
+  { id: '1033', label: 'Workshops & Classes',        icon: '🎓' },
+  { id: '723',  label: 'Zoos & Safari Parks',        icon: '🦁' },
 ];
 
 const PAGE_SIZE = 20;
@@ -190,7 +214,8 @@ function ProductCard({ product, cityId, citySlug }: {
 ───────────────────────────────────────── */
 export default function AttractionsClient() {
   const [activeCity, setActiveCity] = useState('67458');
-  const [activeCategory, setActiveCategory] = useState('');
+  const [activeCategory, setActiveCategory] = useState(''); // tag_id
+  const [showMoreModal, setShowMoreModal] = useState(false);
   const [products, setProducts] = useState<TiqetsProduct[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -207,7 +232,7 @@ export default function AttractionsClient() {
         page: String(page),
       });
       if (cityId) params.set('city_id', cityId);
-      if (category) params.set('query', category);
+      if (category) params.set('tag_id', category); // tag_id 기반 필터링
 
       const res = await fetch(`/api/tiqets/products?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -238,7 +263,8 @@ export default function AttractionsClient() {
   };
 
   const activeCityObj = CITIES.find(c => c.id === activeCity) || CITIES[0];
-  const activeCatObj  = CATEGORIES.find(c => c.key === activeCategory) || CATEGORIES[0];
+  const allCats = [...MAIN_CATEGORIES, ...ALL_CATEGORIES];
+  const activeCatObj = allCats.find(c => c.id === activeCategory) || MAIN_CATEGORIES[0];
 
   return (
     <>
@@ -261,12 +287,12 @@ export default function AttractionsClient() {
         {/* 탭 (히어로 하단) */}
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-            {CATEGORIES.slice(0, 6).map(cat => (
+            {MAIN_CATEGORIES.map(cat => (
               <button
-                key={cat.key}
-                onClick={() => { setActiveCategory(cat.key); setCurrentPage(1); }}
+                key={cat.id || 'all'}
+                onClick={() => { setActiveCategory(cat.id); setCurrentPage(1); }}
                 className={`flex-shrink-0 px-5 py-3 text-[14px] font-semibold rounded-t-[10px] transition-colors ${
-                  activeCategory === cat.key
+                  activeCategory === cat.id
                     ? 'bg-[#F5F7FA] text-[#171717]'
                     : 'text-[#94A3B8] hover:text-white'
                 }`}
@@ -303,13 +329,13 @@ export default function AttractionsClient() {
       {/* ── 서브카테고리 필터 바 ── */}
       <div className="bg-[#F8FAFC] border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3">
-            {CATEGORIES.map(cat => (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide py-3 items-center">
+            {MAIN_CATEGORIES.map(cat => (
               <button
-                key={cat.key || 'all-cat'}
-                onClick={() => { setActiveCategory(cat.key); setCurrentPage(1); }}
+                key={cat.id || 'all-cat'}
+                onClick={() => { setActiveCategory(cat.id); setCurrentPage(1); }}
                 className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${
-                  activeCategory === cat.key
+                  activeCategory === cat.id
                     ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
                 }`}
@@ -318,9 +344,62 @@ export default function AttractionsClient() {
                 <span>{cat.label}</span>
               </button>
             ))}
+            {/* 더보기 버튼 */}
+            <button
+              onClick={() => setShowMoreModal(true)}
+              className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[13px] font-bold border border-dashed border-[#CBD5E1] text-[#64748B] hover:border-[#0F172A] hover:text-[#0F172A] transition-all bg-white"
+            >
+              More categories
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* ── More Categories 모달 ── */}
+      {showMoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* backdrop */}
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMoreModal(false)} />
+          {/* modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[560px] max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E7EB] sticky top-0 bg-white">
+              <h3 className="text-[18px] font-bold text-[#0F172A]">All Categories</h3>
+              <button
+                onClick={() => setShowMoreModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-[#F1F5F9] text-[#64748B] text-[20px] leading-none"
+              >×</button>
+            </div>
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {/* All 버튼 */}
+              <button
+                onClick={() => { setActiveCategory(''); setCurrentPage(1); setShowMoreModal(false); }}
+                className={`flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold border transition-all ${
+                  activeCategory === ''
+                    ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                    : 'bg-[#F8FAFC] text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
+                }`}
+              >
+                <span>✨</span> All
+              </button>
+              {ALL_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setCurrentPage(1); setShowMoreModal(false); }}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl text-[13px] font-semibold border transition-all text-left ${
+                    activeCategory === cat.id
+                      ? 'bg-[#0F172A] text-white border-[#0F172A]'
+                      : 'bg-[#F8FAFC] text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
+                  }`}
+                >
+                  <span className="flex-shrink-0">{cat.icon}</span>
+                  <span className="leading-tight">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── 컨텐츠 영역 ── */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">

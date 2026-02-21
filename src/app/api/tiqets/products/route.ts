@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
   const page_size = searchParams.get('page_size') || '24';
   const query = searchParams.get('query') || '';
 
+  const tag_id = searchParams.get('tag_id') || '';
+
   const params = new URLSearchParams({
     currency: 'USD',
     lang: 'en',
@@ -24,6 +26,7 @@ export async function GET(req: NextRequest) {
     ...(city_id && { city_id }),
     ...(country_id && { country_id }),
     ...(query && { query }),
+    ...(tag_id && { tag_id }),
   });
 
   const res = await fetch(`${BASE_URL}/products?${params}`, { headers });
