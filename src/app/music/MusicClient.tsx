@@ -132,7 +132,9 @@ export default function MusicClient() {
   const [pageInfo,       setPageInfo]       = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
   const [loading,        setLoading]        = useState(true);
   const [currentPage,    setCurrentPage]    = useState(0);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const searchRef  = useRef<HTMLDivElement>(null);
+  const resultsRef  = useRef<HTMLDivElement>(null);
+  const pendingScrollRef = useRef(false);
 
   /* 자동완성: 현재 로드된 이벤트 이름에서 매칭 (2글자+, 최대 7개) */
   const suggestions = useMemo(() => {
@@ -174,7 +176,19 @@ export default function MusicClient() {
     fetchEvents(activeGenre, activeCountry, searchQuery, 0);
   }, [activeGenre, activeCountry, searchQuery, fetchEvents]);
 
+
+  /* 검색 완료 시 결과로 자동 스크롤 */
+  useEffect(() => {
+    if (!loading && pendingScrollRef.current) {
+      pendingScrollRef.current = false;
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  }, [loading]);
+
   function handleSearch() {
+    pendingScrollRef.current = true;
     setSearchQuery(inputValue);
     setShowSuggestions(false);
     setCurrentPage(0);
@@ -317,7 +331,7 @@ export default function MusicClient() {
       </div>
 
       {/* ── Content ── */}
-      <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
+      <div ref={resultsRef} className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
         {/* 검색 결과 표시 */}
         {searchQuery && (
           <div className="flex items-center gap-2 mb-5 px-4 py-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-[10px]">
