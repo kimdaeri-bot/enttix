@@ -175,10 +175,12 @@ export async function GET(req: NextRequest) {
   // 이미지 병렬 스크래핑 (concurrency 15)
   const imageMap = await scrapeImagesParallel(products, 15);
 
-  // 이미지 적용
+  // 이미지 적용 (스크래핑 성공 → OG 이미지; 실패 → 기존 Tiqets 이미지 보존; 둘 다 없으면 [])
   const enriched = products.map(p => ({
     ...p,
-    images: imageMap.has(p.id) ? [imageMap.get(p.id)!] : [],
+    images: imageMap.has(p.id)
+      ? [imageMap.get(p.id)!]
+      : (p.images && p.images.length > 0 ? p.images : []),
   }));
 
   cache.set(cacheKey, { data: enriched, expires: Date.now() + CACHE_TTL });

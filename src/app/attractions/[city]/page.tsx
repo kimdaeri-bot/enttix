@@ -217,8 +217,27 @@ function Top10Card({
   citySlug: string;
   fallbackPhoto: string;
 }) {
-  const fallback = `https://images.unsplash.com/${fallbackPhoto}?w=560&h=420&fit=crop`;
-  const img = product.images?.[0] || fallback;
+  const tagFallback = `https://images.unsplash.com/${getTagFallback(product.tag_ids, product.id)}?w=560&h=420&fit=crop`;
+  const cityFallback = `https://images.unsplash.com/${fallbackPhoto}?w=560&h=420&fit=crop`;
+  const initialImg = product.images?.[0] || tagFallback;
+  const [imgSrc, setImgSrc] = useState<string>(initialImg);
+  const scrapedRef = useRef(false);
+
+  // 이미지 없을 때 백그라운드 스크래핑
+  useEffect(() => {
+    if (product.images?.[0]) {
+      setImgSrc(product.images[0]);
+      return;
+    }
+    if (scrapedRef.current || !product.product_url) return;
+    scrapedRef.current = true;
+    fetch(`/api/tiqets/product-image?product_url=${encodeURIComponent(product.product_url)}`)
+      .then(r => r.json())
+      .then(d => { if (d.imageUrl) setImgSrc(d.imageUrl); })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.images, product.product_url]);
+
   const avg = product.ratings?.average ?? 0;
   const price = Math.floor(product.price || 0);
 
@@ -229,11 +248,12 @@ function Top10Card({
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
         <Image
-          src={img}
+          src={imgSrc}
           alt={product.title}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           unoptimized
+          onError={() => setImgSrc(cityFallback)}
         />
         {/* Number badge */}
         <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-[#2B7FFF] text-white font-extrabold text-[15px] flex items-center justify-center shadow-md">
