@@ -117,6 +117,64 @@ export default function ProductDetailPage() {
   const [heroImage, setHeroImage] = useState<string | null>(null);
   const [heroLoading, setHeroLoading] = useState(true);
 
+  // Calendar state
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+
+  // ── Calendar helpers ──
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+    'July','August','September','October','November','December'];
+  const DOW_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+  function buildCalCells() {
+    const firstDay = new Date(calYear, calMonth, 1);
+    const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+    const startDow = firstDay.getDay();
+    const cells: (number | null)[] = Array(startDow).fill(null);
+    for (let d = 1; d <= lastDate; d++) cells.push(d);
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
+    else setCalMonth(m => m - 1);
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0); }
+    else setCalMonth(m => m + 1);
+  }
+
+  function isPast(d: number) {
+    const cell = new Date(calYear, calMonth, d);
+    return cell < today;
+  }
+
+  function toIso(d: number) {
+    const mm = String(calMonth + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${calYear}-${mm}-${dd}`;
+  }
+
+  function formatDisplayDate(iso: string) {
+    const [y, m, d] = iso.split('-');
+    return `${MONTH_NAMES[parseInt(m) - 1]} ${parseInt(d)}, ${y}`;
+  }
+
+  function handleBook() {
+    if (!selectedDate || !product?.product_checkout_url) return;
+    try {
+      const url = new URL(product.product_checkout_url);
+      url.searchParams.set('date', selectedDate);
+      window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    } catch {
+      window.open(product.product_checkout_url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
   useEffect(() => {
     fetch(`/api/tiqets/products/${productId}`)
       .then(r => r.json())
@@ -520,27 +578,76 @@ export default function ProductDetailPage() {
                     )}
                   </div>
 
-                  {/* Book Now Button */}
-                  {product.product_checkout_url && (
-                    <a
-                      href={product.product_checkout_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block w-full text-center px-6 py-4 rounded-xl bg-[#FF6B35] hover:bg-[#E55A25] active:scale-[0.98] text-white text-[16px] font-bold transition-all mb-3 shadow-lg shadow-orange-200"
-                    >
-                      Book on Tiqets →
-                    </a>
-                  )}
-                  {product.product_url && (
-                    <a
-                      href={product.product_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block w-full text-center px-6 py-3 rounded-xl border border-[#E5E7EB] hover:bg-[#F8FAFC] text-[#374151] text-[14px] font-semibold transition-colors mb-5"
-                    >
-                      View Details on Tiqets
-                    </a>
-                  )}
+                  {/* Date Picker Calendar */}
+                  <div className="mb-4 border border-[#E5E7EB] rounded-xl overflow-hidden">
+                    {/* Month nav */}
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-[#F8FAFC] border-b border-[#E5E7EB]">
+                      <button
+                        onClick={prevMonth}
+                        disabled={calYear === today.getFullYear() && calMonth <= today.getMonth()}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#E5E7EB] text-[#374151] disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-[18px] leading-none"
+                      >‹</button>
+                      <span className="text-[13px] font-bold text-[#0F172A]">
+                        {MONTH_NAMES[calMonth]} {calYear}
+                      </span>
+                      <button
+                        onClick={nextMonth}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#E5E7EB] text-[#374151] transition-colors text-[18px] leading-none"
+                      >›</button>
+                    </div>
+
+                    <div className="p-3">
+                      {/* Day of week headers */}
+                      <div className="grid grid-cols-7 mb-1">
+                        {DOW_LABELS.map(d => (
+                          <div key={d} className="text-center text-[10px] font-semibold text-[#94A3B8] py-1">{d}</div>
+                        ))}
+                      </div>
+
+                      {/* Date cells */}
+                      <div className="grid grid-cols-7 gap-0.5">
+                        {buildCalCells().map((d, i) => {
+                          if (!d) return <div key={i} />;
+                          const iso = toIso(d);
+                          const past = isPast(d);
+                          const isSelected = iso === selectedDate;
+                          const isToday = iso === toIso(today.getDate()) && calYear === today.getFullYear() && calMonth === today.getMonth();
+                          return (
+                            <button
+                              key={i}
+                              disabled={past}
+                              onClick={() => setSelectedDate(iso)}
+                              className={`
+                                w-full aspect-square flex items-center justify-center rounded-lg text-[12px] font-medium transition-all
+                                ${past ? 'text-[#CBD5E1] cursor-not-allowed' : 'hover:bg-[#EFF6FF] cursor-pointer'}
+                                ${isSelected ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6FF0] font-bold' : ''}
+                                ${isToday && !isSelected ? 'border border-[#2B7FFF] text-[#2B7FFF] font-bold' : ''}
+                                ${!isSelected && !isToday && !past ? 'text-[#374151]' : ''}
+                              `}
+                            >
+                              {d}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CTA — Check Availability */}
+                  <button
+                    onClick={handleBook}
+                    disabled={!selectedDate || !product.product_checkout_url}
+                    className={`block w-full text-center px-6 py-4 rounded-xl text-[16px] font-bold transition-all mb-3 shadow-lg ${
+                      selectedDate && product.product_checkout_url
+                        ? 'bg-[#FF6B35] hover:bg-[#E55A25] active:scale-[0.98] text-white shadow-orange-200 cursor-pointer'
+                        : 'bg-[#F1F5F9] text-[#94A3B8] cursor-not-allowed shadow-none'
+                    }`}
+                  >
+                    {selectedDate
+                      ? `Book for ${formatDisplayDate(selectedDate)} →`
+                      : 'Select a Date First'
+                    }
+                  </button>
 
                   {/* Trust badges */}
                   <div className="space-y-2.5 pt-4 border-t border-[#F1F5F9]">
