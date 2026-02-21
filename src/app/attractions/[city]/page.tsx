@@ -696,41 +696,26 @@ export default function CityAttractionsPage() {
     if (!cityInfo) return;
     setLoading(true);
 
-    const apiBase = `/api/tiqets/city-with-images?city_id=${cityInfo.id}&city_url=${encodeURIComponent(cityInfo.tiqetsSlug)}`;
+    const apiBase = `/api/tiqets/city-with-images?city_id=${cityInfo.id}`;
 
     try {
-      // ── 전 도시: 2단계 프로그레시브 로딩 ──────────────────
-      // 1단계: quick=true → 50개 즉시 렌더링
-      const quickRes = await fetch(`${apiBase}&quick=true`);
-      const quickData = await quickRes.json();
-      const quickProducts = quickData.products || [];
-      setProducts(quickProducts);
-      if (quickProducts.length === 0) {
+      const res = await fetch(apiBase);
+      const data = await res.json();
+      const prods = data.products || [];
+      setProducts(prods);
+      if (prods.length === 0) {
         const normalizedSlug = citySlug.replace(/-/g, ' ');
         setDbAttractions(getAttractionsByCity(normalizedSlug));
-      }
-      setLoading(false); // 즉시 페이지 보여줌
-
-      if (!quickData.fromCache) {
-        // 2단계: 백그라운드에서 전체 로드 (캐시 웜업)
-        setLoadingMore(true);
-        fetch(apiBase)
-          .then(r => r.json())
-          .then(d => {
-            const all = d.products || [];
-            if (all.length > 0) {
-              setProducts(all);
-              setDbAttractions([]); // DB fallback 해제
-            }
-          })
-          .catch(() => {})
-          .finally(() => setLoadingMore(false));
+      } else {
+        setDbAttractions([]);
       }
     } catch {
       setProducts([]);
       const normalizedSlug = citySlug.replace(/-/g, ' ');
       setDbAttractions(getAttractionsByCity(normalizedSlug));
+    } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [cityInfo, citySlug]);
 
