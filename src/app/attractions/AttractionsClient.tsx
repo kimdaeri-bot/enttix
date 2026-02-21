@@ -50,12 +50,12 @@ const CITY_IMG: Record<string, string> = {
 /* 메인 카테고리 6개 (tag_id 기반) */
 const MAIN_CATEGORIES = [
   { id: '',     label: 'All',                  icon: '✨' },
-  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
   { id: '709',  label: 'Archaeological Sites', icon: '⛏️' },
-  { id: '1040', label: 'City Tours',           icon: '🗺️' },
-  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
   { id: '700',  label: 'Art Museums',          icon: '🎨' },
+  { id: '1040', label: 'City Tours',           icon: '🗺️' },
+  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
   { id: '702',  label: 'History Museums',      icon: '📜' },
+  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
 ];
 
 /* 전체 카테고리 (모달용) */

@@ -32,12 +32,12 @@ const CITY_MAP: Record<string, {
 /* ─── CATEGORIES (Tiqets tag_id 기반) ──────────────────────── */
 const MAIN_CATEGORIES = [
   { id: '',     label: 'All',                  icon: '✨' },
-  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
   { id: '709',  label: 'Archaeological Sites', icon: '⛏️' },
-  { id: '1040', label: 'City Tours',           icon: '🗺️' },
-  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
   { id: '700',  label: 'Art Museums',          icon: '🎨' },
+  { id: '1040', label: 'City Tours',           icon: '🗺️' },
+  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
   { id: '702',  label: 'History Museums',      icon: '📜' },
+  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
 ];
 
 const ALL_CATEGORIES = [
