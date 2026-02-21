@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 interface TmEvent {
   id: string; name: string; url: string; imageUrl: string;
@@ -8,6 +8,8 @@ interface TmEvent {
   genre: string; subGenre: string;
 }
 interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
+
+const HERO_PHOTO = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&h=800&fit=crop';
 
 const COUNTRIES = [
   { code: '',   name: 'All',            flag: '🌏', count: 77000 },
@@ -51,6 +53,7 @@ function formatDate(d: string) {
 }
 function formatCount(n: number) { return n >= 1000 ? `${(n/1000).toFixed(0)}K` : String(n); }
 
+/* ── 가로 스크롤 + 화살표 버튼 ── */
 function ScrollRow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const scroll = (dir: 'left' | 'right') => {
@@ -58,30 +61,24 @@ function ScrollRow({ children, className = '' }: { children: React.ReactNode; cl
   };
   return (
     <div className={`relative group/scroll ${className}`}>
-      {/* Left arrow */}
-      <button
-        onClick={() => scroll('left')}
+      <button onClick={() => scroll('left')}
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
-        aria-label="Scroll left"
-      >
+        aria-label="Scroll left">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      {/* Scrollable content */}
       <div ref={ref} className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
         {children}
       </div>
-      {/* Right arrow */}
-      <button
-        onClick={() => scroll('right')}
+      <button onClick={() => scroll('right')}
         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
-        aria-label="Scroll right"
-      >
+        aria-label="Scroll right">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </div>
   );
 }
 
+/* ── 이벤트 카드 ── */
 function EventCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
@@ -124,20 +121,47 @@ function EventCard({ event }: { event: TmEvent }) {
   );
 }
 
+/* ══════════════════════════════════════════════════════ */
 export default function MusicClient() {
-  const [activeGenre,   setActiveGenre]   = useState('');
-  const [activeCountry, setActiveCountry] = useState('GB');
-  const [events,        setEvents]        = useState<TmEvent[]>([]);
-  const [pageInfo,      setPageInfo]      = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
-  const [loading,       setLoading]       = useState(true);
-  const [currentPage,   setCurrentPage]   = useState(0);
+  const [activeGenre,    setActiveGenre]    = useState('');
+  const [activeCountry,  setActiveCountry]  = useState('GB');
+  const [searchQuery,    setSearchQuery]    = useState('');   // 실제 API 전송 값
+  const [inputValue,     setInputValue]     = useState('');   // 입력창 표시값
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [events,         setEvents]         = useState<TmEvent[]>([]);
+  const [pageInfo,       setPageInfo]       = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
+  const [loading,        setLoading]        = useState(true);
+  const [currentPage,    setCurrentPage]    = useState(0);
+  const searchRef = useRef<HTMLDivElement>(null);
 
-  const fetchEvents = useCallback(async (genre: string, country: string, page: number) => {
+  /* 자동완성: 현재 로드된 이벤트 이름에서 매칭 (2글자+, 최대 7개) */
+  const suggestions = useMemo(() => {
+    if (!inputValue || inputValue.length < 2) return [];
+    const q = inputValue.toLowerCase();
+    return events
+      .map(e => e.name)
+      .filter(n => n.toLowerCase().includes(q))
+      .slice(0, 7);
+  }, [inputValue, events]);
+
+  /* 외부 클릭 시 자동완성 닫기 */
+  useEffect(() => {
+    function onClickOut(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', onClickOut);
+    return () => document.removeEventListener('mousedown', onClickOut);
+  }, []);
+
+  const fetchEvents = useCallback(async (genre: string, country: string, keyword: string, page: number) => {
     setLoading(true);
     try {
       const p = new URLSearchParams({ tab: 'music', page: String(page), size: '20' });
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
+      if (keyword) p.set('keyword', keyword);
       const res = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
       setEvents(data.events || []);
@@ -145,39 +169,119 @@ export default function MusicClient() {
     } catch { setEvents([]); } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { setCurrentPage(0); fetchEvents(activeGenre, activeCountry, 0); }, [activeGenre, activeCountry, fetchEvents]);
-  const handlePage = (p: number) => { setCurrentPage(p); fetchEvents(activeGenre, activeCountry, p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  useEffect(() => {
+    setCurrentPage(0);
+    fetchEvents(activeGenre, activeCountry, searchQuery, 0);
+  }, [activeGenre, activeCountry, searchQuery, fetchEvents]);
+
+  function handleSearch() {
+    setSearchQuery(inputValue);
+    setShowSuggestions(false);
+    setCurrentPage(0);
+  }
+  function handleClear() {
+    setInputValue('');
+    setSearchQuery('');
+    setCurrentPage(0);
+  }
+
+  const handlePage = (p: number) => {
+    setCurrentPage(p);
+    fetchEvents(activeGenre, activeCountry, searchQuery, p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
-      {/* Hero */}
-      <div className="bg-[#0F172A]">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-10 pt-10 pb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[12px] font-bold text-[#2B7FFF] tracking-[1.5px]">TICKETMASTER</span>
-            <span className="text-[12px] text-[#475569]">·</span>
-            <span className="text-[12px] text-[#475569]">Live Concerts</span>
+
+      {/* ── HERO (Attractions 도시 페이지 동일 구조) ── */}
+      <section className="relative h-[400px] flex flex-col justify-end pb-10">
+        {/* Background */}
+        <img
+          src={HERO_PHOTO}
+          alt="Music concerts"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+
+        <div className="relative z-10 max-w-[1280px] mx-auto px-4 w-full">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 text-[12px] text-white/60 mb-3">
+            <span className="text-white/90">Music</span>
+            <span>›</span>
+            <span className="text-white/60">Ticketmaster</span>
           </div>
-          <h1 className="text-[32px] md:text-[48px] font-extrabold text-white tracking-[-1px] mb-2">🎵 Music</h1>
-          <p className="text-[14px] text-[#94A3B8]">30개국 · 77K+ 이벤트 — 실시간 Ticketmaster 데이터</p>
+
+          {/* Title */}
+          <h1 className="text-[42px] sm:text-[52px] font-extrabold text-white mb-2 leading-tight">
+            🎵 Live Music Events
+          </h1>
+          <p className="text-white/75 text-[15px] mb-6">
+            77K+ Concerts · 30 Countries · Real-time Ticketmaster Data
+          </p>
+
+          {/* Search bar */}
+          <div ref={searchRef} className="relative max-w-[560px]">
+            <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#2B7FFF]">
+              <svg className="ml-4 flex-shrink-0 text-[#94A3B8]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input
+                value={inputValue}
+                onChange={e => { setInputValue(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSearch();
+                  if (e.key === 'Escape') setShowSuggestions(false);
+                }}
+                placeholder="Search concerts, artists, venues..."
+                className="flex-1 px-3 py-3.5 text-[#0F172A] text-[15px] outline-none placeholder:text-[#94A3B8] bg-transparent"
+              />
+              {inputValue && (
+                <button onClick={handleClear}
+                  className="flex-shrink-0 w-6 h-6 mr-2 flex items-center justify-center rounded-full bg-[#E5E7EB] text-[#64748B] hover:bg-[#CBD5E1] text-[14px] leading-none">
+                  ×
+                </button>
+              )}
+              <button onClick={handleSearch}
+                className="flex-shrink-0 m-1.5 px-5 py-2.5 rounded-lg bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors whitespace-nowrap">
+                Search
+              </button>
+            </div>
+
+            {/* Autocomplete */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-[#E5E7EB] overflow-hidden z-50">
+                {suggestions.map((title, i) => (
+                  <button key={i}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => { setInputValue(title); setSearchQuery(title); setShowSuggestions(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F1F5F9] transition-colors border-b border-[#F1F5F9] last:border-0">
+                    <svg className="text-[#94A3B8] flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <span className="text-[14px] text-[#0F172A] line-clamp-1">{title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Country filter row ── */}
       <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
           <ScrollRow className="py-3">
             {COUNTRIES.map(c => (
-              <button
-                key={c.code}
+              <button key={c.code}
                 onClick={() => { setActiveCountry(c.code); setCurrentPage(0); }}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
                   activeCountry === c.code
                     ? 'bg-[#0F172A] text-white shadow-sm'
                     : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
-                }`}
-              >
+                }`}>
                 <span>{c.flag}</span>
                 <span>{c.name}</span>
                 <span className={`text-[10px] ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
@@ -194,15 +298,13 @@ export default function MusicClient() {
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
           <ScrollRow className="py-3">
             {MUSIC_GENRES.map(g => (
-              <button
-                key={g.key}
+              <button key={g.key}
                 onClick={() => { setActiveGenre(g.key); setCurrentPage(0); }}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-[10px] text-[13px] font-bold transition-all border ${
                   activeGenre === g.key
                     ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
                     : 'bg-white text-[#374151] border-[#E5E7EB] hover:border-[#0F172A]/30 hover:bg-[#F1F5F9]'
-                }`}
-              >
+                }`}>
                 <span>{g.icon}</span>
                 <span>{g.label}</span>
                 <span className={`text-[10px] font-medium ${activeGenre === g.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
@@ -214,8 +316,21 @@ export default function MusicClient() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* ── Content ── */}
       <div className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
+        {/* 검색 결과 표시 */}
+        {searchQuery && (
+          <div className="flex items-center gap-2 mb-5 px-4 py-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-[10px]">
+            <svg className="text-[#2B7FFF]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <span className="text-[13px] text-[#1D4ED8] font-semibold">검색: &ldquo;{searchQuery}&rdquo;</span>
+            <button onClick={handleClear} className="ml-auto text-[12px] text-[#2B7FFF] hover:text-[#1D4ED8] font-semibold">
+              Clear ×
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-6">
           <div className="text-[13px] text-[#6B7280]">
             {!loading && pageInfo.totalElements > 0 && (
@@ -246,7 +361,9 @@ export default function MusicClient() {
           <div className="text-center py-20">
             <p className="text-5xl mb-4">🎵</p>
             <p className="text-[#374151] font-semibold">이벤트가 없습니다</p>
-            <p className="text-[#94A3B8] text-[13px] mt-1">다른 국가나 장르를 선택해보세요</p>
+            <p className="text-[#94A3B8] text-[13px] mt-1">
+              {searchQuery ? `"${searchQuery}" 검색 결과 없음` : '다른 국가나 장르를 선택해보세요'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

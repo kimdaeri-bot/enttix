@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
   const page  = searchParams.get('page')   || '0';
   const size  = searchParams.get('size')   || '20';
   const countryCode = searchParams.get('countryCode') || '';
+  const keyword     = searchParams.get('keyword')     || '';
 
   const classificationName = TAB_MAP[tab] || 'Arts & Theatre';
 
@@ -70,6 +71,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (countryCode) params.set('countryCode', countryCode);
+  if (keyword)     params.set('keyword', keyword);
 
   // 필터 우선순위: league(sports) > genre(music/arts) > classificationName
   if (tab === 'sports' && league && LEAGUE_SUBGENRE[league]) {
