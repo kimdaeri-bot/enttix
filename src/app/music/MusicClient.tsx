@@ -9,6 +9,33 @@ interface TmEvent {
 }
 interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
 
+
+// 장르별 폴백 이미지 (이미지 없거나 로드 실패 시)
+const GENRE_FALLBACKS: Record<string, string> = {
+  'rock':           'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&h=450&fit=crop',
+  'pop':            'https://images.unsplash.com/photo-1501386761578-eaa54b05e553?w=800&h=450&fit=crop',
+  'country':        'https://images.unsplash.com/photo-1508973379184-7517410fb0bc?w=800&h=450&fit=crop',
+  'alternative':    'https://images.unsplash.com/photo-1571266028243-e4733b0f0bb0?w=800&h=450&fit=crop',
+  'hiphop':         'https://images.unsplash.com/photo-1571609860748-64c68498ba5c?w=800&h=450&fit=crop',
+  'metal':          'https://images.unsplash.com/photo-1563841930606-67e2bce48b78?w=800&h=450&fit=crop',
+  'folk':           'https://images.unsplash.com/photo-1525201548942-d8732f6617a0?w=800&h=450&fit=crop',
+  'jazz':           'https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=800&h=450&fit=crop',
+  'classical':      'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=800&h=450&fit=crop',
+  'soul':           'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&h=450&fit=crop',
+  'electronic':     'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=450&fit=crop',
+  'dance':          'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&h=450&fit=crop',
+  'latin':          'https://images.unsplash.com/photo-1504609773096-104ff2c73ba4?w=800&h=450&fit=crop',
+  'default':        'https://images.unsplash.com/photo-1501386761578-eaa54b05e553?w=800&h=450&fit=crop',
+};
+
+function getGenreFallback(genre: string, subGenre: string): string {
+  const key = (genre || subGenre || '').toLowerCase().replace(/[^a-z]/g, '');
+  for (const [k, v] of Object.entries(GENRE_FALLBACKS)) {
+    if (key.includes(k)) return v;
+  }
+  return GENRE_FALLBACKS['default'];
+}
+
 const HERO_PHOTO = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&h=800&fit=crop';
 
 const COUNTRIES = [
@@ -91,15 +118,19 @@ function ScrollRow({ children, className = '' }: { children: React.ReactNode; cl
 
 /* ── 이벤트 카드 ── */
 function EventCard({ event }: { event: TmEvent }) {
-  const [imgErr, setImgErr] = useState(false);
+  const fallbackImg = getGenreFallback(event.genre, event.subGenre);
+  const [src, setSrc] = useState(event.imageUrl || fallbackImg);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
   return (
     <a href={`/music/event/${event.id}`}
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col">
       <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
-        {!imgErr && event.imageUrl
-          ? <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={() => setImgErr(true)} />
-          : <div className="w-full h-full flex items-center justify-center"><span className="text-4xl opacity-30">🎵</span></div>}
+        <img
+          src={src}
+          alt={event.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          onError={() => setSrc(fallbackImg)}
+        />
         {event.subGenre && event.subGenre !== 'Undefined' && (
           <div className="absolute top-3 left-3">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold text-white bg-black/60 backdrop-blur-sm">{event.subGenre}</span>
