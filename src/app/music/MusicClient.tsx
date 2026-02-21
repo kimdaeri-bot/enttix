@@ -53,25 +53,36 @@ function formatDate(d: string) {
 }
 function formatCount(n: number) { return n >= 1000 ? `${(n/1000).toFixed(0)}K` : String(n); }
 
-/* ── 가로 스크롤 + 화살표 버튼 ── */
+/* ── 가로 스크롤 + 화살표 (JS hover state 방식) ── */
 function ScrollRow({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState(false);
   const scroll = (dir: 'left' | 'right') => {
-    if (ref.current) ref.current.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollBy({ left: dir === 'left' ? -280 : 280, behavior: 'smooth' });
   };
   return (
-    <div className={`relative group/scroll ${className}`}>
-      <button onClick={() => scroll('left')}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
-        aria-label="Scroll left">
+    <div
+      className={`relative ${className}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        onClick={() => scroll('left')}
+        className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        aria-label="Scroll left"
+        tabIndex={-1}
+      >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <div ref={ref} className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
+      <div ref={scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide px-1">
         {children}
       </div>
-      <button onClick={() => scroll('right')}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-all opacity-0 group-hover/scroll:opacity-100"
-        aria-label="Scroll right">
+      <button
+        onClick={() => scroll('right')}
+        className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-[#E5E7EB] shadow-md flex items-center justify-center text-[#374151] hover:bg-[#F1F5F9] transition-opacity ${hovered ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        aria-label="Scroll right"
+        tabIndex={-1}
+      >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </button>
     </div>
@@ -123,111 +134,112 @@ function EventCard({ event }: { event: TmEvent }) {
 
 /* ══════════════════════════════════════════════════════ */
 export default function MusicClient() {
-  const [activeGenre,    setActiveGenre]    = useState('');
-  const [activeCountry,  setActiveCountry]  = useState('GB');
-  const [searchQuery,    setSearchQuery]    = useState('');   // 실제 API 전송 값
-  const [inputValue,     setInputValue]     = useState('');   // 입력창 표시값
+  const [activeGenre,     setActiveGenre]     = useState('');
+  const [activeCountry,   setActiveCountry]   = useState('GB');
+  const [searchQuery,     setSearchQuery]     = useState('');
+  const [inputValue,      setInputValue]      = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [events,         setEvents]         = useState<TmEvent[]>([]);
-  const [pageInfo,       setPageInfo]       = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
-  const [loading,        setLoading]        = useState(true);
-  const [currentPage,    setCurrentPage]    = useState(0);
+  const [events,          setEvents]          = useState<TmEvent[]>([]);
+  const [pageInfo,        setPageInfo]        = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
+  const [loading,         setLoading]         = useState(true);
+  const [currentPage,     setCurrentPage]     = useState(0);
+
   const searchRef  = useRef<HTMLDivElement>(null);
-  const resultsRef  = useRef<HTMLDivElement>(null);
-  const pendingScrollRef = useRef(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
+
+  /* 외부 클릭 시 자동완성 닫기 */
+  useEffect(() => {
+    const onOut = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSuggestions(false);
+    };
+    document.addEventListener('mousedown', onOut);
+    return () => document.removeEventListener('mousedown', onOut);
+  }, []);
 
   /* 자동완성: 현재 로드된 이벤트 이름에서 매칭 (2글자+, 최대 7개) */
   const suggestions = useMemo(() => {
     if (!inputValue || inputValue.length < 2) return [];
     const q = inputValue.toLowerCase();
-    return events
-      .map(e => e.name)
-      .filter(n => n.toLowerCase().includes(q))
-      .slice(0, 7);
+    return events.map(e => e.name).filter(n => n.toLowerCase().includes(q)).slice(0, 7);
   }, [inputValue, events]);
 
-  /* 외부 클릭 시 자동완성 닫기 */
-  useEffect(() => {
-    function onClickOut(e: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener('mousedown', onClickOut);
-    return () => document.removeEventListener('mousedown', onClickOut);
-  }, []);
-
-  const fetchEvents = useCallback(async (genre: string, country: string, keyword: string, page: number) => {
+  /* API 호출 — 완료 시 scroll 여부 결정 */
+  const fetchEvents = useCallback(async (
+    genre: string, country: string, keyword: string, page: number, shouldScroll = false
+  ) => {
     setLoading(true);
     try {
       const p = new URLSearchParams({ tab: 'music', page: String(page), size: '20' });
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       if (keyword) p.set('keyword', keyword);
-      const res = await fetch(`/api/ticketmaster/events?${p}`);
+      const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
       setEvents(data.events || []);
       setPageInfo(data.page || { number: 0, size: 20, totalElements: 0, totalPages: 0 });
-    } catch { setEvents([]); } finally { setLoading(false); }
+    } catch {
+      setEvents([]);
+    } finally {
+      setLoading(false);
+      if (shouldScroll) {
+        setTimeout(() => {
+          resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 120);
+      }
+    }
   }, []);
 
+  /* 초기 및 필터 변경 시 로드 (스크롤 없음) */
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, searchQuery, 0);
-  }, [activeGenre, activeCountry, searchQuery, fetchEvents]);
+    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false);
+  }, [activeGenre, activeCountry, fetchEvents]);
+  // searchQuery 변경은 handleSearch/handleSelectSuggestion에서 직접 호출
 
-
-  /* 검색 완료 시 결과로 자동 스크롤 */
-  useEffect(() => {
-    if (!loading && pendingScrollRef.current) {
-      pendingScrollRef.current = false;
-      setTimeout(() => {
-        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 80);
-    }
-  }, [loading]);
-
-  function handleSearch() {
-    pendingScrollRef.current = true;
-    setSearchQuery(inputValue);
+  /* 검색 실행 */
+  function execSearch(keyword: string) {
+    setSearchQuery(keyword);
     setShowSuggestions(false);
     setCurrentPage(0);
+    fetchEvents(activeGenre, activeCountry, keyword, 0, true); // shouldScroll = true
   }
+
+  function handleSearch() { execSearch(inputValue); }
+
+  function handleSelectSuggestion(title: string) {
+    setInputValue(title);
+    execSearch(title); // 자동완성 클릭 시 즉시 검색 + 스크롤
+  }
+
   function handleClear() {
     setInputValue('');
     setSearchQuery('');
     setCurrentPage(0);
+    fetchEvents(activeGenre, activeCountry, '', 0, false);
   }
 
   const handlePage = (p: number) => {
     setCurrentPage(p);
-    fetchEvents(activeGenre, activeCountry, searchQuery, p);
+    fetchEvents(activeGenre, activeCountry, searchQuery, p, false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
   const countryObj = COUNTRIES.find(c => c.code === activeCountry) || COUNTRIES[0];
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">
 
-      {/* ── HERO (Attractions 도시 페이지 동일 구조) ── */}
+      {/* ── HERO ── */}
       <section className="relative h-[400px] flex flex-col justify-end pb-10">
-        {/* Background */}
-        <img
-          src={HERO_PHOTO}
-          alt="Music concerts"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={HERO_PHOTO} alt="Music concerts" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
 
         <div className="relative z-10 max-w-[1280px] mx-auto px-4 w-full">
-          {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-[12px] text-white/60 mb-3">
             <span className="text-white/90">Music</span>
             <span>›</span>
             <span className="text-white/60">Ticketmaster</span>
           </div>
-
-          {/* Title */}
           <h1 className="text-[42px] sm:text-[52px] font-extrabold text-white mb-2 leading-tight">
             🎵 Live Music Events
           </h1>
@@ -235,7 +247,7 @@ export default function MusicClient() {
             77K+ Concerts · 30 Countries · Real-time Ticketmaster Data
           </p>
 
-          {/* Search bar */}
+          {/* 검색바 */}
           <div ref={searchRef} className="relative max-w-[560px]">
             <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#2B7FFF]">
               <svg className="ml-4 flex-shrink-0 text-[#94A3B8]" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -264,13 +276,13 @@ export default function MusicClient() {
               </button>
             </div>
 
-            {/* Autocomplete */}
+            {/* 자동완성 */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-[#E5E7EB] overflow-hidden z-50">
                 {suggestions.map((title, i) => (
                   <button key={i}
                     onMouseDown={e => e.preventDefault()}
-                    onClick={() => { setInputValue(title); setSearchQuery(title); setShowSuggestions(false); }}
+                    onClick={() => handleSelectSuggestion(title)}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F1F5F9] transition-colors border-b border-[#F1F5F9] last:border-0">
                     <svg className="text-[#94A3B8] flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
@@ -284,7 +296,7 @@ export default function MusicClient() {
         </div>
       </section>
 
-      {/* ── Country filter row ── */}
+      {/* ── Country filter ── */}
       <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
           <ScrollRow className="py-3">
@@ -292,22 +304,18 @@ export default function MusicClient() {
               <button key={c.code}
                 onClick={() => { setActiveCountry(c.code); setCurrentPage(0); }}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-semibold transition-all ${
-                  activeCountry === c.code
-                    ? 'bg-[#0F172A] text-white shadow-sm'
-                    : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
+                  activeCountry === c.code ? 'bg-[#0F172A] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#374151] hover:bg-[#E2E8F0]'
                 }`}>
                 <span>{c.flag}</span>
                 <span>{c.name}</span>
-                <span className={`text-[10px] ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
-                  {formatCount(c.count)}
-                </span>
+                <span className={`text-[10px] ${activeCountry === c.code ? 'text-white/70' : 'text-[#9CA3AF]'}`}>{formatCount(c.count)}</span>
               </button>
             ))}
           </ScrollRow>
         </div>
       </div>
 
-      {/* ── Genre filter row ── */}
+      {/* ── Genre filter ── */}
       <div className="bg-white border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4 md:px-10">
           <ScrollRow className="py-3">
@@ -321,9 +329,7 @@ export default function MusicClient() {
                 }`}>
                 <span>{g.icon}</span>
                 <span>{g.label}</span>
-                <span className={`text-[10px] font-medium ${activeGenre === g.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>
-                  {formatCount(g.count)}
-                </span>
+                <span className={`text-[10px] font-medium ${activeGenre === g.key ? 'text-white/70' : 'text-[#9CA3AF]'}`}>{formatCount(g.count)}</span>
               </button>
             ))}
           </ScrollRow>
@@ -332,10 +338,10 @@ export default function MusicClient() {
 
       {/* ── Content ── */}
       <div ref={resultsRef} className="max-w-[1280px] mx-auto px-4 md:px-10 py-8">
-        {/* 검색 결과 표시 */}
+
         {searchQuery && (
           <div className="flex items-center gap-2 mb-5 px-4 py-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-[10px]">
-            <svg className="text-[#2B7FFF]" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <svg className="text-[#2B7FFF] flex-shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
             </svg>
             <span className="text-[13px] text-[#1D4ED8] font-semibold">검색: &ldquo;{searchQuery}&rdquo;</span>
@@ -385,7 +391,6 @@ export default function MusicClient() {
           </div>
         )}
 
-        {/* Pagination */}
         {!loading && pageInfo.totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-10">
             <button onClick={() => handlePage(currentPage - 1)} disabled={currentPage === 0}
