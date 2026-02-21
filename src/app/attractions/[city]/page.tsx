@@ -15,30 +15,81 @@ const CITY_MAP: Record<string, {
   photo: string;
   desc: string;
 }> = {
-  london:     { id: 67458,  name: 'London',    tiqetsSlug: 'london-attractions-c67458',     photo: 'photo-1513635269975-59663e0ac1ad', desc: 'Explore the Tower of London, royal palaces, world-class museums and iconic landmarks.' },
-  paris:      { id: 66746,  name: 'Paris',     tiqetsSlug: 'paris-attractions-c66746',      photo: 'photo-1502602898657-3e91760cbb34', desc: 'Climb the Eiffel Tower, visit the Louvre and stroll along the Champs-Élysées.' },
-  barcelona:  { id: 66342,  name: 'Barcelona', tiqetsSlug: 'barcelona-attractions-c66342',  photo: 'photo-1583422409516-2895a77efded', desc: "Discover Gaudí's masterpieces, beautiful beaches and vibrant Catalan culture." },
-  rome:       { id: 71631,  name: 'Rome',      tiqetsSlug: 'rome-attractions-c71631',       photo: 'photo-1552832230-c0197dd311b5',    desc: 'Walk through 2,500 years of history in the Colosseum, Vatican and beyond.' },
-  amsterdam:  { id: 75061,  name: 'Amsterdam', tiqetsSlug: 'amsterdam-attractions-c75061',  photo: 'photo-1534351590666-13e3e96b5017', desc: 'Cruise the canals, visit the Rijksmuseum and discover world-famous art.' },
-  dubai:      { id: 60005,  name: 'Dubai',     tiqetsSlug: 'dubai-attractions-c60005',      photo: 'photo-1512453979798-5ea266f8880c', desc: 'Soar to the top of the Burj Khalifa, explore desert dunes and luxury experiences.' },
-  singapore:  { id: 78125,  name: 'Singapore', tiqetsSlug: 'singapore-attractions-c78125',  photo: 'photo-1525625293386-3f8f99389edd', desc: 'From Gardens by the Bay to Sentosa Island — a city full of surprises.' },
-  prague:     { id: 64162,  name: 'Prague',    tiqetsSlug: 'prague-attractions-c64162',     photo: 'photo-1541849546-216549ae216d',    desc: 'Wander the cobblestone streets, cross Charles Bridge and visit Prague Castle.' },
-  madrid:     { id: 66254,  name: 'Madrid',    tiqetsSlug: 'madrid-attractions-c66254',     photo: 'photo-1539037116277-4db20889f2d4', desc: 'World-class art, tapas culture and the grandeur of the Prado Museum.' },
-  vienna:     { id: 60335,  name: 'Vienna',    tiqetsSlug: 'vienna-attractions-c60335',     photo: 'photo-1516550893923-42d28e5677af', desc: 'Imperial palaces, classical music and the finest coffee house culture in Europe.' },
-  'new-york': { id: 260932, name: 'New York',  tiqetsSlug: 'new-york-attractions-c260932',  photo: 'photo-1496442226666-8d4d0e62e6e9', desc: 'From the Statue of Liberty to Broadway — the city that never sleeps.' },
-  tokyo:      { id: 72181,  name: 'Tokyo',     tiqetsSlug: 'tokyo-attractions-c72181',      photo: 'photo-1540959733332-eab4deabeeaf', desc: 'Ancient temples, futuristic technology and endless culinary adventures.' },
+  london:        { id: 67458,  name: 'London',       tiqetsSlug: 'london-attractions-c67458',       photo: 'photo-1513635269975-59663e0ac1ad', desc: 'Explore the Tower of London, royal palaces, world-class museums and iconic landmarks.' },
+  paris:         { id: 66746,  name: 'Paris',        tiqetsSlug: 'paris-attractions-c66746',        photo: 'photo-1502602898657-3e91760cbb34', desc: 'Climb the Eiffel Tower, visit the Louvre and stroll along the Champs-Élysées.' },
+  barcelona:     { id: 66342,  name: 'Barcelona',    tiqetsSlug: 'barcelona-attractions-c66342',    photo: 'photo-1583422409516-2895a77efded', desc: "Discover Gaudí's masterpieces, beautiful beaches and vibrant Catalan culture." },
+  rome:          { id: 71631,  name: 'Rome',         tiqetsSlug: 'rome-attractions-c71631',         photo: 'photo-1552832230-c0197dd311b5',    desc: 'Walk through 2,500 years of history in the Colosseum, Vatican and beyond.' },
+  amsterdam:     { id: 75061,  name: 'Amsterdam',    tiqetsSlug: 'amsterdam-attractions-c75061',    photo: 'photo-1534351590666-13e3e96b5017', desc: 'Cruise the canals, visit the Rijksmuseum and discover world-famous art.' },
+  dubai:         { id: 60005,  name: 'Dubai',        tiqetsSlug: 'dubai-attractions-c60005',        photo: 'photo-1512453979798-5ea266f8880c', desc: 'Soar to the top of the Burj Khalifa, explore desert dunes and luxury experiences.' },
+  singapore:     { id: 78125,  name: 'Singapore',    tiqetsSlug: 'singapore-attractions-c78125',    photo: 'photo-1525625293386-3f8f99389edd', desc: 'From Gardens by the Bay to Sentosa Island — a city full of surprises.' },
+  prague:        { id: 64162,  name: 'Prague',       tiqetsSlug: 'prague-attractions-c64162',       photo: 'photo-1541849546-216549ae216d',    desc: 'Wander the cobblestone streets, cross Charles Bridge and visit Prague Castle.' },
+  madrid:        { id: 66254,  name: 'Madrid',       tiqetsSlug: 'madrid-attractions-c66254',       photo: 'photo-1539037116277-4db20889f2d4', desc: 'World-class art, tapas culture and the grandeur of the Prado Museum.' },
+  vienna:        { id: 60335,  name: 'Vienna',       tiqetsSlug: 'vienna-attractions-c60335',       photo: 'photo-1516550893923-42d28e5677af', desc: 'Imperial palaces, classical music and the finest coffee house culture in Europe.' },
+  'new-york':    { id: 260932, name: 'New York',     tiqetsSlug: 'new-york-attractions-c260932',    photo: 'photo-1496442226666-8d4d0e62e6e9', desc: 'From the Statue of Liberty to Broadway — the city that never sleeps.' },
+  tokyo:         { id: 72181,  name: 'Tokyo',        tiqetsSlug: 'tokyo-attractions-c72181',        photo: 'photo-1540959733332-eab4deabeeaf', desc: 'Ancient temples, futuristic technology and endless culinary adventures.' },
+  istanbul:      { id: 79079,  name: 'Istanbul',     tiqetsSlug: 'istanbul-attractions-c79079',     photo: 'photo-1524231757912-21f4fe3a7200', desc: 'Where East meets West — mosques, bazaars, Bosphorus cruises and Byzantine history.' },
+  florence:      { id: 71854,  name: 'Florence',     tiqetsSlug: 'florence-attractions-c71854',     photo: 'photo-1541370976299-4d24be63e9d7', desc: 'The cradle of the Renaissance — Uffizi Gallery, Duomo and Michelangelo\'s David.' },
+  lisbon:        { id: 76528,  name: 'Lisbon',       tiqetsSlug: 'lisbon-attractions-c76528',       photo: 'photo-1585208798174-6cedd4234ae0', desc: 'Pastel-coloured hills, trams, Fado music and the world\'s best custard tarts.' },
+  venice:        { id: 71510,  name: 'Venice',       tiqetsSlug: 'venice-attractions-c71510',       photo: 'photo-1523906834658-6e24ef2386f9', desc: 'Glide through canals, explore the Doge\'s Palace and lose yourself in ancient alleyways.' },
+  berlin:        { id: 65144,  name: 'Berlin',       tiqetsSlug: 'berlin-attractions-c65144',       photo: 'photo-1560969184-10fe8719e047', desc: 'History, art and nightlife collide — from the Brandenburg Gate to Museum Island.' },
+  milan:         { id: 71749,  name: 'Milan',        tiqetsSlug: 'milan-attractions-c71749',        photo: 'photo-1520175480921-4edfa2983e0f', desc: 'Fashion, design and da Vinci\'s Last Supper in the style capital of the world.' },
+  krakow:        { id: 46,     name: 'Krakow',       tiqetsSlug: 'krakow-attractions-c46',          photo: 'photo-1519197924294-4ba991a11128', desc: 'Medieval charm, Wawel Castle and a powerful history in Poland\'s cultural heart.' },
+  sydney:        { id: 60400,  name: 'Sydney',       tiqetsSlug: 'sydney-attractions-c60400',       photo: 'photo-1506973035872-a4ec16b8e8d9', desc: 'Iconic Opera House, Harbour Bridge, stunning beaches and a vibrant food scene.' },
+  athens:        { id: 99239,  name: 'Athens',       tiqetsSlug: 'athens-attractions-c99239',       photo: 'photo-1555993539-1732b0258235', desc: 'Walk in the footsteps of ancient philosophers — the Acropolis, Parthenon and beyond.' },
+  bangkok:       { id: 78586,  name: 'Bangkok',      tiqetsSlug: 'bangkok-attractions-c78586',      photo: 'photo-1508009603885-50cf7c579365', desc: 'Glittering temples, floating markets, street food and electrifying nightlife.' },
+  edinburgh:     { id: 21,     name: 'Edinburgh',    tiqetsSlug: 'edinburgh-attractions-c21',       photo: 'photo-1583195763991-f8a6b52de74d', desc: 'A dramatic castle on volcanic rock, whisky trails and the world\'s biggest arts festival.' },
+  dublin:        { id: 68616,  name: 'Dublin',       tiqetsSlug: 'dublin-attractions-c68616',       photo: 'photo-1549918864-48ac28d3be1b', desc: 'Guinness, Georgian streets, Viking history and the warmest pubs in Europe.' },
+  'mexico-city': { id: 74040,  name: 'Mexico City',  tiqetsSlug: 'mexico-city-attractions-c74040',  photo: 'photo-1518105779142-d975f22f1b0a', desc: 'Ancient pyramids, Frida Kahlo, street tacos and one of the world\'s great capital cities.' },
+  munich:        { id: 31,     name: 'Munich',       tiqetsSlug: 'munich-attractions-c31',          photo: 'photo-1595867818082-083862f3d630', desc: 'Oktoberfest, fairytale castles, BMW museums and Alpine day trips.' },
+  budapest:      { id: 68199,  name: 'Budapest',     tiqetsSlug: 'budapest-attractions-c68199',     photo: 'photo-1541264643588-4927a7e47e2a', desc: 'Thermal baths, stunning Parliament building and Danube river cruises.' },
+  brussels:      { id: 60843,  name: 'Brussels',     tiqetsSlug: 'brussels-attractions-c60843',     photo: 'photo-1491557345352-5929e343eb89', desc: 'Art Nouveau architecture, world-famous chocolate, waffles and the EU quarter.' },
+  'cape-town':   { id: 82923,  name: 'Cape Town',    tiqetsSlug: 'cape-town-attractions-c82923',    photo: 'photo-1580060839134-75a5edca2e99', desc: 'Table Mountain, penguin colonies, wine routes and the Cape of Good Hope.' },
+  cairo:         { id: 65792,  name: 'Cairo',        tiqetsSlug: 'cairo-attractions-c65792',        photo: 'photo-1539650116574-75c0c6d73f6e', desc: 'The Great Pyramids, Sphinx, Egyptian Museum and the timeless River Nile.' },
+  bali:          { id: 267738, name: 'Bali',         tiqetsSlug: 'bali-attractions-c267738',        photo: 'photo-1537996194471-e657df975ab4', desc: 'Rice terraces, sacred temples, surf beaches and a unique Hindu culture.' },
+  bruges:        { id: 60844,  name: 'Bruges',       tiqetsSlug: 'bruges-attractions-c60844',       photo: 'photo-1491557345352-5929e343eb89', desc: 'The Venice of the North — canals, medieval architecture and world-class beer.' },
+  osaka:         { id: 28,     name: 'Osaka',        tiqetsSlug: 'osaka-attractions-c28',           photo: 'photo-1589308078059-be1415eab4c3', desc: 'Street food paradise, neon-lit Dotonbori, Universal Studios and vibrant nightlife.' },
+  kyoto:         { id: 72420,  name: 'Kyoto',        tiqetsSlug: 'kyoto-attractions-c72420',        photo: 'photo-1528360983277-13d401cdc186', desc: 'Ancient temples, geisha districts, bamboo groves and the essence of traditional Japan.' },
+  seoul:         { id: 73067,  name: 'Seoul',        tiqetsSlug: 'seoul-attractions-c73067',        photo: 'photo-1538485399081-7191377e8241', desc: 'K-pop culture, royal palaces, cutting-edge tech and incredible Korean cuisine.' },
 };
 
-/* ─── CATEGORIES (Tiqets tag_id 기반) ──────────────────────── */
-const MAIN_CATEGORIES = [
-  { id: '',     label: 'All',                  icon: '✨' },
-  { id: '709',  label: 'Archaeological Sites', icon: '⛏️' },
-  { id: '700',  label: 'Art Museums',          icon: '🎨' },
-  { id: '1040', label: 'City Tours',           icon: '🗺️' },
-  { id: '708',  label: 'Historical Sites',     icon: '🏛️' },
-  { id: '702',  label: 'History Museums',      icon: '📜' },
-  { id: '710',  label: 'Places of Worship',    icon: '⛪' },
-];
+/* ─── CATEGORIES (도시별 top-6 tag_id 기반) ────────────────── */
+const CITY_CATEGORIES: Record<string, { id: string; label: string; icon: string }[]> = {
+  'london':       [{ id:'2596',label:'Shows',icon:'🎭'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1035',label:'Cruises',icon:'🚢'}],
+  'paris':        [{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'703',label:'Science',icon:'🔬'}],
+  'barcelona':    [{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1048',label:'Public Transport',icon:'🚇'},{ id:'1032',label:'City Cards',icon:'🎫'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'710',label:'Places of Worship',icon:'⛪'}],
+  'rome':         [{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'709',label:'Archaeological Sites',icon:'⛏️'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1840',label:'Transfers',icon:'🚖'}],
+  'amsterdam':    [{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'1040',label:'City Tours',icon:'🗺️'}],
+  'dubai':        [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1042',label:'Day Trips',icon:'🚌'}],
+  'singapore':    [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'723',label:'Zoos',icon:'🦁'},{ id:'725',label:'Botanical Gardens',icon:'🌿'}],
+  'prague':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'705',label:'Castles',icon:'🏰'},{ id:'1035',label:'Cruises',icon:'🚢'}],
+  'madrid':       [{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'1042',label:'Day Trips',icon:'🚌'}],
+  'vienna':       [{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1032',label:'City Cards',icon:'🎫'},{ id:'708',label:'Historical Sites',icon:'🏛️'}],
+  'new-york':     [{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'2596',label:'Shows',icon:'🎭'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1032',label:'City Cards',icon:'🎫'}],
+  'tokyo':        [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1042',label:'Day Trips',icon:'🚌'}],
+  'istanbul':     [{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1033',label:'Workshops',icon:'🎓'},{ id:'706',label:'Palaces',icon:'👑'}],
+  'florence':     [{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'}],
+  'lisbon':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'708',label:'Historical Sites',icon:'🏛️'}],
+  'venice':       [{ id:'1840',label:'Transfers',icon:'🚖'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'1033',label:'Workshops',icon:'🎓'}],
+  'berlin':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'}],
+  'milan':        [{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1840',label:'Transfers',icon:'🚖'},{ id:'1040',label:'City Tours',icon:'🗺️'}],
+  'krakow':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'1035',label:'Cruises',icon:'🚢'}],
+  'sydney':       [{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'2596',label:'Shows',icon:'🎭'},{ id:'723',label:'Zoos',icon:'🦁'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'700',label:'Art Museums',icon:'🎨'}],
+  'athens':       [{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'709',label:'Archaeological Sites',icon:'⛏️'},{ id:'1049',label:'Rentals',icon:'🚲'}],
+  'bangkok':      [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'2596',label:'Shows',icon:'🎭'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'1033',label:'Workshops',icon:'🎓'}],
+  'edinburgh':    [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'705',label:'Castles',icon:'🏰'},{ id:'1942',label:'Undergrounds',icon:'🕳️'}],
+  'dublin':       [{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'}],
+  'mexico-city':  [{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'709',label:'Archaeological Sites',icon:'⛏️'},{ id:'1042',label:'Day Trips',icon:'🚌'}],
+  'munich':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'705',label:'Castles',icon:'🏰'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'700',label:'Art Museums',icon:'🎨'}],
+  'budapest':     [{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'1042',label:'Day Trips',icon:'🚌'}],
+  'brussels':     [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'703',label:'Science',icon:'🔬'},{ id:'1032',label:'City Cards',icon:'🎫'}],
+  'cape-town':    [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'708',label:'Historical Sites',icon:'🏛️'},{ id:'1035',label:'Cruises',icon:'🚢'}],
+  'cairo':        [{ id:'709',label:'Archaeological Sites',icon:'⛏️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'1840',label:'Transfers',icon:'🚖'}],
+  'bali':         [{ id:'710',label:'Places of Worship',icon:'⛪'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'723',label:'Zoos',icon:'🦁'},{ id:'1034',label:'Food & Drinks',icon:'🍽️'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'2596',label:'Shows',icon:'🎭'}],
+  'bruges':       [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'708',label:'Historical Sites',icon:'🏛️'}],
+  'osaka':        [{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1032',label:'City Cards',icon:'🎫'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'702',label:'History Museums',icon:'📜'}],
+  'kyoto':        [{ id:'1040',label:'City Tours',icon:'🗺️'},{ id:'1035',label:'Cruises',icon:'🚢'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'702',label:'History Museums',icon:'📜'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'1033',label:'Workshops',icon:'🎓'}],
+  'seoul':        [{ id:'1042',label:'Day Trips',icon:'🚌'},{ id:'701',label:'Interactive Museums',icon:'🎭'},{ id:'706',label:'Palaces',icon:'👑'},{ id:'712',label:'Theme Parks',icon:'🎡'},{ id:'700',label:'Art Museums',icon:'🎨'},{ id:'702',label:'History Museums',icon:'📜'}],
+};
 
 const ALL_CATEGORIES = [
   { id: '700',  label: 'Art Museums',               icon: '🎨' },
@@ -603,7 +654,7 @@ export default function CityAttractionsPage() {
             Browse by category
           </h2>
           <div className="flex flex-wrap gap-2">
-            {MAIN_CATEGORIES.map(cat => (
+            {[{ id: '', label: 'All', icon: '✨' }, ...(CITY_CATEGORIES[citySlug] || [])].map(cat => (
               <button
                 key={cat.id || 'all'}
                 onClick={() => { setActiveCategory(cat.id); setDisplayCount(24); }}

@@ -6,10 +6,16 @@ import Link from 'next/link';
 /* 도시 이름 → slug 변환 (All Cities 모드에서 product.city_name 기반) */
 function cityNameToSlug(name: string): string {
   const MAP: Record<string, string> = {
-    'london': 'london', 'paris': 'paris', 'barcelona': 'barcelona',
-    'rome': 'rome', 'amsterdam': 'amsterdam', 'new york': 'new-york',
-    'dubai': 'dubai', 'tokyo': 'tokyo', 'singapore': 'singapore',
-    'hong kong': 'hong-kong', 'istanbul': 'istanbul',
+    'london':'london','paris':'paris','barcelona':'barcelona','rome':'rome',
+    'amsterdam':'amsterdam','new york':'new-york','dubai':'dubai','tokyo':'tokyo',
+    'singapore':'singapore','hong kong':'hong-kong','istanbul':'istanbul',
+    'florence':'florence','lisbon':'lisbon','venice':'venice','berlin':'berlin',
+    'milan':'milan','krakow':'krakow','sydney':'sydney','athens':'athens',
+    'bangkok':'bangkok','edinburgh':'edinburgh','dublin':'dublin',
+    'mexico city':'mexico-city','munich':'munich','budapest':'budapest',
+    'brussels':'brussels','cape town':'cape-town','cairo':'cairo','bali':'bali',
+    'bruges':'bruges','osaka':'osaka','kyoto':'kyoto','seoul':'seoul',
+    'prague':'prague','madrid':'madrid','vienna':'vienna',
   };
   return MAP[name.toLowerCase()] ?? name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
@@ -18,18 +24,42 @@ function cityNameToSlug(name: string): string {
    Tiqets city IDs (from tiqets.com/en/city-cXX/ URL pattern)
 ───────────────────────────────────────── */
 const CITIES = [
-  { id: '',       name: 'All Cities', flag: '🌍', slug: ''          },
-  { id: '67458',  name: 'London',     flag: '🇬🇧', slug: 'london'    },
-  { id: '66746',  name: 'Paris',      flag: '🇫🇷', slug: 'paris'     },
-  { id: '66342',  name: 'Barcelona',  flag: '🇪🇸', slug: 'barcelona' },
-  { id: '71631',  name: 'Rome',       flag: '🇮🇹', slug: 'rome'      },
-  { id: '75061',  name: 'Amsterdam',  flag: '🇳🇱', slug: 'amsterdam' },
-  { id: '260932', name: 'New York',   flag: '🇺🇸', slug: 'new-york'  },
-  { id: '60005',  name: 'Dubai',      flag: '🇦🇪', slug: 'dubai'     },
-  { id: '72181',  name: 'Tokyo',      flag: '🇯🇵', slug: 'tokyo'     },
-  { id: '78125',  name: 'Singapore',  flag: '🇸🇬', slug: 'singapore' },
-  { id: '34',     name: 'Hong Kong',  flag: '🇭🇰', slug: 'hong-kong' },
-  { id: '79079',  name: 'Istanbul',   flag: '🇹🇷', slug: 'istanbul'  },
+  { id: '',       name: 'All Cities',  flag: '🌍', slug: ''             },
+  { id: '67458',  name: 'London',      flag: '🇬🇧', slug: 'london'       },
+  { id: '66746',  name: 'Paris',       flag: '🇫🇷', slug: 'paris'        },
+  { id: '66342',  name: 'Barcelona',   flag: '🇪🇸', slug: 'barcelona'    },
+  { id: '71631',  name: 'Rome',        flag: '🇮🇹', slug: 'rome'         },
+  { id: '75061',  name: 'Amsterdam',   flag: '🇳🇱', slug: 'amsterdam'    },
+  { id: '260932', name: 'New York',    flag: '🇺🇸', slug: 'new-york'     },
+  { id: '60005',  name: 'Dubai',       flag: '🇦🇪', slug: 'dubai'        },
+  { id: '72181',  name: 'Tokyo',       flag: '🇯🇵', slug: 'tokyo'        },
+  { id: '78125',  name: 'Singapore',   flag: '🇸🇬', slug: 'singapore'    },
+  { id: '79079',  name: 'Istanbul',    flag: '🇹🇷', slug: 'istanbul'     },
+  { id: '71854',  name: 'Florence',    flag: '🇮🇹', slug: 'florence'     },
+  { id: '76528',  name: 'Lisbon',      flag: '🇵🇹', slug: 'lisbon'       },
+  { id: '71510',  name: 'Venice',      flag: '🇮🇹', slug: 'venice'       },
+  { id: '65144',  name: 'Berlin',      flag: '🇩🇪', slug: 'berlin'       },
+  { id: '71749',  name: 'Milan',       flag: '🇮🇹', slug: 'milan'        },
+  { id: '46',     name: 'Krakow',      flag: '🇵🇱', slug: 'krakow'       },
+  { id: '60400',  name: 'Sydney',      flag: '🇦🇺', slug: 'sydney'       },
+  { id: '99239',  name: 'Athens',      flag: '🇬🇷', slug: 'athens'       },
+  { id: '78586',  name: 'Bangkok',     flag: '🇹🇭', slug: 'bangkok'      },
+  { id: '21',     name: 'Edinburgh',   flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', slug: 'edinburgh'    },
+  { id: '68616',  name: 'Dublin',      flag: '🇮🇪', slug: 'dublin'       },
+  { id: '74040',  name: 'Mexico City', flag: '🇲🇽', slug: 'mexico-city'  },
+  { id: '31',     name: 'Munich',      flag: '🇩🇪', slug: 'munich'       },
+  { id: '68199',  name: 'Budapest',    flag: '🇭🇺', slug: 'budapest'     },
+  { id: '60843',  name: 'Brussels',    flag: '🇧🇪', slug: 'brussels'     },
+  { id: '82923',  name: 'Cape Town',   flag: '🇿🇦', slug: 'cape-town'    },
+  { id: '65792',  name: 'Cairo',       flag: '🇪🇬', slug: 'cairo'        },
+  { id: '267738', name: 'Bali',        flag: '🇮🇩', slug: 'bali'         },
+  { id: '60844',  name: 'Bruges',      flag: '🇧🇪', slug: 'bruges'       },
+  { id: '64162',  name: 'Prague',      flag: '🇨🇿', slug: 'prague'       },
+  { id: '66254',  name: 'Madrid',      flag: '🇪🇸', slug: 'madrid'       },
+  { id: '60335',  name: 'Vienna',      flag: '🇦🇹', slug: 'vienna'       },
+  { id: '28',     name: 'Osaka',       flag: '🇯🇵', slug: 'osaka'        },
+  { id: '72420',  name: 'Kyoto',       flag: '🇯🇵', slug: 'kyoto'        },
+  { id: '73067',  name: 'Seoul',       flag: '🇰🇷', slug: 'seoul'        },
 ];
 
 /* City 배경 이미지 (Unsplash) */
@@ -43,8 +73,32 @@ const CITY_IMG: Record<string, string> = {
   '60005':  'photo-1512453979798-5ea266f8880c', // Dubai
   '72181':  'photo-1540959733332-eab4deabeeaf', // Tokyo
   '78125':  'photo-1525625293386-3f8f99389edd', // Singapore
-  '34':     'photo-1617788138017-80ad40651399', // Hong Kong
-  '79079':  'photo-1541432901042-2d8bd64b4a9b', // Istanbul
+  '79079':  'photo-1524231757912-21f4fe3a7200', // Istanbul
+  '71854':  'photo-1541370976299-4d24be63e9d7', // Florence
+  '76528':  'photo-1585208798174-6cedd4234ae0', // Lisbon
+  '71510':  'photo-1523906834658-6e24ef2386f9', // Venice
+  '65144':  'photo-1560969184-10fe8719e047',    // Berlin
+  '71749':  'photo-1520175480921-4edfa2983e0f', // Milan
+  '46':     'photo-1519197924294-4ba991a11128', // Krakow
+  '60400':  'photo-1506973035872-a4ec16b8e8d9', // Sydney
+  '99239':  'photo-1555993539-1732b0258235',    // Athens
+  '78586':  'photo-1508009603885-50cf7c579365', // Bangkok
+  '21':     'photo-1583195763991-f8a6b52de74d', // Edinburgh
+  '68616':  'photo-1549918864-48ac28d3be1b',    // Dublin
+  '74040':  'photo-1518105779142-d975f22f1b0a', // Mexico City
+  '31':     'photo-1595867818082-083862f3d630', // Munich
+  '68199':  'photo-1541264643588-4927a7e47e2a', // Budapest
+  '60843':  'photo-1491557345352-5929e343eb89', // Brussels
+  '82923':  'photo-1580060839134-75a5edca2e99', // Cape Town
+  '65792':  'photo-1539650116574-75c0c6d73f6e', // Cairo
+  '267738': 'photo-1537996194471-e657df975ab4', // Bali
+  '60844':  'photo-1491557345352-5929e343eb89', // Bruges
+  '64162':  'photo-1541849546-216549ae216d',    // Prague
+  '66254':  'photo-1539037116277-4db20889f2d4', // Madrid
+  '60335':  'photo-1516550893923-42d28e5677af', // Vienna
+  '28':     'photo-1589308078059-be1415eab4c3', // Osaka
+  '72420':  'photo-1528360983277-13d401cdc186', // Kyoto
+  '73067':  'photo-1538485399081-7191377e8241', // Seoul
 };
 
 /* 메인 카테고리 6개 (tag_id 기반) */
