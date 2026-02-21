@@ -17,10 +17,6 @@ const showsItems = [
   'Family Shows', 'Dance', 'Circus', 'Magic Shows',
 ];
 
-const musicItems = [
-  'Pop', 'Rock', 'Rap/Hip-hop', 'R&B', 'Country', 'Latin',
-  'Alternative', 'Electronic', 'Soul', 'Classical', 'Jazz', 'Metal',
-];
 
 const ATTRACTION_REGIONS = [
   {
@@ -377,17 +373,13 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {openDropdown === 'shows' && <DropdownMenu items={showsItems} basePath="/musical" onClose={() => setOpenDropdown(null)} />}
           </div>
 
-          {/* Music dropdown */}
-          <div className="relative" onMouseEnter={() => handleEnter('music')} onMouseLeave={handleLeave}>
-            <Link
-              href="/music"
-              className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
-            >
-              Music
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
-            </Link>
-            {openDropdown === 'music' && <DropdownMenu items={musicItems} basePath="/concert" onClose={() => setOpenDropdown(null)} />}
-          </div>
+          {/* Music - direct link */}
+          <Link
+            href="/music"
+            className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors"
+          >
+            Music
+          </Link>
 
           {/* Attractions dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('attractions')} onMouseLeave={handleLeave}>
@@ -509,7 +501,6 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             {[
               { key: 'sports', label: '🏆 Sports', items: sportsItems, basePath: '/sport' },
               { key: 'shows',  label: '🎭 Shows',  items: showsItems,  basePath: '/musical' },
-              { key: 'music',  label: '🎵 Music',  items: musicItems,  basePath: '/concert' },
             ].map(({ key, label, items, basePath }) => (
               <div key={key} className="border-b border-white/8">
                 <button
@@ -562,6 +553,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
 
             {/* 기타 링크 */}
             <Link href="/popular" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🔥 Popular</Link>
+            <Link href="/music" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎵 Music</Link>
             <Link href="/entertainment" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE] border-b border-white/8" onClick={() => setMobileOpen(false)}>🎬 Entertainment</Link>
             <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
