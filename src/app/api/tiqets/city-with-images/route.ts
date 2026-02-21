@@ -8,6 +8,41 @@ const TIQETS_HEADERS = {
   'Accept': 'application/json',
 };
 const SCRAPE_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const ANON_KEY     = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || ANON_KEY;
+
+/* ── Supabase에서 도시 이미지 맵 조회 ── */
+async function getDbImages(city_id: string): Promise<Map<number, string>> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tiqets_images?city_id=eq.${city_id}&select=product_id,image_url`,
+      { headers: { 'Authorization': `Bearer ${SERVICE_KEY}`, 'apikey': SERVICE_KEY } },
+    );
+    if (!res.ok) return new Map();
+    const rows: Array<{ product_id: number; image_url: string }> = await res.json();
+    return new Map(rows.map(r => [r.product_id, r.image_url]));
+  } catch { return new Map(); }
+}
+
+/* ── 새로 스크래핑한 이미지 DB에 저장 ── */
+async function saveScrapedImages(
+  rows: Array<{ product_id: number; image_url: string; city_id: number }>
+) {
+  if (!rows.length) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/tiqets_images`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'apikey': SERVICE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(rows),
+    });
+  } catch { /* 저장 실패해도 페이지 로드는 계속 */ }
+}
 
 interface CacheEntry {
   data: TiqetsProductWithImages[];
@@ -173,42 +208,63 @@ function isMusical(p: TiqetsProductWithImages) {
 /* ── 5. GET 핸들러 ──────────────────────────────────────────── */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const city_id   = searchParams.get('city_id') || '';
-  const city_url  = searchParams.get('city_url') || ''; // 하위 호환 유지 (미사용)
-  const quick     = searchParams.get('quick') === 'true';
+  const city_id  = searchParams.get('city_id') || '';
+  const quick    = searchParams.get('quick') === 'true';
 
   if (!city_id) return NextResponse.json({ error: 'city_id required' }, { status: 400 });
 
+  // ── 인메모리 캐시 확인 ──────────────────────────────────────
   const cacheKey = `${city_id}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() < cached.expires) {
     return NextResponse.json({ products: cached.data, fromCache: true });
   }
 
-  // ── quick=true: page 1만 즉시 반환 (캐시 미저장) ──────────
+  // ── DB에서 이미지 맵 로드 (Supabase → 영구 캐시) ───────────
+  const dbImages = await getDbImages(city_id);
+
+  // ── quick=true: page 1 즉시 반환 + DB 이미지 적용 ──────────
   if (quick) {
     const params = new URLSearchParams({ currency: 'USD', lang: 'en', page: '1', page_size: '50', city_id });
     const res = await fetch(`${BASE_URL}/products?${params}`, { headers: TIQETS_HEADERS });
     if (!res.ok) return NextResponse.json({ products: [] });
     const data = await res.json();
-    const products = (data.products || []).filter((p: TiqetsProductWithImages) => !isMusical(p));
-    return NextResponse.json({ products, fromCache: false, quick: true });
+    const products = (data.products || [])
+      .filter((p: TiqetsProductWithImages) => !isMusical(p))
+      .map((p: TiqetsProductWithImages) => ({
+        ...p,
+        // DB 이미지 > Tiqets API 이미지 > []
+        images: dbImages.has(p.id) ? [dbImages.get(p.id)!]
+               : (p.images && p.images.length > 0 ? p.images : []),
+      }));
+    return NextResponse.json({ products, fromCache: false, quick: true, dbImages: dbImages.size });
   }
 
-  // ── 전체 로드: 상품 수집 + 이미지 병렬 스크래핑 + 캐시 저장 ──
+  // ── 전체 로드: 상품 수집 + DB 우선 + 미발견 시 스크래핑 ────
   const products = (await fetchAllProducts(city_id)).filter(p => !isMusical(p));
 
-  // 이미지 병렬 스크래핑 (concurrency 15)
-  const imageMap = await scrapeImagesParallel(products, 15);
+  // DB에 없는 상품만 스크래핑
+  const needScrape = products.filter(p => !dbImages.has(p.id) && p.product_url);
+  const scraped = await scrapeImagesParallel(needScrape, 12);
 
-  // 이미지 적용 (스크래핑 성공 → OG 이미지; 실패 → 기존 Tiqets 이미지 보존; 둘 다 없으면 [])
+  // 새로 스크래핑된 이미지 → DB 비동기 저장 (응답 블로킹 없음)
+  const newRows = [...scraped.entries()].map(([id, url]) => ({
+    product_id: Number(id), image_url: url, city_id: parseInt(city_id),
+  }));
+  // 기존 Tiqets API 이미지도 DB에 없으면 저장
+  const apiImgRows = products
+    .filter(p => !dbImages.has(p.id) && !scraped.has(p.id) && p.images && p.images.length > 0)
+    .map(p => ({ product_id: p.id, image_url: p.images[0], city_id: parseInt(city_id) }));
+  saveScrapedImages([...newRows, ...apiImgRows]); // fire-and-forget
+
+  // 이미지 적용 우선순위: DB > 스크래핑 > Tiqets API > []
   const enriched = products.map(p => ({
     ...p,
-    images: imageMap.has(p.id)
-      ? [imageMap.get(p.id)!]
-      : (p.images && p.images.length > 0 ? p.images : []),
+    images: dbImages.has(p.id)  ? [dbImages.get(p.id)!]
+          : scraped.has(p.id)   ? [scraped.get(p.id)!]
+          : (p.images && p.images.length > 0 ? p.images : []),
   }));
 
   cache.set(cacheKey, { data: enriched, expires: Date.now() + CACHE_TTL });
-  return NextResponse.json({ products: enriched, fromCache: false });
+  return NextResponse.json({ products: enriched, fromCache: false, dbImages: dbImages.size });
 }
