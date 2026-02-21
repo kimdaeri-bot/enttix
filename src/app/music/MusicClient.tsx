@@ -175,7 +175,16 @@ export default function MusicClient() {
       if (keyword) p.set('keyword', keyword);
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
-      setEvents(data.events || []);
+      // 같은 이미지 중복 제거 (동일 아티스트 투어 여러 날짜 → 가장 빠른 1개만)
+      const raw: TmEvent[] = data.events || [];
+      const seen = new Set<string>();
+      const deduped = raw.filter(e => {
+        if (!e.imageUrl) return true;
+        if (seen.has(e.imageUrl)) return false;
+        seen.add(e.imageUrl);
+        return true;
+      });
+      setEvents(deduped);
       setPageInfo(data.page || { number: 0, size: 20, totalElements: 0, totalPages: 0 });
     } catch {
       setEvents([]);
