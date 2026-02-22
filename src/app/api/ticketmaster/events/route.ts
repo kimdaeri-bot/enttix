@@ -11,7 +11,7 @@ async function getDbImages(ids: string[]): Promise<Map<string, string>> {
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/music_images?event_id=in.(${ids.map(id => `"${id}"`).join(',')})&select=event_id,image_url`,
-      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, next: { revalidate: 300 } }
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, cache: 'no-store' }
     );
     if (!res.ok) return new Map();
     const rows: Array<{ event_id: string; image_url: string }> = await res.json();
