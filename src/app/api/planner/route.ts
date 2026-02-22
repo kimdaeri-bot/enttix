@@ -345,7 +345,11 @@ CONTENT RULES:
 
         const matched = matchAttraction(item.name, cityNorm);
         if (matched) {
-          item.attraction_url = matched.tiqetsUrl;
+          // tiqetsUrl → 내부 상세 페이지 URL 변환
+          const mPid = matched.tiqetsUrl?.match(/-p(\d+)\/?/)?.[1];
+          item.attraction_url = mPid
+            ? `/attractions/${matched.city}/${mPid}`
+            : `/attractions/${matched.city}`;
           item.attraction_price = matched.price;
           item.attraction_currency = matched.currency;
           if (!item.venue) item.venue = matched.city;
@@ -373,13 +377,18 @@ CONTENT RULES:
         );
         if (available.length > 0) {
           const pick = available[day.day % available.length];
+          // tiqetsUrl → 내부 상세 페이지 URL 변환
+          const pid = pick.tiqetsUrl?.match(/-p(\d+)\/?/)?.[1];
+          const attractionInternalUrl = pid
+            ? `/attractions/${pick.city}/${pid}`
+            : `/attractions/${pick.city}`;
           day.items.push({
             time: '20:00',
             type: 'attraction',
             name: pick.name,
             desc: pick.descKo || pick.desc,
             bookable: true,
-            attraction_url: pick.tiqetsUrl,
+            attraction_url: attractionInternalUrl,
             attraction_price: pick.price,
             attraction_currency: pick.currency,
             venue: pick.city,

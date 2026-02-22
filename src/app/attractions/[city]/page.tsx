@@ -583,14 +583,21 @@ function DbAttractionCard({ attraction }: { attraction: AttractionItem }) {
           ) : (
             <p className="text-[14px] font-semibold text-[#10B981]">Free</p>
           )}
-          <a
-            href={attraction.tiqetsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 rounded-lg bg-[#2B7FFF] text-white text-[12px] font-semibold hover:bg-[#1D6AE5] transition-colors whitespace-nowrap"
-          >
-            Book on Tiqets
-          </a>
+          {(() => {
+            // Tiqets URL에서 product ID 추출 → 내부 상세 페이지 연결
+            const pid = attraction.tiqetsUrl?.match(/-p(\d+)\/?/)?.[1];
+            const internalUrl = pid
+              ? `/attractions/${attraction.city}/${pid}`
+              : `/attractions/${attraction.city}`;
+            return (
+              <a
+                href={internalUrl}
+                className="px-3 py-1.5 rounded-lg bg-[#2B7FFF] text-white text-[12px] font-semibold hover:bg-[#1D6AE5] transition-colors whitespace-nowrap"
+              >
+                View Details
+              </a>
+            );
+          })()}
         </div>
       </div>
     </div>

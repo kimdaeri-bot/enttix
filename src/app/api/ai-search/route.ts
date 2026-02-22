@@ -553,18 +553,24 @@ export async function POST(req: NextRequest) {
     let attractionResults: Record<string, unknown>[] = [];
     if (filters.city) {
       const cityAttractions = getAttractionsByCity(normalizeCity(filters.city));
-      attractionResults = cityAttractions.slice(0, 4).map(a => ({
-        type: 'attraction',
-        id: a.id,
-        title: a.nameKo || a.name,
-        subtitle: `${a.city} · ${a.duration || ''}`,
-        price: a.price,
-        currency: a.currency,
-        url: `/attractions/${a.city.replace(/\s+/g, '-')}`,
-        tiqetsUrl: a.tiqetsUrl,
-        imageUrl: a.imageUrl,
-        isEvening: a.isEvening,
-      }));
+      attractionResults = cityAttractions.slice(0, 4).map(a => {
+        // tiqetsUrl → 내부 상세 페이지 URL 변환
+        const pid = a.tiqetsUrl?.match(/-p(\d+)\/?/)?.[1];
+        const internalUrl = pid
+          ? `/attractions/${a.city.replace(/\s+/g, '-')}/${pid}`
+          : `/attractions/${a.city.replace(/\s+/g, '-')}`;
+        return {
+          type: 'attraction',
+          id: a.id,
+          title: a.nameKo || a.name,
+          subtitle: `${a.city} · ${a.duration || ''}`,
+          price: a.price,
+          currency: a.currency,
+          url: internalUrl,
+          imageUrl: a.imageUrl,
+          isEvening: a.isEvening,
+        };
+      });
     }
 
     return NextResponse.json({
