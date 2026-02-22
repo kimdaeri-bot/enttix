@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
             content: `You are an expert travel planner. Generate a detailed, realistic JSON itinerary.
 The user said: "${query}"
 
-Today's date is 2026-02-17. If dates aren't specified, pick reasonable upcoming dates.
+Today's date is ${new Date().toISOString().split('T')[0]}. If dates aren't specified, pick reasonable upcoming dates.
 
 Return ONLY valid JSON (no markdown):
 {
@@ -73,57 +73,64 @@ Return ONLY valid JSON (no markdown):
   "days": [
     {
       "day": 1,
-      "date": "2026-02-28",
+      "date": "2026-03-01",
       "title": "Arrival & South Bank",
       "items": [
-        { "time": "09:00", "type": "cafe", "name": "Monmouth Coffee", "desc": "Borough Market 인근 유명 커피숍", "bookable": false },
-        { "time": "10:00", "type": "attraction", "name": "Tower Bridge", "desc": "유리 보행로가 있는 상징적인 다리", "bookable": true },
-        { "time": "12:30", "type": "food", "name": "Padella", "desc": "수제 파스타 맛집, 웨이팅 필수", "bookable": false },
-        { "time": "14:00", "type": "attraction", "name": "Tate Modern", "desc": "세계적인 현대미술관, 무료 입장", "bookable": false },
-        { "time": "15:30", "type": "dessert", "name": "Kova Patisserie", "desc": "말차 수플레 팬케이크 유명", "bookable": false },
-        { "time": "18:00", "type": "food", "name": "Dishoom", "desc": "봄베이 스타일 인도 레스토랑, 예약 추천", "bookable": true },
-        { "time": "20:00", "type": "event", "name": "Arsenal vs Chelsea", "desc": "프리미어 리그 경기", "event_id": null, "bookable": true },
-        { "time": "19:30", "type": "musical", "name": "Hamilton", "desc": "West End 뮤지컬, 빅토리아 팰리스", "bookable": true }
+        { "time": "09:00", "type": "cafe", "name": "Monmouth Coffee", "desc": "Borough Market 인근 유명 커피숍. 60-90분", "bookable": false },
+        { "time": "10:30", "type": "attraction", "name": "Tower Bridge", "desc": "유리 보행로. 2-3시간", "bookable": true },
+        { "time": "13:00", "type": "food", "name": "Padella", "desc": "수제 파스타. 웨이팅 필수. 60-90분", "bookable": false },
+        { "time": "14:30", "type": "attraction", "name": "Tate Modern", "desc": "현대미술관. 무료 입장. 2시간", "bookable": false },
+        { "time": "17:00", "type": "dessert", "name": "Kova Patisserie", "desc": "말차 팬케이크. 45분", "bookable": false },
+        { "time": "18:00", "type": "food", "name": "Dishoom", "desc": "봄베이 인도 레스토랑. 예약 필수. 90분", "bookable": false },
+        { "time": "20:00", "type": "attraction", "name": "London Eye at Night", "desc": "야경 뷰. 입장권 필요. 60분", "bookable": true }
       ]
     }
   ]
 }
 
 Item types: "attraction", "food", "cafe", "dessert", "event", "musical", "shopping", "transport"
-- type "musical": 뮤지컬/연극 공연. Include when city has theatre district (London West End, NYC Broadway, etc.)
-- type "event": 스포츠/콘서트 이벤트
-- For musical: { "time": "19:30", "type": "musical", "name": "Hamilton", "desc": "West End 뮤지컬, 빅토리아 팰리스", "bookable": true }
-- bookable: true if reservation/ticket is needed or recommended, false if walk-in or free
 
-Rules:
-- 6-9 items per day for a DETAILED realistic schedule
-- Morning: breakfast spot or cafe
-- Lunch: local restaurant recommendation with specific dish or specialty
-- Afternoon: attraction + dessert/cafe break
-- Dinner: restaurant with cuisine style noted
-- Evening: event (sports, concert) or musical (West End/Broadway) when city has theatre district; prefer musical for London/NYC
-- Use REAL, SPECIFIC restaurant/cafe names that actually exist in that city
-- Include specific dish recommendations in desc when possible
-- For events, use real venue/team/artist names
-- Dates: YYYY-MM-DD, Times: HH:MM
-- Descriptions under 60 chars
-- Respond in the same language as user input
-- Mix walking-friendly locations within same area each day
+BOOKING RULES (CRITICAL):
+- bookable: true = requires TICKET purchase (attractions, events, musicals only)
+- bookable: false = walk-in, free, or restaurant reservation (NOT our ticket system)
+- NEVER set bookable: true for type "food", "cafe", "dessert", "shopping", "transport"
+- Free museums/galleries: bookable: false
+- Paid attractions (entry ticket needed): bookable: true
+- Restaurants (even if reservation needed): bookable: false — they use OpenTable/own system
 
-CRITICAL RULES FOR EVENING:
-- ALWAYS include at least ONE paid evening attraction per trip (type "attraction", time 19:00-21:00)
-- For London: London Eye, Sky Garden, Westminster by Night
-- For Paris: Eiffel Tower at night, Seine River Night Cruise
-- For Rome: Rome by Night walking tour, Trevi Fountain at night
-- For Barcelona: Bunkers del Carmel sunset, Gothic Quarter night tour
-- For New York: Empire State Building night, NYC Night Bus Tour
-- For Dubai: Burj Khalifa At The Top, Desert Safari at sunset
-- For Tokyo: Tokyo Skytree Night View, teamLab Borderless
-- For Amsterdam: Canal Night Cruise
-- For Singapore: Gardens by the Bay light show
-- For Hong Kong: Peak Tram night view
-- These MUST be bookable (bookable: true) and set at 19:30 or 20:00 time slot
-- Mark them with type "attraction" but include the evening nature in description`,
+TIME RULES (CRITICAL - NO OVERLAPS):
+- Each item must start AFTER the previous item ends
+- Duration estimates:
+  * cafe/dessert: 45-60 min → next item at least 60 min later
+  * food (meal): 60-90 min → next item at least 90 min later
+  * attraction (museum/landmark): 90-180 min → next item at least 120 min later
+  * event (sports/concert): 150-180 min → next item at least 180 min later
+  * musical/theatre: 150 min → next item at least 180 min later
+  * shopping: 60-90 min → next item at least 90 min later
+- Start first item no earlier than 08:00
+- Last item no later than 23:00
+- 6-8 items per day maximum
+
+EVENING EVENTS (one per day):
+- Always include ONE bookable evening item (19:00-21:00) per day
+- London: musical (West End), or London Eye night, or Sky Garden evening
+- NYC: Broadway musical, or Empire State Building night view
+- Paris: Eiffel Tower light show, or Seine night cruise
+- Rome: Rome night walking tour, or Trevi Fountain evening
+- Barcelona: Flamenco show, or Bunkers del Carmel sunset
+- Tokyo: teamLab, or Tokyo Skytree night
+- Dubai: Burj Khalifa At The Top, or Desert Safari
+
+EVENT TYPE:
+- type "event": sports matches, concerts (not musicals) with real team/artist names
+- type "musical": West End / Broadway shows only
+
+CONTENT RULES:
+- Use REAL, SPECIFIC restaurant/cafe names
+- Include specific dish in desc
+- Descriptions: what it is + estimated duration
+- Respond in same language as user input
+- Keep locations geographically close within each day`,
           },
         ],
       }),
@@ -147,12 +154,69 @@ CRITICAL RULES FOR EVENING:
       plan = JSON.parse(match[0]);
     }
 
+    // ── Force bookable=false for non-ticketable types ─────────────────────
+    for (const day of plan.days) {
+      for (const item of day.items) {
+        if (['food', 'cafe', 'dessert', 'shopping', 'transport'].includes(item.type)) {
+          item.bookable = false;
+        }
+      }
+    }
+
+    // ── Time conflict resolver ────────────────────────────────────────────
+    const ITEM_DURATION: Record<string, number> = {
+      cafe: 60, dessert: 60, food: 90, shopping: 90, transport: 45,
+      attraction: 120, event: 180, musical: 180,
+    };
+
+    function timeToMin(t: string): number {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+    function minToTime(min: number): string {
+      const h = Math.floor(min / 60) % 24;
+      const m = min % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+
+    for (const day of plan.days) {
+      // Sort items by time first
+      day.items.sort((a: PlannerItem, b: PlannerItem) => a.time.localeCompare(b.time));
+
+      // Resolve conflicts: ensure no overlap based on duration
+      const resolved: PlannerItem[] = [];
+      let nextAvailable = 0; // minutes from midnight
+
+      for (const item of day.items) {
+        const itemStart = timeToMin(item.time);
+        const duration = ITEM_DURATION[item.type] || 90;
+
+        if (resolved.length === 0) {
+          resolved.push(item);
+          nextAvailable = itemStart + duration;
+        } else if (itemStart >= nextAvailable) {
+          // No conflict
+          resolved.push(item);
+          nextAvailable = itemStart + duration;
+        } else {
+          // Conflict: try to reschedule to nextAvailable if it fits in the day
+          if (nextAvailable < 23 * 60) {
+            const rescheduled = { ...item, time: minToTime(nextAvailable) };
+            resolved.push(rescheduled);
+            nextAvailable = nextAvailable + duration;
+          }
+          // else: skip item (day is full)
+        }
+      }
+      day.items = resolved;
+    }
+
     // Step 2: Fetch Tixstock events for date range
     const allDates = plan.days.map(d => d.date).sort();
     const dateFrom = allDates[0];
     const dateTo = allDates[allDates.length - 1];
 
-    let feedEvents: any[] = [];
+    let feedEvents: Record<string, unknown>[] = [];
     try {
       const feedUrl = `${TIXSTOCK_BASE}/feed?city=${encodeURIComponent(plan.city)}&date_from=${dateFrom}&date_to=${dateTo}&has_listing=true&per_page=100`;
       const feedRes = await fetch(feedUrl, {
@@ -176,12 +240,12 @@ CRITICAL RULES FOR EVENING:
         const nameWords = nameLower.split(/\s+/).filter(w => w.length > 2);
 
         // Find best match by name similarity and date proximity
-        let bestMatch: any = null;
+        let bestMatch: Record<string, unknown> | null = null;
         let bestScore = 0;
 
         for (const ev of feedEvents) {
-          const evName = (ev.name || ev.title || '').toLowerCase();
-          const evDate = ev.date || ev.event_date || '';
+          const evName = ((ev.name as string) || (ev.title as string) || '').toLowerCase();
+          const evDate = ((ev.date as string) || (ev.event_date as string) || '');
           
           // Score based on word matches
           let score = 0;
@@ -205,18 +269,19 @@ CRITICAL RULES FOR EVENING:
         }
 
         if (bestMatch && bestScore >= 1) {
-          item.event_id = bestMatch.id || bestMatch.event_id;
-          item.price = bestMatch.price || bestMatch.min_price || bestMatch.from_price || null;
-          item.name = bestMatch.name || bestMatch.title || item.name;
-          item.event_date = bestMatch.date || bestMatch.event_date || day.date;
-          item.venue = bestMatch.venue?.name || bestMatch.venue || null;
-          item.desc = bestMatch.category || bestMatch.competition || item.desc;
+          const bmVenue = bestMatch.venue as Record<string, unknown> | null;
+          item.event_id = (bestMatch.id || bestMatch.event_id) as number | null;
+          item.price = (bestMatch.price || bestMatch.min_price || bestMatch.from_price || null) as number | null;
+          item.name = (bestMatch.name || bestMatch.title || item.name) as string;
+          item.event_date = (bestMatch.date || bestMatch.event_date || day.date) as string;
+          item.venue = (bmVenue?.name || bestMatch.venue || null) as string | null;
+          item.desc = (bestMatch.category || bestMatch.competition || item.desc) as string;
         }
       }
     }
 
     // Step 4: LTD Musical matching (London only)
-    let ltdEvents: any[] = [];
+    let ltdEvents: Record<string, unknown>[] = [];
     if (plan.city.toLowerCase().includes('london')) {
       try {
         const ltdRes = await fetch(`${process.env.LTD_BASE_URL}/Events`, {
@@ -236,13 +301,14 @@ CRITICAL RULES FOR EVENING:
         if (item.type !== 'musical') continue;
         const nameLower = item.name.toLowerCase();
         const match = ltdEvents.find(ev => {
-          const evName = (ev.Name || '').toLowerCase();
+          const evName = ((ev.Name as string) || '').toLowerCase();
           return evName.includes(nameLower) || nameLower.includes(evName.split(' ')[0]);
         });
         if (match) {
-          item.musical_event_id = match.EventId;
-          item.venue = item.venue || match.VenueName || match.Venue?.Name || null;
-          item.price = item.price || match.FromPrice || null;
+          const matchVenue = match.Venue as Record<string, unknown> | null;
+          item.musical_event_id = match.EventId as number | null;
+          item.venue = item.venue || (match.VenueName as string | null) || (matchVenue?.Name as string | null) || null;
+          item.price = item.price || (match.FromPrice as number | null) || null;
         }
       }
     }
@@ -253,16 +319,16 @@ CRITICAL RULES FOR EVENING:
     );
     const firstDay = plan.days[0];
     if (firstDay && ltdEvents.length > 0) {
-      const unmatched = ltdEvents.find(ev => !usedMusicalIds.has(ev.EventId) && ev.FromPrice);
+      const unmatched = ltdEvents.find(ev => !usedMusicalIds.has(ev.EventId as number) && ev.FromPrice);
       if (unmatched && !firstDay.items.some(i => i.type === 'musical')) {
         firstDay.items.push({
           time: '19:30',
           type: 'musical',
-          name: unmatched.Name,
-          desc: unmatched.TagLine || 'West End Musical',
-          musical_event_id: unmatched.EventId,
-          venue: unmatched.VenueName || null,
-          price: unmatched.FromPrice || null,
+          name: unmatched.Name as string,
+          desc: (unmatched.TagLine as string) || 'West End Musical',
+          musical_event_id: unmatched.EventId as number,
+          venue: (unmatched.VenueName as string | null) || null,
+          price: (unmatched.FromPrice as number | null) || null,
           bookable: true,
         });
       }
@@ -283,6 +349,10 @@ CRITICAL RULES FOR EVENING:
           item.attraction_price = matched.price;
           item.attraction_currency = matched.currency;
           if (!item.venue) item.venue = matched.city;
+        } else if (item.bookable) {
+          // Fallback: link to city attractions page
+          const citySlug = plan.city.toLowerCase().replace(/\s+/g, '-');
+          item.attraction_url = `/attractions/${citySlug}`;
         }
       }
 
@@ -325,24 +395,25 @@ CRITICAL RULES FOR EVENING:
     );
 
     for (const ev of feedEvents) {
-      const evId = ev.id || ev.event_id;
+      const evId = (ev.id || ev.event_id) as number;
       if (usedIds.has(evId)) continue;
-      const evDate = (ev.date || ev.event_date || '').slice(0, 10);
+      const evDate = ((ev.date || ev.event_date || '') as string).slice(0, 10);
       const matchingDay = plan.days.find(d => d.date === evDate);
       if (!matchingDay) continue;
       // Only add up to 1 extra real event per day
       const existingReal = matchingDay.items.filter(i => i.type === 'event' && i.event_id);
       if (existingReal.length >= 2) continue;
 
+      const evVenue = ev.venue as Record<string, unknown> | null;
       matchingDay.items.push({
         time: '21:00',
         type: 'event',
-        name: ev.name || ev.title || 'Live Event',
-        desc: ev.category || ev.competition || 'Live event',
+        name: ((ev.name || ev.title || 'Live Event') as string),
+        desc: ((ev.category || ev.competition || 'Live event') as string),
         event_id: evId,
-        price: ev.price || ev.min_price || ev.from_price || null,
-        event_date: ev.date || ev.event_date || evDate,
-        venue: ev.venue?.name || ev.venue || null,
+        price: (ev.price || ev.min_price || ev.from_price || null) as number | null,
+        event_date: ((ev.date || ev.event_date || evDate) as string),
+        venue: ((evVenue?.name || ev.venue || null) as string | null),
       });
       usedIds.add(evId);
     }

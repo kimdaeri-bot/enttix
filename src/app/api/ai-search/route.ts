@@ -8,6 +8,8 @@ const TIXSTOCK_BASE_URL = process.env.TIXSTOCK_BASE_URL!;
 const TIXSTOCK_TOKEN = process.env.TIXSTOCK_TOKEN!;
 const LTD_API_KEY = process.env.LTD_API_KEY!;
 const LTD_BASE_URL = process.env.LTD_BASE_URL!;
+const TIQETS_TOKEN = process.env.TIQETS_TOKEN!;
+const TM_API_KEY = process.env.TICKETMASTER_API_KEY || '0HO8fB0w6EOt44tC4M4gHSFRkVTzFQ1D';
 
 // ============================================================
 // City mapping (Korean ↔ English)
@@ -22,6 +24,16 @@ const CITY_MAP: Record<string, string> = {
   'london': 'London', 'new york': 'New York', 'paris': 'Paris', 'barcelona': 'Barcelona',
   'madrid': 'Madrid', 'milan': 'Milan', 'munich': 'Munich', 'manchester': 'Manchester',
   'liverpool': 'Liverpool', 'rome': 'Rome', 'berlin': 'Berlin', 'amsterdam': 'Amsterdam',
+};
+
+const TIQETS_CITY_IDS: Record<string, number> = {
+  'London': 67458, 'Paris': 66746, 'Barcelona': 66342, 'Rome': 71631,
+  'Amsterdam': 75061, 'New York': 260932, 'Dubai': 60005, 'Istanbul': 79079,
+  'Singapore': 78125, 'Tokyo': 72181, 'Florence': 71854, 'Lisbon': 76528,
+  'Venice': 71510, 'Berlin': 65144, 'Milan': 71749, 'Sydney': 60400,
+  'Athens': 99239, 'Bangkok': 78586, 'Edinburgh': 21, 'Dublin': 68616,
+  'Prague': 64162, 'Madrid': 66254, 'Vienna': 60335, 'Osaka': 28,
+  'Kyoto': 72420, 'Seoul': 73067, 'Budapest': 68199, 'Brussels': 60843,
 };
 
 // ============================================================
@@ -178,6 +190,19 @@ function parseRelativeDate(q: string): { date_from?: string; date_to?: string } 
 }
 
 // ============================================================
+// Attraction & Music keyword detection
+// ============================================================
+const ATTRACTION_KEYWORDS = [
+  '박물관', '미술관', '투어', '관광', '명소', '어트랙션', '입장권', '티켓', '전망대',
+  'museum', 'tour', 'attraction', 'sightseeing', 'gallery', 'landmark', 'skip the line',
+  'entry ticket', 'admission', 'observatory', 'palace', 'castle', 'temple',
+];
+const MUSIC_KEYWORDS = [
+  '콘서트', '공연', '밴드', '가수', '뮤지션',
+  'concert', 'music', 'band', 'artist', 'live music', 'gig',
+];
+
+// ============================================================
 // Rule-based query parser (NO AI call)
 // ============================================================
 function parseQuery(query: string): {
@@ -250,6 +275,8 @@ async function buildAiMessage(
   query: string,
   events: Record<string, unknown>[],
   ltdEvents: Record<string, unknown>[],
+  tiqetsResults: Record<string, unknown>[],
+  tmResults: Record<string, unknown>[],
 ): Promise<string> {
   const topEvents = events.slice(0, 3);
   const topLtd = ltdEvents.slice(0, 3);
@@ -268,8 +295,16 @@ async function buildAiMessage(
     return `[Musical/Theatre] ${e.Name} | Ongoing show | London West End | from £${e.EventMinimumPrice || 'TBD'} | ${e.RunningTime || ''}`;
   }).join('\n');
 
-  const allLines = [tixLines, ltdLines].filter(Boolean).join('\n');
-  const totalResults = events.length + ltdEvents.length;
+  const tiqetsLines = tiqetsResults.slice(0, 3).map(p =>
+    `[Attraction] ${p.title} | ${p.city_name} | from $${p.price || 'TBD'}`
+  ).join('\n');
+
+  const tmLines = tmResults.slice(0, 3).map(e =>
+    `[Music] ${e.title} | ${e.date} ${e.time || ''} | ${e.venueName}, ${e.city}`
+  ).join('\n');
+
+  const allLines = [tixLines, ltdLines, tiqetsLines, tmLines].filter(Boolean).join('\n');
+  const totalResults = events.length + ltdEvents.length + tiqetsResults.length + tmResults.length;
 
   const msg = await anthropic.messages.create({
     model: 'claude-3-haiku-20240307',
@@ -282,6 +317,85 @@ async function buildAiMessage(
   });
 
   return msg.content[0].type === 'text' ? msg.content[0].text : '';
+}
+
+// ============================================================
+// Fetch Tiqets attractions
+// ============================================================
+async function fetchTiqetsAttractions(city: string, query: string): Promise<Record<string, unknown>[]> {
+  const cityId = TIQETS_CITY_IDS[city];
+  if (!cityId) return [];
+  try {
+    const params = new URLSearchParams({ currency: 'USD', lang: 'en', page: '1', page_size: '20', city_id: String(cityId) });
+    const res = await fetch(`https://api.tiqets.com/v2/products?${params}`, {
+      headers: { 'Authorization': `Token ${TIQETS_TOKEN}`, 'Accept': 'application/json' },
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const products: Record<string, unknown>[] = data.products || [];
+    // Filter by query keywords if provided
+    const queryWords = query.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2);
+    const filtered = queryWords.length > 0 ? products.filter((p: Record<string, unknown>) => {
+      const text = ((p.title as string) + ' ' + (p.tagline as string || '')).toLowerCase();
+      return queryWords.some((w: string) => text.includes(w));
+    }) : products;
+    return (filtered.length > 0 ? filtered : products).slice(0, 6).map((p: Record<string, unknown>) => ({
+      type: 'tiqets',
+      id: p.id,
+      title: p.title,
+      tagline: p.tagline,
+      price: p.price,
+      city_name: p.city_name || city,
+      product_url: p.product_url,
+      product_checkout_url: p.product_checkout_url,
+      ratings: p.ratings,
+      url: `/attractions/${city.toLowerCase().replace(/\s+/g, '-')}/${p.id}`,
+    }));
+  } catch { return []; }
+}
+
+// ============================================================
+// Fetch Ticketmaster music events
+// ============================================================
+async function fetchTMMusic(query: string, city: string): Promise<Record<string, unknown>[]> {
+  try {
+    const params = new URLSearchParams({
+      apikey: TM_API_KEY,
+      keyword: query.replace(/콘서트|공연|concert|music|live/gi, '').trim() || query,
+      classificationName: 'Music',
+      size: '6',
+      sort: 'date,asc',
+    });
+    if (city) params.set('city', city);
+    const res = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?${params}`, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const events: Record<string, unknown>[] = data._embedded?.events || [];
+    return events.slice(0, 6).map((e: Record<string, unknown>) => {
+      const dates = e.dates as Record<string, unknown>;
+      const start = dates?.start as Record<string, unknown>;
+      const embedded = e._embedded as Record<string, unknown>;
+      const venues = embedded?.venues as Record<string, unknown>[];
+      const venue = venues?.[0];
+      const images = (e.images as Array<Record<string, unknown>>) || [];
+      const img = images.find((i: Record<string, unknown>) => i.ratio === '16_9' && (i.width as number) > 500) || images[0];
+      return {
+        type: 'music',
+        id: e.id,
+        title: e.name,
+        date: start?.localDate,
+        time: start?.localTime,
+        venueName: (venue?.name as string) || '',
+        city: (venue?.city as Record<string, unknown>)?.name || city,
+        url: e.url,
+        imageUrl: (img?.url as string) || '',
+        internalUrl: `/music/event/${e.id}`,
+      };
+    });
+  } catch { return []; }
 }
 
 // ============================================================
@@ -335,8 +449,13 @@ export async function POST(req: NextRequest) {
     const filters = parseQuery(query);
     const { isLtd, ltdType, searchTerm } = detectLtdKeyword(query);
 
-    // Step 2: Parallel fetch — Tixstock + LTD (if musical)
-    const [tixResult, ltdEvents] = await Promise.all([
+    // Detect query intent
+    const lower = query.toLowerCase();
+    const isAttractionQuery = ATTRACTION_KEYWORDS.some(kw => lower.includes(kw.toLowerCase()));
+    const isMusicQuery = MUSIC_KEYWORDS.some(kw => lower.includes(kw.toLowerCase()));
+
+    // Step 2: Parallel fetch — Tixstock + LTD + Tiqets + TM
+    const [tixResult, ltdEvents, tiqetsResults, tmResults] = await Promise.all([
       // Tixstock fetch
       (async () => {
         const params = new URLSearchParams({ has_listing: 'true', per_page: '50' });
@@ -358,6 +477,10 @@ export async function POST(req: NextRequest) {
       })(),
       // LTD fetch (only if musical/theatre query)
       isLtd ? fetchLtdEvents(searchTerm, ltdType) : Promise.resolve([]),
+      // Tiqets fetch (only if attraction query and city known)
+      isAttractionQuery && filters.city ? fetchTiqetsAttractions(filters.city, query) : Promise.resolve([]),
+      // TM music fetch (only if music query and not LTD)
+      isMusicQuery && !isLtd ? fetchTMMusic(query, filters.city) : Promise.resolve([]),
     ]);
 
     let events = tixResult;
@@ -424,7 +547,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Step 3: AI conversational response (Haiku, 1 call)
-    const aiMessage = await buildAiMessage(query, events.slice(0, 10), ltdEvents);
+    const aiMessage = await buildAiMessage(query, events.slice(0, 10), ltdEvents, tiqetsResults, tmResults);
 
     // Step 4: Attractions DB — 도시 검색이면 attractions 포함
     let attractionResults: Record<string, unknown>[] = [];
@@ -456,6 +579,10 @@ export async function POST(req: NextRequest) {
       isMusicalQuery: isLtd,
       // Attractions DB results
       attractionResults,
+      // Tiqets attractions (for attraction queries)
+      tiqetsResults,
+      // Ticketmaster music events
+      tmResults,
     });
   } catch (e) {
     console.error('AI search error:', e);

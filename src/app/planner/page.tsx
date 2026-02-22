@@ -367,20 +367,14 @@ function PlannerContent() {
 
                           {/* Book Button */}
                           {isEvent ? (
-                            <button
-                              onClick={() => handleToggleTickets(key, item.event_id!)}
-                              className={`flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold transition-all ${
-                                isExpanded
-                                  ? 'bg-[#2B7FFF] text-white shadow-sm'
-                                  : 'bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE]'
-                              }`}
+                            <Link
+                              href={`/event/${item.event_id}`}
+                              className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE] transition-all whitespace-nowrap"
                             >
-                              🎫 {item.price ? `From $${item.price}` : 'View Tickets'}
-                            </button>
+                              🎫 {item.price ? `From £${item.price}` : 'View Tickets'}
+                            </Link>
                           ) : item.type === 'event' && !item.event_id ? (
-                            <span className="flex-shrink-0 px-3 py-2 rounded-lg bg-[#F9FAFB] text-[#9CA3AF] text-[12px] border border-[#F1F5F9]">
-                              Not available
-                            </span>
+                            null
                           ) : isMusical ? (
                             item.musical_event_id ? (
                               <button
@@ -413,9 +407,7 @@ function PlannerContent() {
                                 : 'Book'}
                             </a>
                           ) : item.type === 'attraction' && item.bookable && !item.attraction_url ? (
-                            <span className="flex-shrink-0 px-3 py-2 rounded-lg bg-[#FFF7ED] text-[#EA580C] text-[12px] border border-[#FED7AA]">
-                              💰 Paid
-                            </span>
+                            null
                           ) : null}
                         </div>
                       </div>
