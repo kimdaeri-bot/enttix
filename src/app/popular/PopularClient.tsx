@@ -284,8 +284,7 @@ function PopularSection({ cat, txData, tmData, ltdShows, loading }: {
       return (
         <TicketCard
           key={e.id}
-          href={e.url}
-          isExternal
+          href={`/music/event/${e.id}`}
           image={e.imageUrl}
           fallbackImg={cat.bgImg}
           title={e.name}

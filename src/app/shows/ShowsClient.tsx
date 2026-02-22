@@ -92,7 +92,7 @@ function TmCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
   const sym = event.currency === 'GBP' ? '£' : event.currency === 'EUR' ? '€' : '$';
   return (
-    <a href={event.url} target="_blank" rel="noopener noreferrer"
+    <a href={`/music/event/${event.id}`}
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col">
       <div className="relative aspect-[16/9] bg-[#E5E7EB] overflow-hidden flex-shrink-0">
         {!imgErr && event.imageUrl

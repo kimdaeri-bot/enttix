@@ -140,9 +140,7 @@ function EventCard({ event }: { event: TmEvent }) {
   const [imgErr, setImgErr] = useState(false);
   return (
     <a
-      href={event.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={`/music/event/${event.id}`}
       className="group bg-white rounded-[16px] overflow-hidden border border-[#E5E7EB] hover:shadow-lg hover:border-[#2B7FFF]/30 transition-all duration-200 flex flex-col"
     >
       {/* 이미지 */}
