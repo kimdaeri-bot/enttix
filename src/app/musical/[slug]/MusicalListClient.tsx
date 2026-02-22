@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -240,11 +240,13 @@ export default function MusicalListClient({
   const [sort, setSort] = useState<SortKey>('popular');
   const [searchQuery, setSearchQuery] = useState('');   // 실제 필터 적용값
   const [inputValue, setInputValue] = useState('');     // 입력창 표시값
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
   const [isDragging, setIsDragging] = useState(false);
 
   const resultsRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
+  const searchRef  = useRef<HTMLDivElement>(null);
+  const sliderRef  = useRef<HTMLDivElement>(null);
   const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const onDragStart = (clientX: number) => {
     if (!sliderRef.current) return;
@@ -275,9 +277,42 @@ export default function MusicalListClient({
     fetchEvents();
   }, [fetchEvents]);
 
+  // 자동완성 후보 (inputValue 기준, 2글자 이상, 최대 7개)
+  const suggestions = useMemo(() => {
+    if (!inputValue || inputValue.length < 2) return [];
+    const q = inputValue.toLowerCase();
+    return events
+      .filter(ev => ev.Name.toLowerCase().includes(q))
+      .slice(0, 7)
+      .map(ev => ev.Name);
+  }, [inputValue, events]);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // 검색 실행 (버튼 클릭 or Enter)
   function handleSearch() {
     setSearchQuery(inputValue);
+    setShowSuggestions(false);
+    setDisplayCount(24);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
+  // 자동완성 선택 → 즉시 검색 + 스크롤
+  function handleSuggestionClick(name: string) {
+    setInputValue(name);
+    setSearchQuery(name);
+    setShowSuggestions(false);
     setDisplayCount(24);
     setTimeout(() => {
       resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -287,6 +322,7 @@ export default function MusicalListClient({
   function handleClear() {
     setInputValue('');
     setSearchQuery('');
+    setShowSuggestions(false);
     setDisplayCount(24);
   }
 
@@ -385,34 +421,59 @@ export default function MusicalListClient({
           <p className="text-white/75 text-[15px] mb-6">
             {events.length > 0 ? `${events.length}+` : '100+'} Shows · Official LTD Partner · Book Online
           </p>
-          {/* Search bar — attractions 패턴 동일 적용 */}
-          <div className="flex items-center gap-2 max-w-[600px]">
-            <div className="relative flex-1">
-              <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+          {/* Search bar — attractions 동일 패턴 + 자동완성 */}
+          <div ref={searchRef} className="relative w-full max-w-[600px]">
+            <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#2B7FFF]">
+              <svg className="ml-4 flex-shrink-0 text-[#94A3B8]"
                 width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
               </svg>
               <input
                 value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                onChange={e => { setInputValue(e.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSearch();
+                  if (e.key === 'Escape') setShowSuggestions(false);
+                }}
                 placeholder={slug === 'london' ? 'Search London shows...' : 'Search Broadway shows...'}
-                className="w-full pl-12 pr-10 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
+                className="flex-1 px-3 py-3.5 text-[#0F172A] text-[15px] outline-none placeholder:text-[#94A3B8] bg-transparent"
               />
               {inputValue && (
                 <button onClick={handleClear}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#94A3B8]/20 hover:bg-[#94A3B8]/40 flex items-center justify-center text-[#64748B] transition-colors">
-                  ✕
+                  className="flex-shrink-0 w-6 h-6 mr-2 flex items-center justify-center rounded-full bg-[#E5E7EB] text-[#64748B] hover:bg-[#CBD5E1] text-[14px] leading-none">
+                  ×
                 </button>
               )}
+              <button
+                onClick={handleSearch}
+                className="flex-shrink-0 m-1 sm:m-1.5 px-3 sm:px-5 py-2.5 rounded-lg bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white font-semibold transition-colors"
+              >
+                <svg className="sm:hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <span className="hidden sm:inline text-[14px]">Search</span>
+              </button>
             </div>
-            <button
-              onClick={handleSearch}
-              className="flex-shrink-0 flex items-center gap-1.5 px-5 py-3.5 rounded-xl bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[15px] font-semibold shadow-lg transition-colors"
-            >
-              <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-              <span className="hidden sm:inline">Search</span>
-            </button>
+
+            {/* 자동완성 드롭다운 */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl shadow-xl border border-[#E5E7EB] overflow-hidden z-50">
+                {suggestions.map((name, i) => (
+                  <button
+                    key={i}
+                    onMouseDown={e => e.preventDefault()}
+                    onClick={() => handleSuggestionClick(name)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[#F1F5F9] transition-colors border-b border-[#F1F5F9] last:border-0"
+                  >
+                    <svg className="text-[#94A3B8] flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <span className="text-[14px] text-[#0F172A] line-clamp-1">{name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
