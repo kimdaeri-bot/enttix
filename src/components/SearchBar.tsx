@@ -41,7 +41,9 @@ interface PlannerItem {
 interface PlannerDay { day: number; date: string; title: string; items: PlannerItem[]; }
 interface PlannerResult { city: string; country: string; days: PlannerDay[]; }
 interface LTDEventResult { EventId: number; Name: string; TagLine?: string; MainImageUrl?: string; EventMinimumPrice?: number; RunningTime?: string; EventType?: number; }
-interface AISearchResult { aiMessage?: string; summary?: string; events?: any[]; ltdEvents?: LTDEventResult[]; isMusicalQuery?: boolean; }
+interface TiqetsResult { id: number; title: string; tagline?: string; price?: number; city_name?: string; url: string; product_url?: string; ratings?: { total: number; average: number }; }
+interface TMResult { id: string; title: string; date?: string; time?: string; venueName?: string; city?: string; url?: string; imageUrl?: string; internalUrl?: string; }
+interface AISearchResult { aiMessage?: string; summary?: string; events?: any[]; ltdEvents?: LTDEventResult[]; isMusicalQuery?: boolean; tiqetsResults?: TiqetsResult[]; tmResults?: TMResult[]; }
 
 const typeConfig: Record<string, { icon: string; label: string; color: string; bg: string }> = {
   attraction: { icon: '🏛️', label: 'Attraction', color: '#6366F1', bg: '#EEF2FF' },
@@ -464,7 +466,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#2B7FFF] to-[#7C3AED] flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z"/></svg></div>
               <span className="text-[14px] font-semibold text-[#0F172A]">✨ AI Search Results</span>
-              <span className="text-[12px] text-[#94A3B8]">{aiResult.events?.length || 0} events</span>
+              <span className="text-[12px] text-[#94A3B8]">{(aiResult.events?.length || 0) + (aiResult.tiqetsResults?.length || 0) + (aiResult.tmResults?.length || 0) + (aiResult.ltdEvents?.length || 0)} results</span>
             </div>
             <button onClick={() => { setAiResult(null); setPlannerResult(null); }} className="text-[11px] text-[#94A3B8] hover:text-[#EF4444] transition-colors">✕ Close</button>
           </div>
@@ -520,7 +522,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                     );
                   })}
                 </div>
-              ) : (!aiResult.isMusicalQuery && <p className="text-[#94A3B8] text-[13px]">No matching events found</p>)}
+              ) : null}
 
               {/* LTD Musical results */}
               {aiResult.isMusicalQuery && aiResult.ltdEvents && aiResult.ltdEvents.length > 0 && (
@@ -552,6 +554,72 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
               )}
               {aiResult.isMusicalQuery && (!aiResult.ltdEvents || aiResult.ltdEvents.length === 0) && (!aiResult.events || aiResult.events.length === 0) && (
                 <p className="text-[#94A3B8] text-[13px]">No matching shows found</p>
+              )}
+
+              {/* Tiqets Attraction Results */}
+              {aiResult.tiqetsResults && aiResult.tiqetsResults.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[11px] font-bold text-[#10B981] uppercase tracking-wider mb-2">🎟️ Attractions & Experiences</p>
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto">
+                    {aiResult.tiqetsResults.map((p, i) => (
+                      <a key={i} href={p.url}
+                        className="flex items-center gap-3 p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] hover:border-[#10B981]/50 hover:shadow-md transition-all cursor-pointer group">
+                        <div className="flex-shrink-0 w-[44px] h-[44px] rounded-lg bg-[#D1FAE5] flex items-center justify-center text-2xl">🏛️</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[#0F172A] font-semibold text-[13px] leading-snug group-hover:text-[#059669] transition-colors truncate">{p.title}</p>
+                          <p className="text-[#94A3B8] text-[11px] mt-0.5">{p.city_name || ''}{p.ratings?.average ? ` · ⭐ ${p.ratings.average.toFixed(1)}` : ''}</p>
+                          {p.price ? (
+                            <span className="text-[#059669] font-bold text-[12px]">From ${p.price}</span>
+                          ) : null}
+                        </div>
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#DCFCE7] group-hover:bg-[#10B981] flex items-center justify-center transition-colors">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#10B981] group-hover:text-white transition-colors"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Ticketmaster Music Results */}
+              {aiResult.tmResults && aiResult.tmResults.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-[11px] font-bold text-[#EC4899] uppercase tracking-wider mb-2">🎵 Music Events</p>
+                  <div className="space-y-2 max-h-[360px] overflow-y-auto">
+                    {aiResult.tmResults.map((e, i) => {
+                      const dateObj = e.date ? new Date(e.date) : null;
+                      return (
+                        <a key={i} href={e.internalUrl || e.url || '#'}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-[#FDF2F8] border border-[#FBCFE8] hover:border-[#EC4899]/50 hover:shadow-md transition-all cursor-pointer group">
+                          <div className="flex-shrink-0 w-[52px] h-[52px] rounded-xl overflow-hidden bg-[#1E293B]">
+                            {e.imageUrl
+                              ? <img src={e.imageUrl} alt={e.title} className="w-full h-full object-cover" />
+                              : <div className="w-full h-full flex items-center justify-center text-2xl">🎵</div>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[#0F172A] font-semibold text-[13px] leading-snug group-hover:text-[#EC4899] transition-colors truncate">{e.title}</p>
+                            <p className="text-[#94A3B8] text-[11px] mt-0.5">
+                              {dateObj ? dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' }) : ''}
+                              {e.venueName ? ` · ${e.venueName}` : ''}
+                              {e.city ? `, ${e.city}` : ''}
+                            </p>
+                          </div>
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#FCE7F3] group-hover:bg-[#EC4899] flex items-center justify-center transition-colors">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-[#EC4899] group-hover:text-white transition-colors"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 결과 없음 */}
+              {!aiResult.isMusicalQuery &&
+                (!aiResult.events || aiResult.events.length === 0) &&
+                (!aiResult.tiqetsResults || aiResult.tiqetsResults.length === 0) &&
+                (!aiResult.tmResults || aiResult.tmResults.length === 0) && (
+                <p className="text-[#94A3B8] text-[13px]">No matching results found</p>
               )}
             </div>
           </div>
