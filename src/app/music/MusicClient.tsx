@@ -7,7 +7,6 @@ interface TmEvent {
   country: string; minPrice: number | null; currency: string;
   genre: string; subGenre: string; venueImageUrl?: string;
 }
-interface PageInfo { number: number; size: number; totalElements: number; totalPages: number; }
 
 
 // 장르별 플레이스홀더 (이미지 없거나 로드 실패 시 CSS 그라데이션)
@@ -337,10 +336,10 @@ export default function MusicClient() {
   const [searchQuery,      setSearchQuery]      = useState('');
   const [inputValue,       setInputValue]       = useState('');
   const [showSuggestions,  setShowSuggestions]  = useState(false);
-  const [events,           setEvents]           = useState<TmEvent[]>([]);
-  const [pageInfo,         setPageInfo]         = useState<PageInfo>({ number: 0, size: 20, totalElements: 0, totalPages: 0 });
+  const [allEvents,        setAllEvents]        = useState<TmEvent[]>([]); // 전체 필터된 이벤트
   const [loading,          setLoading]          = useState(true);
   const [currentPage,      setCurrentPage]      = useState(0);
+  const PAGE_SIZE = 24;
 
   const searchRef  = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -354,56 +353,52 @@ export default function MusicClient() {
     return () => document.removeEventListener('mousedown', onOut);
   }, []);
 
-  /* 자동완성: 현재 로드된 이벤트 이름에서 매칭 (2글자+, 최대 7개) */
+  /* 자동완성: 전체 이벤트 이름에서 매칭 (2글자+, 최대 7개) */
   const suggestions = useMemo(() => {
     if (!inputValue || inputValue.length < 2) return [];
     const q = inputValue.toLowerCase();
-    return events.map(e => e.name).filter(n => n.toLowerCase().includes(q)).slice(0, 7);
-  }, [inputValue, events]);
+    return allEvents.map(e => e.name).filter(n => n.toLowerCase().includes(q)).slice(0, 7);
+  }, [inputValue, allEvents]);
 
   /* API 호출 — 완료 시 scroll 여부 결정 */
   const fetchEvents = useCallback(async (
-    genre: string, country: string, keyword: string, page: number,
+    genre: string, country: string, keyword: string,
     shouldScroll = false, dateStart: string | null = null, dateEnd: string | null = null
   ) => {
     setLoading(true);
     try {
-      const p = new URLSearchParams({ tab: 'music', page: String(page), size: '50' });
+      // size=200으로 한 번에 크게 받아서 클라이언트 페이지네이션 (TM 페이지 의존 제거)
+      const p = new URLSearchParams({ tab: 'music', page: '0', size: '200' });
       if (genre)   p.set('genre', genre);
       if (country) p.set('countryCode', country);
       if (keyword) p.set('keyword', keyword);
-      // 날짜 범위: startDate 선택 시 TM API startDateTime 오버라이드
       if (dateStart) p.set('startDate', dateStart);
-      // endDate: 단일 날짜면 같은 날 끝, 범위면 endDate
       if (dateStart) {
         const endIso = `${dateEnd || dateStart}T23:59:59Z`;
         p.set('endDateTime', endIso);
       }
       const res  = await fetch(`/api/ticketmaster/events?${p}`);
       const data = await res.json();
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const today = new Date().toISOString().slice(0, 10);
       const raw: TmEvent[] = (data.events || []).filter(
-        (e: TmEvent) =>
-          (!e.date || e.date >= today)  // 지난 이벤트 제외
+        (e: TmEvent) => !e.date || e.date >= today
       );
 
-      // 같은 이미지 → 삭제 아님, 해당 이벤트만 venue 이미지로 교체
-      // Ticketmaster _RETINA_PORTRAIT 등 suffix 제거해 "기본 이미지 ID" 추출
+      // 중복 이미지 → venue 이미지로 교체
       const seenImg = new Set<string>();
       const fixed = raw.map(e => {
         const normUrl = e.imageUrl
           .replace(/_(RETINA|TABLET|REINA|STANDARD|CUSTOM)_[A-Z0-9_]+\.(jpg|jpeg|png|webp)$/i, '');
         if (normUrl && seenImg.has(normUrl)) {
-          // 중복 이미지 → venue 이미지로 교체 (없으면 빈 문자열 → 기본 이모지 폴백)
           return { ...e, imageUrl: e.venueImageUrl || '' };
         }
         if (normUrl) seenImg.add(normUrl);
         return e;
       });
-      setEvents(fixed.slice(0, 24)); // 최대 24개 표시
-      setPageInfo(data.page || { number: 0, size: 24, totalElements: 0, totalPages: 0 });
+
+      setAllEvents(fixed); // 전체 저장 (클라이언트 페이지네이션)
     } catch {
-      setEvents([]);
+      setAllEvents([]);
     } finally {
       setLoading(false);
       if (shouldScroll) {
@@ -417,15 +412,19 @@ export default function MusicClient() {
   /* 초기 및 필터 변경 시 로드 (스크롤 없음) */
   useEffect(() => {
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, searchQuery, 0, false, calStartDate, calEndDate);
+    fetchEvents(activeGenre, activeCountry, searchQuery, false, calStartDate, calEndDate);
   }, [activeGenre, activeCountry, calStartDate, calEndDate, fetchEvents]);
 
   /* 검색 실행 */
+  // 클라이언트 페이지네이션 (fetchEvents 재호출 없음)
+  const totalPages = Math.ceil(allEvents.length / PAGE_SIZE);
+  const events = allEvents.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+
   function execSearch(keyword: string) {
     setSearchQuery(keyword);
     setShowSuggestions(false);
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, keyword, 0, true, calStartDate, calEndDate);
+    fetchEvents(activeGenre, activeCountry, keyword, true, calStartDate, calEndDate);
   }
 
   function handleSearch() { execSearch(inputValue); }
@@ -435,12 +434,11 @@ export default function MusicClient() {
     setInputValue('');
     setSearchQuery('');
     setCurrentPage(0);
-    fetchEvents(activeGenre, activeCountry, '', 0, false, calStartDate, calEndDate);
+    fetchEvents(activeGenre, activeCountry, '', false, calStartDate, calEndDate);
   }
 
   const handlePage = (p: number) => {
     setCurrentPage(p);
-    fetchEvents(activeGenre, activeCountry, searchQuery, p, false, calStartDate, calEndDate);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -609,13 +607,13 @@ export default function MusicClient() {
 
         <div className="flex items-center justify-between mb-6">
           <div className="text-[13px] text-[#6B7280]">
-            {!loading && pageInfo.totalElements > 0 && (
+            {!loading && allEvents.length > 0 && (
               <>
                 <span className="font-semibold text-[#171717]">{countryObj.flag} {countryObj.name}</span>
                 {' · '}총{' '}
-                <span className="font-semibold text-[#171717]">{pageInfo.totalElements.toLocaleString()}</span>개 이벤트
+                <span className="font-semibold text-[#171717]">{allEvents.length.toLocaleString()}</span>개 이벤트
                 {' · '}페이지{' '}
-                <span className="font-semibold text-[#171717]">{pageInfo.number + 1}</span> / {pageInfo.totalPages.toLocaleString()}
+                <span className="font-semibold text-[#171717]">{currentPage + 1}</span> / {totalPages.toLocaleString()}
               </>
             )}
           </div>
@@ -647,14 +645,14 @@ export default function MusicClient() {
           </div>
         )}
 
-        {!loading && pageInfo.totalPages > 1 && (
+        {!loading && totalPages > 1 && (
           <div className="flex items-center justify-center gap-2 mt-10">
             <button onClick={() => handlePage(currentPage - 1)} disabled={currentPage === 0}
               className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 transition-colors flex items-center gap-1.5">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Prev
             </button>
-            <span className="px-4 py-2.5 text-[13px] text-[#6B7280]">{currentPage + 1} / {pageInfo.totalPages}</span>
-            <button onClick={() => handlePage(currentPage + 1)} disabled={currentPage + 1 >= pageInfo.totalPages}
+            <span className="px-4 py-2.5 text-[13px] text-[#6B7280]">{currentPage + 1} / {totalPages}</span>
+            <button onClick={() => handlePage(currentPage + 1)} disabled={currentPage + 1 >= totalPages}
               className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 transition-colors flex items-center gap-1.5">
               Next<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </button>
