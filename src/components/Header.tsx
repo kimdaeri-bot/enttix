@@ -13,8 +13,7 @@ const sportsItems = [
 ];
 
 const showsItems = [
-  'West End', 'Broadway', 'Opera', 'Ballet', 'Comedy', 'Drama',
-  'Family Shows', 'Dance', 'Circus', 'Magic Shows',
+  'London', 'Broadway',
 ];
 
 
