@@ -226,6 +226,7 @@ function TheatreCard({
 
 /* ─── MAIN PAGE ──────────────────────────────────────────────── */
 export default function MusicalListClient({
+  slug,
   displayName,
   eventType,
 }: {
@@ -237,11 +238,12 @@ export default function MusicalListClient({
   const [loading, setLoading] = useState(true);
   const [displayCount, setDisplayCount] = useState(24);
   const [sort, setSort] = useState<SortKey>('popular');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');   // 실제 필터 적용값
+  const [inputValue, setInputValue] = useState('');     // 입력창 표시값
   const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Drag-to-scroll for Top 10 slider
+  const resultsRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const dragState = useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
   const onDragStart = (clientX: number) => {
@@ -272,6 +274,21 @@ export default function MusicalListClient({
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
+
+  // 검색 실행 (버튼 클릭 or Enter)
+  function handleSearch() {
+    setSearchQuery(inputValue);
+    setDisplayCount(24);
+    setTimeout(() => {
+      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
+  function handleClear() {
+    setInputValue('');
+    setSearchQuery('');
+    setDisplayCount(24);
+  }
 
   /* ─── Filter & sort ─── */
   let filtered = events.filter(ev => {
@@ -368,22 +385,34 @@ export default function MusicalListClient({
           <p className="text-white/75 text-[15px] mb-6">
             {events.length > 0 ? `${events.length}+` : '100+'} Shows · Official LTD Partner · Book Online
           </p>
-          {/* Search bar */}
-          <div className="relative max-w-[520px]">
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
-              width="18" height="18" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5"
+          {/* Search bar — attractions 패턴 동일 적용 */}
+          <div className="flex items-center gap-2 max-w-[600px]">
+            <div className="relative flex-1">
+              <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8]"
+                width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                value={inputValue}
+                onChange={e => setInputValue(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                placeholder={slug === 'london' ? 'Search London shows...' : 'Search Broadway shows...'}
+                className="w-full pl-12 pr-10 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
+              />
+              {inputValue && (
+                <button onClick={handleClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#94A3B8]/20 hover:bg-[#94A3B8]/40 flex items-center justify-center text-[#64748B] transition-colors">
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              onClick={handleSearch}
+              className="flex-shrink-0 flex items-center gap-1.5 px-5 py-3.5 rounded-xl bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[15px] font-semibold shadow-lg transition-colors"
             >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search West End shows..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-[#0F172A] text-[15px] outline-none shadow-lg placeholder:text-[#94A3B8] focus:ring-2 focus:ring-[#2B7FFF]"
-            />
+              <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <span className="hidden sm:inline">Search</span>
+            </button>
           </div>
         </div>
       </section>
@@ -436,7 +465,7 @@ export default function MusicalListClient({
       </section>
 
       {/* ─── 4. FILTER BAR (sticky) ────────────────────────── */}
-      <div className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
+      <div ref={resultsRef} className="bg-white border-b border-[#E5E7EB] sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1280px] mx-auto px-4">
           {/* Category chips */}
           <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-none">
@@ -515,7 +544,7 @@ export default function MusicalListClient({
           <div className="text-center py-20">
             <p className="text-[#94A3B8] text-[18px] mb-3">No shows found</p>
             <button
-              onClick={() => { setActiveCategory(0); setSearchQuery(''); }}
+              onClick={() => { setActiveCategory(0); setSearchQuery(''); setInputValue(''); }}
               className="text-[#2B7FFF] text-[14px] hover:underline"
             >
               Clear filters
