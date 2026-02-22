@@ -384,8 +384,7 @@ export default function MusicClient() {
       const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
       const raw: TmEvent[] = (data.events || []).filter(
         (e: TmEvent) =>
-          (!e.date || e.date >= today) &&              // 지난 이벤트 제외
-          e.url && e.url.includes('ticketmaster.com')  // TM 직접링크 아닌 것 제외
+          (!e.date || e.date >= today)  // 지난 이벤트 제외
       );
 
       // 같은 이미지 → 삭제 아님, 해당 이벤트만 venue 이미지로 교체
