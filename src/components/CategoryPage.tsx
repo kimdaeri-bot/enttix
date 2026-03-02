@@ -133,7 +133,7 @@ export default function CategoryPage({ slug, displayName, categoryType }: Catego
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]"><Header /></div>
+      <div className="bg-[#0F172A]"><Header hideSearch /></div>
 
       {/* Hero Banner */}
       <div className="relative h-[280px] md:h-[340px] overflow-hidden bg-[#0F172A]">

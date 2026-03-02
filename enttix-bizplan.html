@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENTTIX 창업사업화 지원사업 사업계획서</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'NanumGothic', sans-serif;
+  font-size: 10pt;
+  background: #fff;
+  color: #000;
+  padding: 28mm 26mm 32mm;
+  max-width: 210mm;
+  margin: 0 auto;
+  line-height: 1.65;
+}
+
+.doc-main-title {
+  text-align: center; font-size: 16pt; font-weight: 900;
+  margin-bottom: 4px; letter-spacing: -0.5px;
+}
+.doc-sub-title {
+  text-align: center; font-size: 10pt; color: #555; margin-bottom: 26px;
+}
+.section-marker {
+  font-size: 11pt; font-weight: 700; margin: 20px 0 5px; padding-left: 2px;
+}
+.section-marker::before { content: '□ '; }
+.tbl-caption {
+  text-align: center; font-size: 10pt; font-weight: 700;
+  margin: 16px 0 4px;
+}
+table {
+  width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 9.5pt;
+}
+th, td { border: 1px solid #222; padding: 6px 9px; vertical-align: middle; line-height: 1.5; }
+thead th { background: #e5e5e5; font-weight: 700; text-align: center; }
+.c-head { background: #ececec; font-weight: 700; text-align: center; word-break: keep-all; }
+.c-sub  { background: #f7f7f7; font-weight: 600; text-align: center; word-break: keep-all; font-size: 9pt; }
+.c-ctr  { text-align: center; }
+ul.tl   { margin: 0; padding-left: 0; list-style: none; }
+ul.tl li::before { content: '· '; font-weight: 700; }
+ul.tl li { padding: 1px 0; }
+.pg { page-break-after: always; }
+.note { font-size: 8.5pt; color: #666; text-align: center; margin-top: 18px; }
+
+@media print {
+  body { padding: 15mm 18mm; }
+  @page { margin: 15mm 18mm; }
+}
+</style>
+</head>
+<body>
+
+<div class="doc-main-title">창업사업화 지원사업 사업계획서</div>
+<div class="doc-sub-title">ENTTIX — AI 예약엔진 기반 글로벌 엔터테인먼트 티켓 플랫폼</div>
+
+<!-- ══════════════════════
+     □ 일반현황
+══════════════════════ -->
+<div class="section-marker">일반현황</div>
+
+<div class="tbl-caption">＜ 일반현황 ＞</div>
+<table>
+<tbody>
+  <tr>
+    <td class="c-head" style="width:100px">창업아이템명</td>
+    <td colspan="3">"해외 공연·스포츠 티켓, ENTTIX가 AI로 직접 예약해드립니다" — AI 예약엔진 기반 글로벌 엔터테인먼트 티켓 플랫폼</td>
+  </tr>
+  <tr>
+    <td class="c-head">산출물<br><small style="font-weight:400">(협약기간 내)</small></td>
+    <td colspan="3">
+      <ul class="tl">
+        <li>AI 예약엔진 (자연어 기반 큐레이션·예약 실행 모듈) 1개</li>
+        <li>글로벌 티켓 API 연동 모듈 (Tixstock·Ticketmaster 등) 1개</li>
+        <li>ENTTIX 웹 플랫폼 (Next.js 기반) 1개</li>
+        <li>여행사용 B2B API 공급 모듈 1개</li>
+        <li>실시간 예약 현황 관리자 대시보드 1개</li>
+        <li>AI 기반 엔터테인먼트 티켓 예약 관련 특허 출원 1건</li>
+      </ul>
+    </td>
+  </tr>
+</tbody>
+</table>
+
+<div class="tbl-caption">＜ 조직구성 현황 (대표자 본인 제외) ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:40px">순번</th>
+    <th style="width:60px">직위</th>
+    <th style="width:120px">담당 업무</th>
+    <th>보유역량 (경력 및 학력 등)</th>
+    <th style="width:110px">구성 상태</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">팀장</td>
+    <td>백엔드 및 AI 파이프라인 개발</td>
+    <td>Node.js·Python 기반 서버 개발 5년 이상, OpenAI·Claude API 연동 경험 3년, RAG 시스템 설계 경력</td>
+    <td class="c-ctr">팀원 (4대보험)</td>
+  </tr>
+  <tr>
+    <td class="c-ctr">2</td>
+    <td class="c-ctr">팀원</td>
+    <td>프론트엔드 개발</td>
+    <td>Next.js·React 기반 웹앱 개발 4년, UX 중심 예약 플로우 설계 경험</td>
+    <td class="c-ctr">팀원 (4대보험)</td>
+  </tr>
+  <tr>
+    <td class="c-ctr">3</td>
+    <td class="c-ctr">팀원</td>
+    <td>글로벌 티켓 API 연동 및 데이터 관리</td>
+    <td>REST API 연동 3년 이상, Tixstock·Ticketmaster API 실무 경험, 데이터 파이프라인 설계</td>
+    <td class="c-ctr">팀원 (4대보험)</td>
+  </tr>
+  <tr>
+    <td class="c-ctr">4</td>
+    <td class="c-ctr">팀원</td>
+    <td>AI 모델 설계 및 프롬프트 엔지니어링</td>
+    <td>LLM 파인튜닝·RAG 설계 경험, 여행·티켓 도메인 AI 서비스 개발 경력</td>
+    <td class="c-ctr">팀원 예정 ('26.04)</td>
+  </tr>
+  <tr>
+    <td class="c-ctr">5</td>
+    <td class="c-ctr">팀원</td>
+    <td>글로벌 파트너십 및 B2B 영업</td>
+    <td>여행사 대상 B2B 세일즈 경험 3년 이상, 항공·크루즈 GSSA 실무 경력</td>
+    <td class="c-ctr">팀원 예정 ('26.06)</td>
+  </tr>
+  <tr>
+    <td class="c-ctr">6</td>
+    <td class="c-ctr">팀원</td>
+    <td>마케팅 및 콘텐츠 기획</td>
+    <td>디지털 마케팅 경험 3년 이상, 해외 엔터테인먼트 콘텐츠 기획</td>
+    <td class="c-ctr">팀원 예정 ('26.07)</td>
+  </tr>
+</tbody>
+</table>
+
+
+<!-- ══════════════════════
+     □ 창업아이템 개요
+══════════════════════ -->
+<div class="section-marker">창업아이템 개요 (요약)</div>
+
+<div class="tbl-caption">＜ 창업아이템 개요 ＞</div>
+<table>
+<tbody>
+  <tr>
+    <td class="c-head" style="width:100px">명칭</td>
+    <td style="width:36%">ENTTIX (엔틱스)</td>
+    <td class="c-head" style="width:80px">범주</td>
+    <td>AI 예약엔진 기반 엔터테인먼트 티켓 플랫폼</td>
+  </tr>
+  <tr>
+    <td class="c-head">아이템 개요</td>
+    <td colspan="3">사용자의 텍스트·음성 입력 → AI 에이전트의 조건 분석 및 상품 큐레이션 → 실시간 예약·결제 페이지 즉시 연결 → 발권의 <strong>End-to-End 예약 흐름</strong>을 구현한 글로벌 엔터테인먼트 티켓 예약 플랫폼</td>
+  </tr>
+  <tr>
+    <td class="c-head">핵심 기능</td>
+    <td colspan="3">AI 자연어 입력 → 조건 분석 → 상품 큐레이션 → 실시간 예약·결제 → 발권 (End-to-End 단일 흐름 완결)</td>
+  </tr>
+  <tr>
+    <td class="c-head">대상 고객</td>
+    <td colspan="3">해외여행 계획 중인 개인 여행자 / 공연·스포츠 관람을 원하는 한국인 / 글로벌 엔터테인먼트 티켓을 취급하는 여행사(B2B)</td>
+  </tr>
+  <tr>
+    <td class="c-head">고객 혜택</td>
+    <td colspan="3">복잡한 해외 티켓 예약 과정 간소화, AI 기반 맞춤 큐레이션, 실시간 재고 확인 및 즉시 발권</td>
+  </tr>
+  <tr>
+    <td class="c-head">가격 모델</td>
+    <td colspan="3">티켓 판매 수수료 기반 (GMV의 약 10~15%) + B2B API 공급 월정액 구독료 병행</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="tbl-caption">＜ 핵심 기술 및 특징 ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:100px">구분</th>
+    <th style="width:150px">핵심 기능</th>
+    <th>설명</th>
+    <th style="width:165px">특징</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-head">AI 예약엔진</td>
+    <td>자연어 기반 조건 분석 및 예약 실행</td>
+    <td>텍스트·음성 입력 분석 → 원하는 이벤트·좌석 조건 구조화 → 실시간 재고 기반 상품 큐레이션 → 예약 페이지 즉시 연결</td>
+    <td>AI를 추천 보조가 아닌 예약 실행 주체(Agent)로 설계</td>
+  </tr>
+  <tr>
+    <td class="c-head">실시간 데이터<br>주입 (RAG)</td>
+    <td>글로벌 API 실시간 재고·가격 주입</td>
+    <td>Tixstock 등 글로벌 티켓 API 실시간 데이터를 AI 컨텍스트에 동적 주입 → 실제 예약 가능한 상품만 추천, AI 환각 방지</td>
+    <td>AI 환각(Hallucination) 방지, 재고 기반 추천</td>
+  </tr>
+  <tr>
+    <td class="c-head">예약 매핑<br>엔진</td>
+    <td>AI 추천 결과와 예약 페이지 실시간 연결</td>
+    <td>AI 큐레이션 결과를 해당 상품의 예약·결제 페이지와 즉시 연결하는 자체 엔진. 검색→추천→예약 간 단절 구조적 제거</td>
+    <td>추천→예약 이탈 제거, E2E 단일 흐름</td>
+  </tr>
+  <tr>
+    <td class="c-head">노출 최적화<br>로직</td>
+    <td>재고·마진율·선호도 복합 반영 랭킹</td>
+    <td>재고 가용성·마진율·사용자 선호도를 복합 반영한 자체 랭킹 알고리즘으로 전환율과 수익성 동시 최적화</td>
+    <td>전환율 + 수익성 동시 최적화</td>
+  </tr>
+  <tr>
+    <td class="c-head">B2B API<br>공급</td>
+    <td>여행사 대상 AI 예약엔진 화이트레이블</td>
+    <td>국내외 여행사에 AI 예약엔진을 API 형태로 공급. 여행사가 자사 서비스에 글로벌 티켓 예약 기능 통합 가능</td>
+    <td>B2B 월정액 구독 수익, 파트너 확장</td>
+  </tr>
+</tbody>
+</table>
+
+
+<!-- ══════════════════════
+     □ 배경 및 필요성
+══════════════════════ -->
+<div class="section-marker">1-1. 창업아이템 배경 및 필요성</div>
+
+<div class="tbl-caption">＜ 문제 인식 (Problem) ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:100px">구분</th>
+    <th style="width:150px">문제 유형</th>
+    <th>내용</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-head" rowspan="3">시장 문제</td>
+    <td class="c-sub">통합 플랫폼 부재</td>
+    <td>해외 스포츠·공연·뮤지컬·전시 등 엔터테인먼트 티켓을 한 곳에서 예약할 수 있는 한국어 통합 플랫폼 사실상 부재</td>
+  </tr>
+  <tr>
+    <td class="c-sub">높은 탐색 비용</td>
+    <td>기존 글로벌 OTA 및 티켓 플랫폼은 검색·필터 기반 상품 나열 구조에 머물러 있어 사용자의 탐색 비용 과다 발생 및 구매 전환 단절</td>
+  </tr>
+  <tr>
+    <td class="c-sub">언어·접근성 장벽</td>
+    <td>대부분 영문 위주의 해외 플랫폼으로 한국인 여행자의 접근성 및 활용성이 낮음. 사기·미발권 피해 우려로 신뢰 기반 예약 인프라 부재</td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="3">기존 서비스<br>한계</td>
+    <td class="c-sub">AI 연동 부재</td>
+    <td>AI와 결합된 실질적인 '예약 실행형' 서비스 사실상 부재. 기존 서비스는 AI를 추천 보조 기능으로만 활용</td>
+  </tr>
+  <tr>
+    <td class="c-sub">예약 단절 구조</td>
+    <td>검색 → 추천 → 예약 과정에서 단절이 발생해 이탈률이 높음. 여러 사이트를 이동하며 최종 예약까지 다수의 단계가 필요</td>
+  </tr>
+  <tr>
+    <td class="c-sub">대표자 실증</td>
+    <td>항공·크루즈 GSSA 운영(아남항공) 경험을 통해 한국 여행자의 해외 엔터테인먼트 티켓 예약 수요 직접 확인. 현재 Tixstock B2B API 계약 체결 및 파일럿 운영 중</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="tbl-caption">＜ 해결방안 및 개발 목적 ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:100px">구분</th>
+    <th style="width:150px">항목</th>
+    <th>내용</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-head" rowspan="4">해결 방안</td>
+    <td class="c-sub">E2E 예약 흐름 구현</td>
+    <td>텍스트·음성 입력 → AI 조건 분석 → 실시간 재고 기반 큐레이션 → 예약·결제 페이지 즉시 연결 → 발권까지 단절 없는 단일 흐름 구현</td>
+  </tr>
+  <tr>
+    <td class="c-sub">글로벌 API 연동</td>
+    <td>Tixstock·Ticketmaster 등 글로벌 티켓 API 연동으로 해외 스포츠·공연·뮤지컬·전시 등 다양한 카테고리 실시간 재고 및 발권 처리</td>
+  </tr>
+  <tr>
+    <td class="c-sub">RAG 기반 AI 설계</td>
+    <td>글로벌 API 실시간 데이터를 AI 컨텍스트에 동적 주입 → AI 환각 방지, 실제 예약 가능한 상품만 추천하는 신뢰 기반 서비스</td>
+  </tr>
+  <tr>
+    <td class="c-sub">개발 준비 현황</td>
+    <td>Tixstock API 계약 체결 완료, 파일럿 플랫폼(enttix-omega.vercel.app) 운영 중. 기존 항공·크루즈 GSSA 네트워크 활용 초기 B2B 고객 확보 가능</td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="3">개발 목적</td>
+    <td class="c-sub">예약 접근성 향상</td>
+    <td>한국인 여행자가 언어 장벽 없이 해외 엔터테인먼트 티켓을 간편하게 예약할 수 있는 한국어 통합 플랫폼 제공</td>
+  </tr>
+  <tr>
+    <td class="c-sub">구매 전환율 개선</td>
+    <td>AI 예약엔진을 통해 검색·추천·예약 간 단절을 제거하여 구매 전환율 구조적 개선 및 탐색 비용 최소화</td>
+  </tr>
+  <tr>
+    <td class="c-sub">여행산업 융합</td>
+    <td>여행 일정 기반 콘텐츠 소비 연계 → 관광산업과 엔터테인먼트산업을 실질적인 매출 구조로 융합. B2B API 공급으로 여행사 파트너 생태계 구축</td>
+  </tr>
+</tbody>
+</table>
+
+
+<!-- ══════════════════════
+     □ 목표시장 및 사업화 전략
+══════════════════════ -->
+<div class="section-marker">목표시장 및 사업화 전략</div>
+
+<div class="tbl-caption">＜ 목표시장 및 사업화 전략 ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:100px">구분</th>
+    <th style="width:150px">항목</th>
+    <th>내용</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-head" rowspan="2">시장 현황</td>
+    <td class="c-sub">목표 시장</td>
+    <td>국내 해외여행 인구 연 2,000만 명 이상 / 글로벌 엔터테인먼트 티켓 시장 약 700억 달러(2024) / 한국인 해외 공연·스포츠 관람 수요 급증</td>
+  </tr>
+  <tr>
+    <td class="c-sub">고객 요구사항</td>
+    <td>
+      <ul class="tl">
+        <li>믿을 수 있는 한국어 해외 티켓 예약 서비스 필요</li>
+        <li>복잡한 해외 사이트 없이 원하는 티켓을 한 번에 예약하길 원함</li>
+        <li>여행 일정과 연계된 맞춤형 엔터테인먼트 추천 필요</li>
+        <li>실시간 재고 확인 및 즉시 발권 기능 필요</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="2">비즈니스<br>모델</td>
+    <td class="c-sub">수익 구조</td>
+    <td>① B2C 수수료: 티켓 거래액(GMV)의 약 10~15% 수수료 수취<br>② B2B 구독료: 여행사 대상 AI 예약엔진 API 공급, 월정액 구독료</td>
+  </tr>
+  <tr>
+    <td class="c-sub">고객 확보 전략</td>
+    <td>초기: 아남항공·디플랫코리아 기존 여행사 네트워크 활용 B2B 선점 → 이후 B2C 직판 확장. 해외 공연·스포츠 커뮤니티 타겟 SNS 마케팅</td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="3">성과 목표</td>
+    <td class="c-sub">2026년 (협약기간)</td>
+    <td>B2B 파트너 여행사 5개사 확보 / B2C 월 거래액(GMV) 5,000만 원 이상 / 매출 600,000천원 목표</td>
+  </tr>
+  <tr>
+    <td class="c-sub">2027년</td>
+    <td>B2B 파트너 여행사 20개사 / B2C 누적 회원 10,000명 / 매출 1,200,000천원 목표</td>
+  </tr>
+  <tr>
+    <td class="c-sub">2028년~</td>
+    <td>글로벌 티켓 카테고리 10개 이상 확장 / 매출 2,000,000천원 이상 / 고용 인력 10명 이상</td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="2">핵심<br>경쟁력</td>
+    <td class="c-sub">차별성</td>
+    <td>단순 추천을 넘어 AI가 직접 예약·결제를 실행하는 <strong>End-to-End AI 예약엔진</strong> 구현. 국내 유일 AI 기반 글로벌 엔터테인먼트 티켓 통합 예약 플랫폼</td>
+  </tr>
+  <tr>
+    <td class="c-sub">기술·사업 경쟁력</td>
+    <td>Tixstock API 계약 완료 및 파일럿 운영 중(선점 우위), 항공·크루즈 GSSA 운영을 통한 여행 유통 실무 경험, 자체 RAG·예약매핑 엔진 개발</td>
+  </tr>
+</tbody>
+</table>
+
+<div class="tbl-caption">＜ 최종 산출물 작성 (전체 사업단계) ＞</div>
+<table>
+<thead>
+  <tr>
+    <th style="width:95px">구분</th>
+    <th>최종 산출물</th>
+    <th style="width:48px">수량</th>
+    <th style="width:80px">완료 일정</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="c-head" rowspan="6">단기<br>(협약기간 내)</td>
+    <td>AI 예약엔진 (자연어 기반 큐레이션·예약 실행 모듈)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.06</td>
+  </tr>
+  <tr>
+    <td>글로벌 티켓 API 연동 모듈 (Tixstock·Ticketmaster 등)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.06</td>
+  </tr>
+  <tr>
+    <td>ENTTIX 웹 플랫폼 (B2C, Next.js 기반)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.09</td>
+  </tr>
+  <tr>
+    <td>실시간 예약 현황 관리자 대시보드</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.09</td>
+  </tr>
+  <tr>
+    <td>여행사용 B2B API 공급 모듈</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.12</td>
+  </tr>
+  <tr>
+    <td>AI 기반 엔터테인먼트 티켓 예약 관련 특허 출원</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2026.12</td>
+  </tr>
+  <tr>
+    <td class="c-head" rowspan="4">중·장기<br>최종 산출물</td>
+    <td>노출 최적화 랭킹 알고리즘 고도화 모듈</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2027.06</td>
+  </tr>
+  <tr>
+    <td>글로벌 티켓 카테고리 확장 (10개 이상 카테고리)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2027.12</td>
+  </tr>
+  <tr>
+    <td>ENTTIX 모바일 앱 (iOS, AOS)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2027.12</td>
+  </tr>
+  <tr>
+    <td>AI 여행 일정 연계 엔터테인먼트 추천 서비스 (일정 기반 큐레이션)</td>
+    <td class="c-ctr">1</td>
+    <td class="c-ctr">2028.06</td>
+  </tr>
+</tbody>
+</table>
+
+<p class="note">— ENTTIX 창업사업화 지원사업 사업계획서 —</p>
+
+</body>
+</html>

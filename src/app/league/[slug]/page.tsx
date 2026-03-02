@@ -23,7 +23,7 @@ export default async function LeaguePage({ params }: { params: Promise<{ slug: s
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
       <div className="hero-bg pb-16">
-        <Header transparent />
+        <Header transparent hideSearch />
         <div className="max-w-[1280px] mx-auto px-4 pt-8">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[11px] font-semibold text-[rgba(219,234,254,0.5)] tracking-[1px]">OFFICIAL TICKET PARTNER</span>

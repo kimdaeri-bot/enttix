@@ -225,7 +225,7 @@ function CheckoutContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]"><Header /></div>
+      <div className="bg-[#0F172A]"><Header hideSearch /></div>
 
       <div className="max-w-[720px] mx-auto px-4 py-8">
         {/* Page Title */}
@@ -426,7 +426,7 @@ export default function CheckoutPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-[#F5F7FA]">
-        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="bg-[#0F172A]"><Header hideSearch /></div>
         <div className="flex items-center justify-center py-32">
           <div className="text-[18px] font-semibold text-[#9CA3AF] animate-pulse">Loading checkout...</div>
         </div>

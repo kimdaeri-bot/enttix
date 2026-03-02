@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENTTIX 사업의 특장점</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+    font-size: 13px;
+    background: #fff;
+    color: #111;
+    padding: 48px 52px 64px;
+    max-width: 860px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ─── 페이지 제목 ─── */
+  .doc-title {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+  }
+  .doc-caption {
+    text-align: center;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 28px;
+  }
+
+  /* ─── 섹션 제목 (< > 캡션 스타일) ─── */
+  .tbl-caption {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 32px 0 8px;
+    letter-spacing: -0.3px;
+  }
+
+  /* ─── 공통 표 ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+  }
+
+  th, td {
+    border: 1px solid #333;
+    padding: 9px 12px;
+    vertical-align: middle;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  thead th {
+    background: #f0f0f0;
+    font-weight: 700;
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .col-head {
+    background: #f7f7f7;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+    width: 80px;
+  }
+
+  .col-sub {
+    background: #fafafa;
+    font-weight: 600;
+    text-align: center;
+    width: 100px;
+  }
+
+  /* 강조 키워드 */
+  strong { font-weight: 700; }
+  .kw {
+    display: inline-block;
+    background: #111;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin: 0 2px;
+  }
+  .kw-blue {
+    background: #1e40af;
+  }
+  .kw-teal {
+    background: #0d9488;
+  }
+  .kw-violet {
+    background: #5b21b6;
+  }
+  .kw-red {
+    background: #b91c1c;
+  }
+
+  /* 화살표 흐름 */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+  }
+  .flow-step {
+    background: #111;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 3px;
+  }
+  .flow-step.bad { background: #b91c1c; }
+  .flow-step.good { background: #1e40af; }
+  .flow-step.break {
+    background: #fef9c3;
+    color: #92400e;
+    border: 1px solid #fde047;
+  }
+  .flow-arrow { font-size: 11px; color: #777; }
+
+  ul.feat-list {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+  }
+  ul.feat-list li {
+    padding: 2px 0;
+  }
+  ul.feat-list li::before {
+    content: '· ';
+    font-weight: 700;
+  }
+
+  /* 페이지 구분선 */
+  .page-div {
+    border: none;
+    border-top: 1px dashed #ccc;
+    margin: 40px 0;
+  }
+
+  .note {
+    font-size: 11px;
+    color: #777;
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="doc-title">1-2. 사업의 특장점</div>
+<div class="doc-caption">차별성 · 융합성 · 혁신성</div>
+
+<!-- ════════════════════════════════
+     1. 차별성
+════════════════════════════════ -->
+<div class="tbl-caption">&lt; 1) 차별성 — 추천을 넘어 '예약'까지 제공하는 AI 에이전트 기반 예약 플랫폼 &gt;</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:90px">구분</th>
+      <th style="width:160px">항목</th>
+      <th>내용</th>
+      <th style="width:180px">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-head" rowspan="3">문제 정의</td>
+      <td class="col-sub">시장 공백</td>
+      <td>해외 스포츠·공연·엔터테인먼트 티켓을 전문적으로 예약할 수 있는 통합 플랫폼 부재</td>
+      <td>국내외 동일 공백</td>
+    </tr>
+    <tr>
+      <td class="col-sub">기존 플랫폼 한계</td>
+      <td>검색·필터 기반 상품 나열 구조에 머물러 있어, 탐색 비용 과다 발생 및 구매 전환 단절</td>
+      <td>OTA, 글로벌 티켓사</td>
+    </tr>
+    <tr>
+      <td class="col-sub">기존 흐름</td>
+      <td>
+        <div class="flow">
+          <span class="flow-step bad">검색</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step bad">필터</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step bad">목록 나열</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step break">단절</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step bad">이탈</span>
+        </div>
+      </td>
+      <td>실질적 예약 실행 부재</td>
+    </tr>
+    <tr>
+      <td class="col-head" rowspan="4">ENTTIX<br>차별점</td>
+      <td class="col-sub">E2E 예약 흐름</td>
+      <td>
+        <div class="flow">
+          <span class="flow-step good">텍스트·음성 입력</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step good">AI 조건 분석</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step good">상품 큐레이션</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step good">예약·결제 페이지</span>
+          <span class="flow-arrow">→</span>
+          <span class="flow-step good">실시간 발권</span>
+        </div>
+      </td>
+      <td>End-to-End 단일 흐름 완결</td>
+    </tr>
+    <tr>
+      <td class="col-sub">단절 제거</td>
+      <td>검색 → 추천 → 예약 간 단절을 구조적으로 제거. 이탈 없이 예약 페이지로 즉시 연결</td>
+      <td>예약 매핑 엔진 탑재</td>
+    </tr>
+    <tr>
+      <td class="col-sub">구매 전환 개선</td>
+      <td>탐색 비용 제거 → 구매 전환율 구조적 개선</td>
+      <td>자연어 기반 입력</td>
+    </tr>
+    <tr>
+      <td class="col-sub">포지셔닝</td>
+      <td>AI가 단순 추천하는 서비스가 아닌, <strong>실제 예약·결제를 직접 실행하는 AI 에이전트 예약 플랫폼</strong></td>
+      <td>국내 최초 예약 실행형</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ════════════════════════════════
+     2. 융합성
+════════════════════════════════ -->
+<div class="tbl-caption">&lt; 2) 융합성 — 관광 × 엔터테인먼트 × AI × 글로벌 티켓 API의 유기적 결합 &gt;</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:90px">구분</th>
+      <th style="width:160px">융합 영역</th>
+      <th>핵심 내용</th>
+      <th style="width:180px">특징</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-head" rowspan="4">융합 요소</td>
+      <td class="col-sub">✈️ 관광 산업</td>
+      <td>
+        <ul class="feat-list">
+          <li>여행 일정 기반 콘텐츠 소비 연계</li>
+          <li>여행 계획 수립 시 예약 실행까지 연결</li>
+        </ul>
+      </td>
+      <td>여행 중 고관여 콘텐츠 소비 특화</td>
+    </tr>
+    <tr>
+      <td class="col-sub">🎭 엔터테인먼트</td>
+      <td>
+        <ul class="feat-list">
+          <li>해외 스포츠, 공연, 뮤지컬, 전시, 입장권 등</li>
+          <li>고객단가 높은 콘텐츠 중심 상품 구성</li>
+        </ul>
+      </td>
+      <td>고관여·고객단가 콘텐츠 집중</td>
+    </tr>
+    <tr>
+      <td class="col-sub">🧠 AI 기술</td>
+      <td>
+        <ul class="feat-list">
+          <li>자연어 이해 기반 여행 큐레이션</li>
+          <li>예약 실행형 AI 에이전트 구현</li>
+        </ul>
+      </td>
+      <td>추천→예약 연결 핵심 기술</td>
+    </tr>
+    <tr>
+      <td class="col-sub">🌐 글로벌 유통</td>
+      <td>
+        <ul class="feat-list">
+          <li>해외 엔터테인먼트 티켓 API 연동</li>
+          <li>실시간 재고·가격 데이터 활용</li>
+        </ul>
+      </td>
+      <td>실시간 발권 인프라 확보</td>
+    </tr>
+    <tr>
+      <td class="col-head" rowspan="2">융합<br>결과</td>
+      <td class="col-sub">매출 구조</td>
+      <td>관광 소비의 실제 결제 지점까지 AI가 관여 → 관광산업과 콘텐츠산업을 <strong>실질적인 매출 구조로 융합</strong></td>
+      <td>관광 × 콘텐츠 융합 수익화</td>
+    </tr>
+    <tr>
+      <td class="col-sub">융합성 요약</td>
+      <td>단순 정보 제공·큐레이션을 넘어, <strong>관광 소비의 실제 결제 지점까지 AI가 관여하는 구조</strong> — 4개 산업·기술의 교차점에서 탄생</td>
+      <td>국내 유일 4중 융합 플랫폼</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ════════════════════════════════
+     3. 혁신성
+════════════════════════════════ -->
+<div class="tbl-caption">&lt; 3) 혁신성 — 'AI 추천 서비스'가 아닌 'AI 예약 엔진' 구현 &gt;</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:90px">구분</th>
+      <th style="width:160px">기술 파이프라인</th>
+      <th>기능 설명</th>
+      <th style="width:180px">혁신 포인트</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-head" rowspan="5">자체 기술<br>파이프라인</td>
+      <td class="col-sub">⚙️ 도메인 특화<br>AI 파이프라인</td>
+      <td>여행·티켓 도메인에 최적화된 프롬프트 엔지니어링 및 응답 구조화 로직 자체 설계. 예약 실행에 특화된 응답 생성</td>
+      <td>예약 실행 특화 응답 구조</td>
+    </tr>
+    <tr>
+      <td class="col-sub">📡 실시간 데이터<br>주입 (RAG)</td>
+      <td>글로벌 티켓 API의 실시간 재고·가격 데이터를 AI 컨텍스트에 동적으로 주입하여 실제 예약 가능한 상품만 추천</td>
+      <td>AI 환각(Hallucination) 방지</td>
+    </tr>
+    <tr>
+      <td class="col-sub">🔗 예약 매핑<br>엔진</td>
+      <td>AI 추천 결과를 해당 상품의 예약·결제 페이지와 실시간 연결하는 자체 엔진. 추천과 예약 사이의 이탈 구조적 제거</td>
+      <td>추천→예약 이탈 Zero 구조</td>
+    </tr>
+    <tr>
+      <td class="col-sub">📊 노출 최적화<br>로직</td>
+      <td>재고 가용성 · 마진율 · 사용자 선호도를 복합 반영한 자체 랭킹 알고리즘으로 전환율과 수익성 동시 최적화</td>
+      <td>전환율 + 수익성 동시 최적화</td>
+    </tr>
+    <tr>
+      <td class="col-sub">혁신성 요약</td>
+      <td>AI를 보조 기능이 아닌 <strong>예약 주체(Agent)로 설계</strong> — 입력부터 발권까지 단일 흐름으로 완결되는 자체 E2E 예약 엔진 보유</td>
+      <td>AI = 예약 실행 주체</td>
+    </tr>
+    <tr>
+      <td class="col-head" rowspan="3">구현 효과</td>
+      <td class="col-sub">정확도</td>
+      <td>RAG 기반 실시간 데이터 주입으로 실제 예약 가능한 상품만 추천 → 환각 방지 및 신뢰도 확보</td>
+      <td>실시간 재고 기반</td>
+    </tr>
+    <tr>
+      <td class="col-sub">연속성</td>
+      <td>입력 → 분석 → 큐레이션 → 예약·결제까지 단절 없이 단일 흐름으로 완결</td>
+      <td>End-to-End 단일 흐름</td>
+    </tr>
+    <tr>
+      <td class="col-sub">수익성</td>
+      <td>노출 최적화 로직으로 마진율·전환율을 동시에 반영 → 플랫폼 수익 구조 자동 최적화</td>
+      <td>자체 랭킹 알고리즘</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="note" style="text-align:center; margin-top: 16px;">— ENTTIX 사업계획서 —</p>
+
+</body>
+</html>

@@ -16,7 +16,7 @@ function OrderSuccessContent() {
 
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
-      <div className="bg-[#0F172A]"><Header /></div>
+      <div className="bg-[#0F172A]"><Header hideSearch /></div>
 
       <div className="max-w-[560px] mx-auto px-4 py-16 text-center">
         {/* Success Icon */}
@@ -97,7 +97,7 @@ export default function OrderSuccessPage() {
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-[#F5F7FA]">
-        <div className="bg-[#0F172A]"><Header /></div>
+        <div className="bg-[#0F172A]"><Header hideSearch /></div>
         <div className="flex items-center justify-center py-32">
           <div className="text-[18px] font-semibold text-[#9CA3AF] animate-pulse">Loading...</div>
         </div>
