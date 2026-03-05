@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/Header';
+import { useTranslations } from 'next-intl';
 
 /* ─── LTD EVENT TYPE ────────────────────────────────────────── */
 interface LTDEvent {
@@ -234,12 +235,13 @@ export default function MusicalListClient({
   displayName: string;
   eventType: number | null;
 }) {
+  const t = useTranslations('musical');
   const [events, setEvents] = useState<LTDEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayCount, setDisplayCount] = useState(24);
   const [sort, setSort] = useState<SortKey>('popular');
-  const [searchQuery, setSearchQuery] = useState('');   // 실제 필터 적용값
-  const [inputValue, setInputValue] = useState('');     // 입력창 표시값
+  const [searchQuery, setSearchQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
   const [isDragging, setIsDragging] = useState(false);
@@ -567,9 +569,9 @@ export default function MusicalListClient({
               onChange={e => { setSort(e.target.value as SortKey); setDisplayCount(24); }}
               className="text-[12px] font-semibold text-[#374151] border border-[#E5E7EB] rounded-lg px-3 py-1.5 outline-none focus:border-[#2B7FFF] cursor-pointer bg-white"
             >
-              <option value="popular">Popular</option>
-              <option value="price_asc">Price ↑</option>
-              <option value="price_desc">Price ↓</option>
+              <option value="popular">{t('sort_popular')}</option>
+              <option value="price_asc">{t('sort_price_asc')}</option>
+              <option value="price_desc">{t('sort_price_desc')}</option>
             </select>
           </div>
         </div>
@@ -603,7 +605,7 @@ export default function MusicalListClient({
           </>
         ) : (
           <div className="text-center py-20">
-            <p className="text-[#94A3B8] text-[18px] mb-3">No shows found</p>
+            <p className="text-[#94A3B8] text-[18px] mb-3">{t('no_shows')}</p>
             <button
               onClick={() => { setActiveCategory(0); setSearchQuery(''); setInputValue(''); }}
               className="text-[#2B7FFF] text-[14px] hover:underline"

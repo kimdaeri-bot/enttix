@@ -5,8 +5,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
+  const t = useTranslations('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -88,12 +90,12 @@ export default function LoginPage() {
           {/* Email Form */}
           <form onSubmit={handleEmailAuth} className="flex flex-col gap-4">
             <div>
-              <label className="text-[13px] font-semibold text-[#374151] mb-1.5 block">Email</label>
+              <label className="text-[13px] font-semibold text-[#374151] mb-1.5 block">{t('email')}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="example@email.com"
+                placeholder={t('email_placeholder')}
                 className="w-full px-4 py-3 rounded-[12px] border border-[#E5E7EB] text-[14px] outline-none focus:border-[#2B7FFF] focus:ring-2 focus:ring-[#2B7FFF]/20 transition-all"
                 required
               />

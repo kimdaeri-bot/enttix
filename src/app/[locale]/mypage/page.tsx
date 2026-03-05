@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 interface SavedTrip {
   id: string;
@@ -34,6 +35,7 @@ interface Order {
 }
 
 function MyPageInner() {
+  const t = useTranslations('mypage');
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -140,7 +142,7 @@ function MyPageInner() {
         <div className="bg-white rounded-[20px] p-6 md:p-8 shadow-lg border border-[#E5E7EB]">
           {/* Header + Tabs */}
           <div className="flex items-center justify-between mb-5">
-            <h1 className="text-[24px] font-bold text-[#171717]">My Account</h1>
+            <h1 className="text-[24px] font-bold text-[#171717]">{t('title')}</h1>
             <p className="text-[12px] text-[#94A3B8]">{user?.email}</p>
           </div>
           <div className="flex gap-1 mb-6 bg-[#F1F5F9] p-1 rounded-xl w-fit">
@@ -168,8 +170,8 @@ function MyPageInner() {
               ) : orders.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-[48px] mb-3">🎫</p>
-                  <p className="text-[16px] font-semibold text-[#374151] mb-1">No orders yet</p>
-                  <p className="text-[13px] text-[#94A3B8] mb-4">Book tickets to see your orders here.</p>
+                  <p className="text-[16px] font-semibold text-[#374151] mb-1">{t('no_orders')}</p>
+                  <p className="text-[13px] text-[#94A3B8] mb-4">{t('no_orders_sub')}</p>
                   <button onClick={() => router.push('/')} className="px-5 py-2.5 bg-[#2B7FFF] text-white text-[13px] font-semibold rounded-lg hover:bg-[#1D6AE5] transition-colors">
                     Browse Events
                   </button>
@@ -405,8 +407,8 @@ function MyPageInner() {
           ) : trips.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-[48px] mb-3">✈️</p>
-              <p className="text-[16px] font-semibold text-[#374151] mb-1">No saved trips yet</p>
-              <p className="text-[13px] text-[#94A3B8] mb-4">Search for a destination and save your AI-generated itinerary!</p>
+              <p className="text-[16px] font-semibold text-[#374151] mb-1">{t('no_trips')}</p>
+              <p className="text-[13px] text-[#94A3B8] mb-4">{t('no_trips_sub')}</p>
               <button onClick={() => router.push('/')} className="px-5 py-2.5 bg-[#2B7FFF] text-white text-[13px] font-semibold rounded-lg hover:bg-[#1D6AE5] transition-colors">
                 Plan a Trip
               </button>

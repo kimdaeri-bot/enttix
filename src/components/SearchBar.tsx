@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useTranslations } from 'next-intl';
 
 function isPlannerQuery(q: string): boolean {
   const lower = q.toLowerCase();
@@ -80,6 +81,7 @@ function buildMapsUrl(name: string, city: string): string {
 }
 
 export default function SearchBar({ compact = false, fullWidth = false, inline = false }: { compact?: boolean; fullWidth?: boolean; inline?: boolean }) {
+  const t = useTranslations('search');
   const router = useRouter();
   const { user } = useAuth();
   const [expanded, setExpanded] = useState(true);
@@ -507,10 +509,10 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                           {evPrice ? (
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-[#2B7FFF] font-bold text-[13px]">From {evCurrency}{evPrice}</span>
-                              <span className="text-[9px] text-[#10B981] bg-[#ECFDF5] px-1.5 py-0.5 rounded font-semibold">AVAILABLE</span>
+                              <span className="text-[9px] text-[#10B981] bg-[#ECFDF5] px-1.5 py-0.5 rounded font-semibold">{t('available')}</span>
                             </div>
                           ) : (
-                            <span className="text-[11px] text-[#94A3B8] mt-1 inline-block">Price TBD</span>
+                            <span className="text-[11px] text-[#94A3B8] mt-1 inline-block">{t('price_tbd')}</span>
                           )}
                         </div>
 
@@ -553,7 +555,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                 </div>
               )}
               {aiResult.isMusicalQuery && (!aiResult.ltdEvents || aiResult.ltdEvents.length === 0) && (!aiResult.events || aiResult.events.length === 0) && (
-                <p className="text-[#94A3B8] text-[13px]">No matching shows found</p>
+                <p className="text-[#94A3B8] text-[13px]">{t('no_shows')}</p>
               )}
 
               {/* Tiqets Attraction Results */}
@@ -619,7 +621,7 @@ export default function SearchBar({ compact = false, fullWidth = false, inline =
                 (!aiResult.events || aiResult.events.length === 0) &&
                 (!aiResult.tiqetsResults || aiResult.tiqetsResults.length === 0) &&
                 (!aiResult.tmResults || aiResult.tmResults.length === 0) && (
-                <p className="text-[#94A3B8] text-[13px]">No matching results found</p>
+                <p className="text-[#94A3B8] text-[13px]">{t('no_results')}</p>
               )}
             </div>
           </div>

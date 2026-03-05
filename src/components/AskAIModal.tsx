@@ -1,9 +1,11 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 // Button that opens the Ask AI modal — used in hero and filter bars
 export function AskAIButton({ variant = 'default' }: { variant?: 'default' | 'pill' | 'filter' }) {
+  const t = useTranslations('common');
   const [open, setOpen] = useState(false);
 
   const styles = {
@@ -18,7 +20,7 @@ export function AskAIButton({ variant = 'default' }: { variant?: 'default' | 'pi
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
           <path d="M12 2L14.09 8.26L20 9.27L15.55 13.97L16.91 20L12 16.9L7.09 20L8.45 13.97L4 9.27L9.91 8.26L12 2Z" fill="currentColor" opacity="0.9"/>
         </svg>
-        Ask AI
+        {t('ask_ai')}
       </button>
       {open && <AskAiModal onClose={() => setOpen(false)} />}
     </>
