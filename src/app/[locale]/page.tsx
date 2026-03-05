@@ -13,7 +13,7 @@ const LEAGUE_TABS = [
   { id: 'bundesliga', label: 'BUNDESLIGA', img: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=200&h=200&fit=crop' },
   { id: 'seriea', label: 'SERIE A', img: 'https://images.unsplash.com/photo-1553778263-73a83bab9b0c?w=200&h=200&fit=crop' },
   { id: 'ligue1', label: 'LIGUE 1', img: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=200&h=200&fit=crop' },
-  { id: 'ucl', label: 'CHAMPIONS\nLEAGUE', img: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=200&h=200&fit=crop' },
+  { id: 'ucl', label: 'CHAMPIONS\nLEAGUE', img: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=200&h=200&fit=crop' },
   { id: 'f1', label: 'FORMULA 1', img: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=200&h=200&fit=crop' },
   { id: 'nba', label: 'NBA', img: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&h=200&fit=crop' },
 ];
@@ -25,7 +25,7 @@ const STADIUM_IMAGES = [
   'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&h=600&fit=crop',
   'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=500&h=600&fit=crop',
   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=500&h=600&fit=crop',
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=500&h=600&fit=crop',
 ];
 
 const SPORTS_IMAGES = [

@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { LangSwitcher } from './LangSwitcher';
 const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
 
 const sportsItems = [
@@ -301,6 +303,7 @@ function AttractionsDropdown({ onClose }: { onClose: () => void }) {
 }
 
 export default function Header({ transparent = false, hideSearch = false }: { transparent?: boolean; hideSearch?: boolean }) {
+  const t = useTranslations('nav');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -409,6 +412,9 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             )}
           </Link>
 
+          {/* 언어 전환 */}
+          <LangSwitcher />
+
           {user ? (
             <div className="relative">
               <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-white/10 transition-colors">
@@ -430,9 +436,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
               Sign In
             </Link>
           )}
-          <Link href="/sell" className="ml-2 px-5 py-2.5 rounded-[8px] bg-[#2B7FFF] hover:bg-[#1D6AE5] text-white text-[14px] font-semibold transition-colors">
-            Sell Tickets
-          </Link>
+          {/* Sell Tickets button removed */}
         </nav>
 
         <button
@@ -551,11 +555,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
 
-          <div className="px-4 mt-4">
-            <Link href="/sell" className="block px-4 py-3 text-center text-[15px] font-semibold text-white bg-[#2B7FFF] rounded-[10px]" onClick={() => setMobileOpen(false)}>
-              Sell Tickets
-            </Link>
-          </div>
+          {/* Sell Tickets button removed */}
         </div>
       )}
     </header>

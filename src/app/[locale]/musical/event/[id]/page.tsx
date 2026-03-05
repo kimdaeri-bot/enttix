@@ -431,6 +431,26 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <p className="text-[#78350F] text-[13px] leading-relaxed">{event.ImportantNotice}</p>
                     </div>
                   )}
+
+                  {/* Seating Plan */}
+                  {event.VenueSeatingPlanUrl && (
+                    <div>
+                      <h3 className="text-[15px] font-bold text-[#0F172A] mb-3 flex items-center gap-2">
+                        🪑 좌석 배치도
+                        {venueName && <span className="text-[12px] font-normal text-[#64748B]">— {venueName}</span>}
+                      </h3>
+                      <div className="rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC]">
+                        <img
+                          src={event.VenueSeatingPlanUrl}
+                          alt={`${venueName || event.Name} seating plan`}
+                          className="w-full object-contain max-h-[600px]"
+                        />
+                      </div>
+                      <p className="text-[11px] text-[#94A3B8] mt-2 text-center">
+                        실제 좌석 배치는 공연장 사정에 따라 다를 수 있습니다
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -664,7 +684,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                       <button
                         onClick={() => {
                           if (selectedPerf) {
-                            router.push(`/musical/book/${selectedPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event?.Name || '')}&price=${selectedPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}`);
+                            router.push(`/musical/book/${selectedPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event?.Name || '')}&price=${selectedPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}&seatmap=${encodeURIComponent(event?.VenueSeatingPlanUrl || '')}`);
                           } else if (timesForDate.length === 1) {
                             selectTime(timesForDate[0]);
                           }
@@ -958,7 +978,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                     onClick={() => {
                       if (!sheetPerf) return;
                       setShowCalSheet(false);
-                      router.push(`/musical/book/${sheetPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event.Name)}&price=${sheetPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}&date=${encodeURIComponent(sheetPerf.PerformanceDate)}`);
+                      router.push(`/musical/book/${sheetPerf.PerformanceId}?eventId=${id}&eventName=${encodeURIComponent(event.Name)}&price=${sheetPerf.MinimumTicketPrice}&venue=${encodeURIComponent(venueName)}&date=${encodeURIComponent(sheetPerf.PerformanceDate)}&seatmap=${encodeURIComponent(event.VenueSeatingPlanUrl || '')}`);
                     }}
                     className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all ${
                       sheetPerf

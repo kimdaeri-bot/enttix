@@ -113,6 +113,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const minPrice = params.get('price') || '0';
   const venue = params.get('venue') || '';
   const dateParam = params.get('date') || '';
+  const seatmapUrl = params.get('seatmap') || '';
 
   /* Step state */
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -492,6 +493,23 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             )}
           </div>
         </div>
+
+        {/* Seating Plan Image */}
+        {seatmapUrl && (
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
+            <div className="px-5 py-3 border-b border-[#F1F5F9]">
+              <h3 className="text-[14px] font-bold text-[#0F172A]">🪑 좌석 배치도</h3>
+              <p className="text-[11px] text-[#94A3B8] mt-0.5">{venue}</p>
+            </div>
+            <div className="p-3 bg-[#F8FAFC]">
+              <img
+                src={seatmapUrl}
+                alt="좌석 배치도"
+                className="w-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Basket create error */}
         {basketCreateError && (
