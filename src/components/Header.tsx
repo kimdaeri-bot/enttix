@@ -5,7 +5,7 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { LangSwitcher } from './LangSwitcher';
+import { LangSwitcher, MobileLangPicker } from './LangSwitcher';
 const SearchBar = dynamic(() => import('./SearchBar'), { ssr: false });
 
 const sportsItems = [
@@ -555,7 +555,11 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
             <Link href="/planner" className="flex items-center px-3 py-3.5 text-[15px] font-semibold text-[#DBEAFE]" onClick={() => setMobileOpen(false)}>✨ Planner</Link>
           </div>
 
-          {/* Sell Tickets button removed */}
+          {/* 언어 선택 */}
+          <div className="px-4 pt-4">
+            <p className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mb-2">🌐 Language</p>
+            <MobileLangPicker onClose={() => setMobileOpen(false)} />
+          </div>
         </div>
       )}
     </header>

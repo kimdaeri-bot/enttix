@@ -4,6 +4,38 @@ import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { useState, useRef, useEffect } from 'react';
 
+/* ── 모바일 전용: 그리드 형태 언어 선택 ─────────────────────── */
+export function MobileLangPicker({ onClose }: { onClose?: () => void }) {
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const switchTo = (code: string) => {
+    router.push(pathname, { locale: code });
+    onClose?.();
+  };
+
+  return (
+    <div className="grid grid-cols-5 gap-1.5">
+      {LANGS.map(l => (
+        <button
+          key={l.code}
+          onClick={() => switchTo(l.code)}
+          className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-xl text-center transition-colors
+            ${l.code === locale
+              ? 'bg-[#2B7FFF] text-white'
+              : 'bg-white/10 text-[#DBEAFE] hover:bg-white/20'}`}
+        >
+          <span className="text-[18px] leading-none">{l.flag}</span>
+          <span className="text-[9px] font-semibold leading-none mt-0.5 truncate w-full text-center">
+            {l.code === 'zh-TW' ? '繁體' : l.code === 'zh' ? '简体' : l.code.toUpperCase()}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const LANGS = [
   { code: 'en',    label: 'English',     flag: '🇬🇧' },
   { code: 'ko',    label: '한국어',       flag: '🇰🇷' },
