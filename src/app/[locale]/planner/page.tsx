@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -71,6 +72,7 @@ function getAttractionIcon(item: PlannerItem): string {
 }
 
 function PlannerContent() {
+  const tr = useTranslations('planner');
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
 
@@ -240,8 +242,8 @@ function PlannerContent() {
         <div className="max-w-[680px] mx-auto px-4 pb-16">
           <div className="flex flex-col items-center gap-4 py-20">
             <div className="w-12 h-12 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-            <p className="text-[#64748B] text-[15px]">Planning your perfect trip...</p>
-            <p className="text-[#94A3B8] text-[13px]">This may take a few seconds</p>
+            <p className="text-[#64748B] text-[15px]">{tr('planning')}</p>
+            <p className="text-[#94A3B8] text-[13px]">{tr('may_take')}</p>
           </div>
         </div>
       )}
@@ -460,7 +462,7 @@ function PlannerContent() {
                               </div>
                             ) : isMusicalExpanded ? (
                               <div className="text-center py-8">
-                                <p className="text-[#94A3B8] text-[13px] mb-3">No upcoming performances found</p>
+                                <p className="text-[#94A3B8] text-[13px] mb-3">{tr('no_performances')}</p>
                                 <a href={`/musical/event/${item.musical_event_id}`} className="text-[#7C3AED] text-[13px] font-semibold hover:underline">
                                   Check availability →
                                 </a>
@@ -524,7 +526,7 @@ function PlannerContent() {
                                         <p className="text-[#0F172A] font-extrabold text-[20px] leading-tight">
                                           {t.currency || '$'}{t.price || '—'}
                                         </p>
-                                        <p className="text-[#94A3B8] text-[11px]">per ticket</p>
+                                        <p className="text-[#94A3B8] text-[11px]">{tr('per_ticket')}</p>
                                       </div>
                                     </div>
                                   </div>

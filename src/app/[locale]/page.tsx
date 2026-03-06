@@ -5,6 +5,7 @@ import NewlyAddedCard from '@/components/NewlyAddedCard';
 import MatchRow from '@/components/MatchRow';
 import Link from 'next/link';
 import { getMatches, demoData } from '@/lib/api';
+import { getTranslations } from 'next-intl/server';
 import SearchBar from '@/components/SearchBar';
 
 const LEAGUE_TABS = [
@@ -72,6 +73,7 @@ const MAN_CITY_MATCH = {
 };
 
 export default async function Home() {
+  const t = await getTranslations('home');
   const apiMatches = await getMatches({ has_listing: 'true', per_page: '10' });
   // Man City 맨 앞에 추가, 중복 제거
   const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
@@ -155,7 +157,7 @@ export default async function Home() {
         <section className="pb-12 md:pb-20 px-4 md:px-[55.5px]">
           <div className="max-w-[1280px] mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[22px] font-bold text-[#171717]">Trending Events 🔥</h2>
+              <h2 className="text-[22px] font-bold text-[#171717]">{t('trending')}</h2>
               <div className="flex items-center gap-2">
                 <button className="w-8 h-8 rounded-full bg-[#0F172A] flex items-center justify-center text-white hover:bg-[#1E293B] transition-colors">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -191,7 +193,7 @@ export default async function Home() {
         <div className="max-w-[1280px] mx-auto">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h2 className="text-[22px] font-bold text-[#171717]">Match Schedule</h2>
+              <h2 className="text-[22px] font-bold text-[#171717]">{t('match_schedule')}</h2>
               <div className="w-12 h-1 bg-[#2B7FFF] rounded-full mt-1" />
             </div>
             <Link href="/all-tickets" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
@@ -201,10 +203,10 @@ export default async function Home() {
 
           {/* Grid Header */}
           <div className="hidden md:grid grid-cols-[60px_1fr_200px_120px_40px] gap-4 px-6 pb-3 mt-6 text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] border-b border-[#E5E7EB]">
-            <span>EVENT</span>
+            <span>{t('event')}</span>
             <span></span>
-            <span>LOCATION</span>
-            <span className="text-right">TICKET PRICE</span>
+            <span>{t('location')}</span>
+            <span className="text-right">{t('price')}</span>
             <span></span>
           </div>
 
@@ -233,7 +235,7 @@ export default async function Home() {
         <div className="max-w-[1280px] mx-auto">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-[22px] font-bold text-[#171717]">Newly Added</h2>
+              <h2 className="text-[22px] font-bold text-[#171717]">{t('newly_added')}</h2>
               <div className="w-12 h-1 bg-[#2B7FFF] rounded-full mt-1" />
             </div>
             <div className="flex items-center gap-2">
@@ -267,7 +269,7 @@ export default async function Home() {
         <div className="max-w-[1280px] mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-[24px] font-bold text-[#171717]">Popular Cities</h2>
+              <h2 className="text-[24px] font-bold text-[#171717]">{t('popular_cities')}</h2>
               <div className="w-12 h-1 bg-[#2B7FFF] rounded-full mt-1" />
             </div>
             <Link href="/attractions" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
@@ -299,7 +301,7 @@ export default async function Home() {
       {/* Customer Reviews */}
       <section className="py-12 md:py-20 px-4 border-t border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto">
-          <h2 className="text-[24px] font-bold text-[#171717] text-center mb-10">What Our Fans Say</h2>
+          <h2 className="text-[24px] font-bold text-[#171717] text-center mb-10">{t('fans_say')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             {REVIEWS.map(review => (
               <div key={review.name} className="bg-white rounded-[16px] p-6 border border-[#E5E7EB]">

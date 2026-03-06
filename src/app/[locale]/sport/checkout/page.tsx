@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
+import { useTranslations } from 'next-intl';
 import SeatMap from '@/components/SeatMap';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -10,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
 function CheckoutContent() {
+  const t = useTranslations('checkout');
   const router = useRouter();
   const params = useSearchParams();
 
@@ -235,12 +237,12 @@ function CheckoutContent() {
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </Link>
-          <h1 className="text-[22px] font-extrabold text-[#171717]">Checkout</h1>
+          <h1 className="text-[22px] font-extrabold text-[#171717]">{t('title')}</h1>
         </div>
 
         {/* Order Summary Card */}
         <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
-          <h2 className="text-[15px] font-bold text-[#171717] mb-4">Order Summary</h2>
+          <h2 className="text-[15px] font-bold text-[#171717] mb-4">{t('order_summary')}</h2>
 
           {/* Tixstock-style detail table */}
           <div className="divide-y divide-[#F1F5F9] text-[13px]">
@@ -280,11 +282,11 @@ function CheckoutContent() {
               <span className="flex-1 text-[#171717] font-semibold">£{price.toFixed(2)}</span>
             </div>
             <div className="flex py-2.5 gap-3">
-              <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">Additional charges</span>
+              <span className="w-[130px] flex-shrink-0 text-[#6B7280] font-medium">{t('additional_charges')}</span>
               <span className="flex-1 text-[#171717] font-semibold">£0</span>
             </div>
             <div className="flex py-2.5 gap-3 bg-[#F8FAFC] -mx-6 px-6 rounded-b-[10px]">
-              <span className="w-[130px] flex-shrink-0 text-[#374151] font-bold">Total proceeds</span>
+              <span className="w-[130px] flex-shrink-0 text-[#374151] font-bold">{t('total_proceeds')}</span>
               <span className="flex-1 text-[#171717] font-extrabold text-[15px]">£{grandTotal}</span>
             </div>
           </div>
@@ -303,7 +305,7 @@ function CheckoutContent() {
         {/* Seat Location Card */}
         {(mapUrl || section) && (
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
-            <h2 className="text-[15px] font-bold text-[#171717] mb-4">Your Seat Location</h2>
+            <h2 className="text-[15px] font-bold text-[#171717] mb-4">{t('seat_location')}</h2>
             <SeatMap
               venueName={venue || 'Venue'}
               mapUrl={mapUrl || undefined}
@@ -318,11 +320,11 @@ function CheckoutContent() {
         {/* Customer Info Form */}
         <form onSubmit={handleConfirmOrder}>
           <div className="bg-white rounded-[16px] border border-[#E5E7EB] p-6 mb-5">
-            <h2 className="text-[15px] font-bold text-[#171717] mb-4">Your Details</h2>
+            <h2 className="text-[15px] font-bold text-[#171717] mb-4">{t('your_details')}</h2>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="text-[12px] font-semibold text-[#374151] mb-1 block">First Name *</label>
+                <label className="text-[12px] font-semibold text-[#374151] mb-1 block">{t('first_name')}</label>
                 <input
                   type="text"
                   name="firstName"
@@ -334,7 +336,7 @@ function CheckoutContent() {
                 />
               </div>
               <div>
-                <label className="text-[12px] font-semibold text-[#374151] mb-1 block">Last Name *</label>
+                <label className="text-[12px] font-semibold text-[#374151] mb-1 block">{t('last_name')}</label>
                 <input
                   type="text"
                   name="lastName"
@@ -348,7 +350,7 @@ function CheckoutContent() {
             </div>
 
             <div className="mb-3">
-              <label className="text-[12px] font-semibold text-[#374151] mb-1 block">Email Address *</label>
+              <label className="text-[12px] font-semibold text-[#374151] mb-1 block">{t('email_address')}</label>
               <input
                 type="email"
                 name="email"
@@ -361,7 +363,7 @@ function CheckoutContent() {
             </div>
 
             <div className="mb-5">
-              <label className="text-[12px] font-semibold text-[#374151] mb-1 block">Phone Number <span className="text-[#9CA3AF] font-normal">(optional)</span></label>
+              <label className="text-[12px] font-semibold text-[#374151] mb-1 block">{t('phone_number')} <span className="text-[#9CA3AF] font-normal">(optional)</span></label>
               <input
                 type="tel"
                 name="phone"
@@ -423,12 +425,13 @@ function CheckoutContent() {
 }
 
 export default function CheckoutPage() {
+  const t = useTranslations('checkout');
   return (
     <Suspense fallback={
       <main className="min-h-screen bg-[#F5F7FA]">
         <div className="bg-[#0F172A]"><Header hideSearch /></div>
         <div className="flex items-center justify-center py-32">
-          <div className="text-[18px] font-semibold text-[#9CA3AF] animate-pulse">Loading checkout...</div>
+          <div className="text-[18px] font-semibold text-[#9CA3AF] animate-pulse">{t('loading')}</div>
         </div>
       </main>
     }>

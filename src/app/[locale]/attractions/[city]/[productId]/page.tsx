@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -100,6 +101,7 @@ function RatingBar({ label, value, max = 5 }: { label: string; value: number; ma
 }
 
 export default function ProductDetailPage() {
+  const t = useTranslations('attractions');
   const params = useParams();
   const citySlug = params.city as string;
   const productId = params.productId as string;
@@ -249,7 +251,7 @@ export default function ProductDetailPage() {
       <div className="min-h-screen bg-white">
         <Header hideSearch />
         <div className="flex items-center justify-center h-64 flex-col gap-4">
-          <p className="text-[#64748B] text-[18px]">Product not found.</p>
+          <p className="text-[#64748B] text-[18px]">{t('not_found')}</p>
           <Link href={`/attractions/${citySlug}`} className="text-[#2B7FFF] hover:underline">
             ← Back to {cityInfo?.name || 'City'}
           </Link>
@@ -446,7 +448,7 @@ export default function ProductDetailPage() {
                     />
                   )}
                   {!product.tagline && !product.summary && !product.description && (
-                    <p className="text-[#94A3B8]">No description available.</p>
+                    <p className="text-[#94A3B8]">{t('no_description')}</p>
                   )}
                 </div>
               )}
@@ -467,7 +469,7 @@ export default function ProductDetailPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-[#94A3B8]">No highlights available.</p>
+                      <p className="text-[#94A3B8]">{t('no_highlights')}</p>
                     );
                   })()}
                 </div>
@@ -492,7 +494,7 @@ export default function ProductDetailPage() {
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-[#94A3B8] text-[13px]">Not specified.</p>
+                        <p className="text-[#94A3B8] text-[13px]">{t('not_specified')}</p>
                       );
                     })()}
                   </div>
@@ -555,7 +557,7 @@ export default function ProductDetailPage() {
                       </a>
                     </div>
                   ) : (
-                    <p className="text-[#94A3B8] py-8">No reviews yet.</p>
+                    <p className="text-[#94A3B8] py-8">{t('no_reviews')}</p>
                   )}
                 </div>
               )}
@@ -568,11 +570,11 @@ export default function ProductDetailPage() {
               <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xl overflow-hidden">
                 {/* Price header */}
                 <div className="bg-gradient-to-r from-[#0F172A] to-[#1a2f5a] p-6">
-                  <p className="text-white/60 text-[13px] mb-1">Starting from</p>
+                  <p className="text-white/60 text-[13px] mb-1">{t('starting_from')}</p>
                   <p className="text-[42px] font-extrabold text-white leading-none">
                     ${priceInt}
                   </p>
-                  <p className="text-white/50 text-[12px] mt-1">per person · USD</p>
+                  <p className="text-white/50 text-[12px] mt-1">{t('per_person')} · USD</p>
                 </div>
 
                 <div className="p-6">
@@ -659,12 +661,12 @@ export default function ProductDetailPage() {
                       {/* 범례 */}
                       {!availLoading && Object.keys(availMap).length > 0 && (
                         <div className="flex items-center gap-3 mt-2 px-1 text-[10px] text-[#94A3B8]">
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block"/>Available</span>
-                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>Limited</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-400 inline-block"/>{t('available')}</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400 inline-block"/>{t('limited')}</span>
                         </div>
                       )}
                       {availLoading && (
-                        <p className="text-center text-[10px] text-[#94A3B8] mt-1 animate-pulse">Loading availability…</p>
+                        <p className="text-center text-[10px] text-[#94A3B8] mt-1 animate-pulse">{t('loading')}</p>
                       )}
                     </div>
                   </div>
@@ -672,7 +674,7 @@ export default function ProductDetailPage() {
                   {/* 타임슬롯 선택 */}
                   {selectedDate && availMap[selectedDate]?.timeslots?.length > 0 && (
                     <div className="mb-3">
-                      <p className="text-[11px] font-semibold text-[#374151] mb-2">Select a time:</p>
+                      <p className="text-[11px] font-semibold text-[#374151] mb-2">{t('select_time')}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {availMap[selectedDate].timeslots.map(t => (
                           <button

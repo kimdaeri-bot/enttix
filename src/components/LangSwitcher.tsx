@@ -1,7 +1,7 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/navigation';
 import { useState, useRef, useEffect } from 'react';
 
 const LANGS = [
@@ -17,17 +17,13 @@ const LANGS = [
   { code: 'ar',    label: 'العربية',     flag: '🇸🇦' },
 ];
 
-// 지원 locale 코드 목록
-const LOCALE_CODES = LANGS.map(l => l.code);
-
 export function LangSwitcher() {
   const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname();   // next-intl: locale prefix 없는 순수 경로
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // 외부 클릭 시 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -37,15 +33,8 @@ export function LangSwitcher() {
   }, []);
 
   const switchTo = (code: string) => {
-    // 현재 pathname에서 locale prefix 제거
-    const segments = pathname.split('/');
-    const hasLocale = LOCALE_CODES.includes(segments[1]);
-    const rest = hasLocale ? '/' + segments.slice(2).join('/') : pathname;
-    const cleanRest = rest === '/' ? '' : rest;
-
-    // 기본 locale(en)은 prefix 없음, 나머지는 /코드 붙임
-    const newPath = code === 'en' ? (cleanRest || '/') : `/${code}${cleanRest || '/'}`;
-    router.push(newPath);
+    // next-intl router.push(pathname, { locale }) 이 자동으로 prefix 처리
+    router.push(pathname, { locale: code });
     setOpen(false);
   };
 
