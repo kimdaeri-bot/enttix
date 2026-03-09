@@ -436,6 +436,13 @@ function PlannerContent() {
                             >
                               🎫 {item.price ? `From £${item.price}` : 'View Tickets'}
                             </Link>
+                          ) : item.type === 'event' && !item.event_id && item.attraction_url ? (
+                            <a
+                              href={item.attraction_url}
+                              className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE] transition-all whitespace-nowrap"
+                            >
+                              🎫 {item.price ? `From £${item.price}` : 'View Tickets'}
+                            </a>
                           ) : item.type === 'event' && !item.event_id && item.bookable ? (
                             <button
                               onClick={() => handleInlineSearch(key, item.name, plan!.city)}
@@ -459,6 +466,13 @@ function PlannerContent() {
                               >
                                 🎭 {item.price ? `From £${item.price}` : 'Book Musical'}
                               </button>
+                            ) : item.attraction_url ? (
+                              <a
+                                href={item.attraction_url}
+                                className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#F5F3FF] text-[#7C3AED] hover:bg-[#EDE9FE] transition-colors"
+                              >
+                                🎭 {item.price ? `From £${item.price}` : 'Book Now'}
+                              </a>
                             ) : (
                               <button
                                 onClick={() => handleInlineSearch(key, item.name, plan!.city)}

@@ -4,6 +4,18 @@ import { getAttractionsByCity, getEveningAttractions, matchAttraction, normalize
 const TIXSTOCK_BASE = process.env.TIXSTOCK_BASE_URL!;
 const TIXSTOCK_TOKEN = process.env.TIXSTOCK_TOKEN!;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY!;
+const TIQETS_TOKEN = process.env.TIQETS_TOKEN!;
+const TM_KEY = process.env.TICKETMASTER_API_KEY || '';
+
+const TIQETS_CITY_IDS: Record<string, number> = {
+  'london': 67458, 'paris': 66746, 'barcelona': 66342, 'rome': 71631,
+  'amsterdam': 75061, 'new york': 260932, 'dubai': 60005, 'istanbul': 79079,
+  'singapore': 78125, 'tokyo': 72181, 'florence': 71854, 'lisbon': 76528,
+  'venice': 71510, 'berlin': 65144, 'milan': 71749, 'sydney': 60400,
+  'athens': 99239, 'bangkok': 78586, 'edinburgh': 21, 'dublin': 68616,
+  'prague': 64162, 'madrid': 66254, 'vienna': 60335, 'osaka': 28,
+  'kyoto': 72420, 'seoul': 73067, 'budapest': 68199, 'brussels': 60843,
+};
 
 interface PlannerItem {
   time: string;
@@ -19,6 +31,7 @@ interface PlannerItem {
   attraction_url?: string | null;
   attraction_price?: number | null;
   attraction_currency?: string | null;
+  booking_url?: string | null;
 }
 
 interface PlannerDay {
@@ -493,6 +506,89 @@ CONTENT RULES:
         usedEventIds.add(evId);
       }
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Step 7: Proactive URL injection for still-unmatched bookable items
+    // Run Tiqets (attractions) + Ticketmaster (events/musicals) in parallel
+    // ─────────────────────────────────────────────────────────────
+    const cityLower = plan.city.toLowerCase();
+    const tiqetsCityId = TIQETS_CITY_IDS[cityLower];
+
+    const unmatched: Array<{ di: number; ii: number; item: PlannerItem; day: PlannerDay }> = [];
+    for (let di = 0; di < plan.days.length; di++) {
+      for (let ii = 0; ii < plan.days[di].items.length; ii++) {
+        const item = plan.days[di].items[ii];
+        if (!item.bookable) continue;
+        if (item.event_id || item.musical_event_id || item.attraction_url) continue;
+        if (['food', 'cafe', 'dessert', 'shopping', 'transport'].includes(item.type)) continue;
+        unmatched.push({ di, ii, item, day: plan.days[di] });
+      }
+    }
+
+    await Promise.allSettled(unmatched.slice(0, 8).map(async ({ item, day }) => {
+      const keywords = item.name.replace(/[^\w\s]/g, '').trim();
+      const citySlug = plan.city.toLowerCase().replace(/\s+/g, '-');
+
+      if (item.type === 'attraction') {
+        // Try Tiqets product search
+        if (tiqetsCityId) {
+          try {
+            const tqUrl = `https://api.tiqets.com/v2/products?city_id=${tiqetsCityId}&q=${encodeURIComponent(keywords)}&limit=3`;
+            const tqRes = await fetch(tqUrl, {
+              headers: { Authorization: `Bearer ${TIQETS_TOKEN}`, 'Accept-Language': 'en' },
+            });
+            if (tqRes.ok) {
+              const tqData = await tqRes.json();
+              const products: Record<string, unknown>[] = tqData.products || tqData || [];
+              const best = products[0];
+              if (best?.id) {
+                item.attraction_url = `/attractions/${citySlug}/${best.id}`;
+                item.attraction_price = (best.min_price || best.price || null) as number | null;
+                item.attraction_currency = (best.currency || 'EUR') as string;
+                item.name = (best.title || best.name || item.name) as string;
+                return;
+              }
+            }
+          } catch { /* continue */ }
+        }
+        // Fallback: city attractions page
+        item.attraction_url = `/attractions/${citySlug}`;
+
+      } else if (item.type === 'event' || item.type === 'musical') {
+        // Try Ticketmaster
+        if (TM_KEY) {
+          try {
+            const params = new URLSearchParams({
+              apikey: TM_KEY,
+              keyword: keywords,
+              city: plan.city,
+              size: '3',
+            });
+            if (day.date) {
+              params.set('startDateTime', `${day.date}T00:00:00Z`);
+              params.set('endDateTime', `${day.date}T23:59:59Z`);
+            }
+            const tmRes = await fetch(
+              `https://app.ticketmaster.com/discovery/v2/events.json?${params}`
+            );
+            if (tmRes.ok) {
+              const tmData = await tmRes.json();
+              const ev = tmData._embedded?.events?.[0];
+              if (ev?.id) {
+                item.attraction_url = `/music/event/${ev.id}`;
+                item.name = ev.name || item.name;
+                item.price = ev.priceRanges?.[0]?.min || item.price || null;
+                item.venue = ev._embedded?.venues?.[0]?.name || item.venue || null;
+                return;
+              }
+            }
+          } catch { /* continue */ }
+        }
+        // Fallback: sport or entertainment page with keyword
+        const fallbackPage = item.type === 'musical' ? 'entertainment' : 'sport';
+        item.attraction_url = `/${fallbackPage}`;
+      }
+    }));
 
     return NextResponse.json(plan);
   } catch (e) {
