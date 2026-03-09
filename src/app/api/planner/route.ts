@@ -218,7 +218,7 @@ CONTENT RULES:
 
     let feedEvents: Record<string, unknown>[] = [];
     try {
-      const feedUrl = `${TIXSTOCK_BASE}/feed?city=${encodeURIComponent(plan.city)}&date_from=${dateFrom}&date_to=${dateTo}&has_listing=true&per_page=100`;
+      const feedUrl = `${TIXSTOCK_BASE}/feed?city=${encodeURIComponent(plan.city)}&date_from=${dateFrom}&date_to=${dateTo}&has_listing=true&per_page=200`;
       const feedRes = await fetch(feedUrl, {
         headers: { Authorization: `Bearer ${TIXSTOCK_TOKEN}`, 'Content-Type': 'application/json' },
       });
@@ -231,51 +231,86 @@ CONTENT RULES:
       // Continue without event matching
     }
 
-    // Step 3: Match events
+    // Group real events by date for fast O(1) lookup
+    const eventsByDate = new Map<string, Record<string, unknown>[]>();
+    for (const ev of feedEvents) {
+      const evDate = ((ev.date || ev.event_date || '') as string).slice(0, 10);
+      if (!evDate) continue;
+      if (!eventsByDate.has(evDate)) eventsByDate.set(evDate, []);
+      eventsByDate.get(evDate)!.push(ev);
+    }
+
+    // Improved scoring: match on name + category + competition
+    function scoreTixstockMatch(
+      itemName: string,
+      dayDate: string,
+      ev: Record<string, unknown>,
+    ): number {
+      const nameWords = itemName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      const evName = ((ev.name as string) || (ev.title as string) || '').toLowerCase();
+      const evCategory = ((ev.category as string) || '').toLowerCase();
+      const evCompetition = ((ev.competition as string) || '').toLowerCase();
+      const evDate = ((ev.date as string) || (ev.event_date as string) || '');
+
+      let score = 0;
+      for (const word of nameWords) {
+        if (evName.includes(word)) score += 3;
+        if (evCategory.includes(word)) score += 1;
+        if (evCompetition.includes(word)) score += 1;
+      }
+      if (evDate && evDate.startsWith(dayDate)) score += 4;
+      else if (evDate) {
+        const diff = Math.abs(new Date(dayDate).getTime() - new Date(evDate).getTime()) / 86400000;
+        if (diff <= 1) score += 2;
+        else if (diff <= 2) score += 1;
+      }
+      return score;
+    }
+
+    // Step 3: Match events — improved with fallback to any real event on same day
+    const usedEventIds = new Set<number>();
+
     for (const day of plan.days) {
       for (const item of day.items) {
         if (item.type !== 'event') continue;
 
-        const nameLower = item.name.toLowerCase();
-        const nameWords = nameLower.split(/\s+/).filter(w => w.length > 2);
-
-        // Find best match by name similarity and date proximity
+        // 1) Name-based match across all feed events
         let bestMatch: Record<string, unknown> | null = null;
         let bestScore = 0;
-
         for (const ev of feedEvents) {
-          const evName = ((ev.name as string) || (ev.title as string) || '').toLowerCase();
-          const evDate = ((ev.date as string) || (ev.event_date as string) || '');
-          
-          // Score based on word matches
-          let score = 0;
-          for (const word of nameWords) {
-            if (evName.includes(word)) score += 1;
-          }
-          
-          // Bonus for same date
-          if (evDate && evDate.startsWith(day.date)) score += 2;
-          
-          // Bonus for close dates
-          if (evDate) {
-            const dayDiff = Math.abs(new Date(day.date).getTime() - new Date(evDate).getTime()) / 86400000;
-            if (dayDiff <= 1) score += 1;
-          }
+          const s = scoreTixstockMatch(item.name, day.date, ev);
+          if (s > bestScore) { bestScore = s; bestMatch = ev; }
+        }
 
-          if (score > bestScore) {
-            bestScore = score;
-            bestMatch = ev;
+        // 2) If no name match (score < 2), fallback: pick any available event on same day
+        if (bestScore < 2) {
+          const sameDay = (eventsByDate.get(day.date) || []).find(
+            ev => !usedEventIds.has((ev.id || ev.event_id) as number),
+          );
+          if (sameDay) { bestMatch = sameDay; bestScore = 99; }
+        }
+
+        // 3) Still no match: try events within 2 days
+        if (!bestMatch) {
+          for (const ev of feedEvents) {
+            const evId = (ev.id || ev.event_id) as number;
+            if (usedEventIds.has(evId)) continue;
+            const evDate = ((ev.date || ev.event_date || '') as string).slice(0, 10);
+            const diff = Math.abs(new Date(day.date).getTime() - new Date(evDate).getTime()) / 86400000;
+            if (diff <= 2) { bestMatch = ev; break; }
           }
         }
 
-        if (bestMatch && bestScore >= 1) {
+        if (bestMatch) {
           const bmVenue = bestMatch.venue as Record<string, unknown> | null;
-          item.event_id = (bestMatch.id || bestMatch.event_id) as number | null;
+          const evId = (bestMatch.id || bestMatch.event_id) as number;
+          item.event_id = evId;
           item.price = (bestMatch.price || bestMatch.min_price || bestMatch.from_price || null) as number | null;
           item.name = (bestMatch.name || bestMatch.title || item.name) as string;
           item.event_date = (bestMatch.date || bestMatch.event_date || day.date) as string;
           item.venue = (bmVenue?.name || bestMatch.venue || null) as string | null;
           item.desc = (bestMatch.category || bestMatch.competition || item.desc) as string;
+          usedEventIds.add(evId);
         }
       }
     }
@@ -300,6 +335,8 @@ CONTENT RULES:
       for (const item of day.items) {
         if (item.type !== 'musical') continue;
         const nameLower = item.name.toLowerCase();
+
+        // Try LTD first (London)
         const match = ltdEvents.find(ev => {
           const evName = ((ev.Name as string) || '').toLowerCase();
           return evName.includes(nameLower) || nameLower.includes(evName.split(' ')[0]);
@@ -309,6 +346,26 @@ CONTENT RULES:
           item.musical_event_id = match.EventId as number | null;
           item.venue = item.venue || (match.VenueName as string | null) || (matchVenue?.Name as string | null) || null;
           item.price = item.price || (match.FromPrice as number | null) || null;
+        } else {
+          // Fallback for non-London: try Tixstock with "theatre" or "musical" category
+          const tixMatch = feedEvents.find(ev => {
+            const evCat = ((ev.category as string) || '').toLowerCase();
+            const evName = ((ev.name as string) || '').toLowerCase();
+            const evId = (ev.id || ev.event_id) as number;
+            if (usedEventIds.has(evId)) return false;
+            return evCat.includes('theatre') || evCat.includes('musical') || evCat.includes('show')
+              || evName.includes(nameLower.split(' ')[0]);
+          });
+          if (tixMatch) {
+            const tmVenue = tixMatch.venue as Record<string, unknown> | null;
+            const tmId = (tixMatch.id || tixMatch.event_id) as number;
+            // Map to event_id for Tixstock flow (not musical_event_id)
+            item.event_id = tmId;
+            item.type = 'event'; // treat as regular event
+            item.venue = item.venue || (tmVenue?.name as string | null) || null;
+            item.price = item.price || (tixMatch.price || tixMatch.min_price || null) as number | null;
+            usedEventIds.add(tmId);
+          }
         }
       }
     }
@@ -397,34 +454,44 @@ CONTENT RULES:
       }
     }
 
-    // Also attach unmatched real events to days that have room
-    // (offer real available events even if AI didn't predict them)
-    const usedIds = new Set(
-      plan.days.flatMap(d => d.items.filter(i => i.event_id).map(i => i.event_id))
-    );
+    // Step 6: Inject real Tixstock events aggressively
+    // For each day, ensure at least 1 real bookable event exists (up to 2 total)
+    for (const day of plan.days) {
+      const existingReal = day.items.filter(i => i.type === 'event' && i.event_id);
+      const maxToAdd = Math.max(0, 2 - existingReal.length);
+      if (maxToAdd === 0) continue;
 
-    for (const ev of feedEvents) {
-      const evId = (ev.id || ev.event_id) as number;
-      if (usedIds.has(evId)) continue;
-      const evDate = ((ev.date || ev.event_date || '') as string).slice(0, 10);
-      const matchingDay = plan.days.find(d => d.date === evDate);
-      if (!matchingDay) continue;
-      // Only add up to 1 extra real event per day
-      const existingReal = matchingDay.items.filter(i => i.type === 'event' && i.event_id);
-      if (existingReal.length >= 2) continue;
+      // Prioritize events on the exact same date, then nearby
+      const candidates = [
+        ...(eventsByDate.get(day.date) || []),
+        ...feedEvents.filter(ev => {
+          const evDate = ((ev.date || ev.event_date || '') as string).slice(0, 10);
+          if (evDate === day.date) return false; // already in first array
+          const diff = Math.abs(new Date(day.date).getTime() - new Date(evDate).getTime()) / 86400000;
+          return diff <= 1;
+        }),
+      ].filter(ev => !usedEventIds.has((ev.id || ev.event_id) as number));
 
-      const evVenue = ev.venue as Record<string, unknown> | null;
-      matchingDay.items.push({
-        time: '21:00',
-        type: 'event',
-        name: ((ev.name || ev.title || 'Live Event') as string),
-        desc: ((ev.category || ev.competition || 'Live event') as string),
-        event_id: evId,
-        price: (ev.price || ev.min_price || ev.from_price || null) as number | null,
-        event_date: ((ev.date || ev.event_date || evDate) as string),
-        venue: ((evVenue?.name || ev.venue || null) as string | null),
-      });
-      usedIds.add(evId);
+      const slotTimes = ['19:00', '21:30'];
+      for (let i = 0; i < Math.min(maxToAdd, candidates.length); i++) {
+        const ev = candidates[i];
+        const evId = (ev.id || ev.event_id) as number;
+        if (usedEventIds.has(evId)) continue;
+        const evVenue = ev.venue as Record<string, unknown> | null;
+        const evDate = ((ev.date || ev.event_date || day.date) as string).slice(0, 10);
+        day.items.push({
+          time: slotTimes[existingReal.length + i] || '20:00',
+          type: 'event',
+          name: (ev.name || ev.title || 'Live Event') as string,
+          desc: (ev.category || ev.competition || 'Live event') as string,
+          event_id: evId,
+          price: (ev.price || ev.min_price || ev.from_price || null) as number | null,
+          event_date: evDate,
+          venue: (evVenue?.name || ev.venue || null) as string | null,
+          bookable: true,
+        });
+        usedEventIds.add(evId);
+      }
     }
 
     return NextResponse.json(plan);
