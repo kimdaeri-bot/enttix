@@ -87,6 +87,9 @@ function PlannerContent() {
   const [expandedMusical, setExpandedMusical] = useState<string | null>(null);
   const [musicalPerformances, setMusicalPerformances] = useState<Record<string, any[]>>({});
   const [musicalLoading, setMusicalLoading] = useState<string | null>(null);
+  const [inlineSearch, setInlineSearch] = useState<Record<string, any[]>>({});
+  const [inlineSearchLoading, setInlineSearchLoading] = useState<string | null>(null);
+  const [inlineSearchOpen, setInlineSearchOpen] = useState<string | null>(null);
 
   const handleSearch = async (q?: string) => {
     const searchQuery = q || query;
@@ -142,6 +145,64 @@ function PlannerContent() {
       setMusicalPerformances(prev => ({ ...prev, [key]: [] }));
     } finally {
       setMusicalLoading(null);
+    }
+  };
+
+  const handleInlineSearch = async (key: string, itemName: string, city: string) => {
+    if (inlineSearchOpen === key) { setInlineSearchOpen(null); return; }
+    setInlineSearchOpen(key);
+    if (inlineSearch[key]) return;
+    setInlineSearchLoading(key);
+    try {
+      const res = await fetch('/api/ai-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: `${itemName} ${city}` }),
+      });
+      const data = await res.json();
+      const results: any[] = [];
+      // Tixstock events
+      (data.events || []).slice(0, 3).forEach((ev: any) => {
+        const venueObj = ev.venue || {};
+        results.push({
+          type: 'event',
+          id: ev.id || ev.event_id,
+          title: ev.name || ev.title,
+          subtitle: `${ev.date ? new Date(ev.date).toLocaleDateString('ko-KR') : ''} · ${venueObj.name || venueObj.city || city}`,
+          price: ev.min_ticket_price || ev.price || null,
+          currency: ev.currency || 'GBP',
+          url: `/event/${ev.id || ev.event_id}`,
+        });
+      });
+      // LTD musicals
+      (data.ltdEvents || []).slice(0, 2).forEach((ev: any) => {
+        results.push({
+          type: 'musical',
+          id: ev.EventId,
+          title: ev.Name,
+          subtitle: `London West End · from £${ev.EventMinimumPrice || ev.FromPrice || '?'}`,
+          price: ev.EventMinimumPrice || ev.FromPrice || null,
+          currency: 'GBP',
+          url: `/musical/event/${ev.EventId}`,
+        });
+      });
+      // Attractions
+      (data.attractionResults || []).slice(0, 2).forEach((a: any) => {
+        results.push({
+          type: 'attraction',
+          id: a.id,
+          title: a.title,
+          subtitle: a.subtitle,
+          price: a.price,
+          currency: a.currency,
+          url: a.url,
+        });
+      });
+      setInlineSearch(prev => ({ ...prev, [key]: results }));
+    } catch {
+      setInlineSearch(prev => ({ ...prev, [key]: [] }));
+    } finally {
+      setInlineSearchLoading(null);
     }
   };
 
@@ -375,8 +436,17 @@ function PlannerContent() {
                             >
                               🎫 {item.price ? `From £${item.price}` : 'View Tickets'}
                             </Link>
-                          ) : item.type === 'event' && !item.event_id ? (
-                            null
+                          ) : item.type === 'event' && !item.event_id && item.bookable ? (
+                            <button
+                              onClick={() => handleInlineSearch(key, item.name, plan!.city)}
+                              className={`flex-shrink-0 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${
+                                inlineSearchOpen === key
+                                  ? 'bg-[#2B7FFF] text-white shadow-sm'
+                                  : 'bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE]'
+                              }`}
+                            >
+                              🔍 Find Tickets
+                            </button>
                           ) : isMusical ? (
                             item.musical_event_id ? (
                               <button
@@ -390,26 +460,87 @@ function PlannerContent() {
                                 🎭 {item.price ? `From £${item.price}` : 'Book Musical'}
                               </button>
                             ) : (
-                              <Link
-                                href="/musical/london"
-                                className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#F5F3FF] text-[#7C3AED] hover:bg-[#EDE9FE] transition-colors"
+                              <button
+                                onClick={() => handleInlineSearch(key, item.name, plan!.city)}
+                                className={`flex-shrink-0 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${
+                                  inlineSearchOpen === key
+                                    ? 'bg-[#7C3AED] text-white shadow-sm'
+                                    : 'bg-[#F5F3FF] text-[#7C3AED] hover:bg-[#EDE9FE]'
+                                }`}
                               >
-                                🎭 Book Musical
-                              </Link>
+                                🔍 Find Show
+                              </button>
                             )
                           ) : item.type === 'attraction' && item.attraction_url ? (
                             <a
                               href={item.attraction_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
                               className="flex-shrink-0 px-4 py-2 rounded-lg text-[13px] font-semibold bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE] transition-all whitespace-nowrap"
                             >
                               🎟️ {item.attraction_price
                                 ? `From ${item.attraction_currency || '$'}${item.attraction_price}`
                                 : 'Book'}
                             </a>
-                          ) : item.type === 'attraction' && item.bookable && !item.attraction_url ? (
-                            null
+                          ) : item.type === 'attraction' && item.bookable ? (
+                            <button
+                              onClick={() => handleInlineSearch(key, item.name, plan!.city)}
+                              className={`flex-shrink-0 px-3 py-2 rounded-lg text-[12px] font-semibold transition-all whitespace-nowrap ${
+                                inlineSearchOpen === key
+                                  ? 'bg-[#2B7FFF] text-white shadow-sm'
+                                  : 'bg-[#EFF6FF] text-[#2B7FFF] hover:bg-[#DBEAFE]'
+                              }`}
+                            >
+                              🔍 Find Tickets
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* Inline Search Results */}
+                      <div className={`overflow-hidden transition-all duration-300 ${inlineSearchOpen === key ? 'max-h-[500px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+                        <div className="bg-white rounded-2xl shadow-lg border border-[#E2E8F0] overflow-hidden ml-8">
+                          {inlineSearchLoading === key ? (
+                            <div className="flex items-center justify-center gap-2 py-8 text-[#94A3B8] text-[13px]">
+                              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                              </svg>
+                              Searching Enttix...
+                            </div>
+                          ) : inlineSearch[key]?.length ? (
+                            <div>
+                              <div className="px-5 py-3 border-b border-[#F1F5F9] bg-[#F8FAFC]">
+                                <p className="text-[#64748B] text-[12px] font-semibold uppercase tracking-wider">
+                                  🔍 Search Results on Enttix
+                                </p>
+                              </div>
+                              <div className="divide-y divide-[#F1F5F9]">
+                                {inlineSearch[key].map((r: any, ri: number) => (
+                                  <a key={ri} href={r.url} className="flex items-center gap-4 px-5 py-4 hover:bg-[#F8FAFC] transition-colors group">
+                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[18px] bg-[#F1F5F9] flex-shrink-0">
+                                      {r.type === 'musical' ? '🎭' : r.type === 'attraction' ? '🏛️' : '🎫'}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[#0F172A] font-semibold text-[14px] truncate group-hover:text-[#2B7FFF] transition-colors">{r.title}</p>
+                                      <p className="text-[#94A3B8] text-[12px] truncate">{r.subtitle}</p>
+                                    </div>
+                                    {r.price && (
+                                      <div className="text-right flex-shrink-0">
+                                        <p className="text-[#0F172A] font-bold text-[15px]">
+                                          {r.currency === 'GBP' ? '£' : r.currency === 'USD' ? '$' : r.currency}{r.price}~
+                                        </p>
+                                      </div>
+                                    )}
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" className="flex-shrink-0">
+                                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                                    </svg>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          ) : inlineSearchOpen === key ? (
+                            <div className="text-center py-8">
+                              <p className="text-[#94A3B8] text-[13px] mb-3">No results found on Enttix</p>
+                            </div>
                           ) : null}
                         </div>
                       </div>
