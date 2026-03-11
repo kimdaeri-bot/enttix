@@ -480,24 +480,26 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   ────────────────────────────── */
   if (step === 1) {
     return (
-      <div className="max-w-[680px] mx-auto px-4 py-8">
-        {/* Back */}
-        <Link
-          href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
-          className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-5 transition-colors group"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          {eventName}로 돌아가기
-        </Link>
+      <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
+        {/* Back + StepBar + Summary — 중앙 680px */}
+        <div className="max-w-[680px] mx-auto">
+          <Link
+            href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
+            className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-5 transition-colors group"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            {eventName}로 돌아가기
+          </Link>
 
-        <StepBar />
+          <StepBar />
 
-        {/* Summary */}
-        <SummaryCard />
+          {/* Summary */}
+          <SummaryCard />
+        </div>
 
-        {/* ── LTD Embedded Seating Plan ── */}
+        {/* ── LTD Embedded Seating Plan — full width ── */}
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
           <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-5 py-4">
             <h2 className="text-[16px] font-extrabold text-white">🪑 Select Your Seats</h2>
@@ -515,13 +517,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             </div>
 
             {/* 좌석 맵 (위젯이 canvas 삽입) */}
-            <div className="ltd-seatplan" />
+            <div className="ltd-seatplan" style={{ minHeight: 600 }} />
 
-            {/* 바스켓 UI — 위젯이 자동으로 선택 좌석 목록 + "Proceed to Booking" 버튼 생성 */}
-            {/* display-tickets: 선택 좌석 리스트 표시 / display-submit: 결제 진행 버튼 표시 */}
+            {/* 바스켓 UI */}
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <div
-              className="ltd-basket mt-4"
+              className="ltd-basket mt-4 max-w-[680px] mx-auto"
               {...{
                 'display-tickets': '',
                 'display-submit': '',
