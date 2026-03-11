@@ -92,16 +92,28 @@ function MiniCalendar({
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const perfs = perfsByDate[dateStr];
     if (!perfs || perfs.length === 0) return 'gray';
+
+    // Check TicketsAvailability: 0=sold out, 1=good, 2=limited
     const hasGood = perfs.some(p => p.TicketsAvailability === 1);
     const hasLimited = perfs.some(p => p.TicketsAvailability === 2);
+    const hasSoldOut = perfs.some(p => p.TicketsAvailability === 0);
+
     if (hasGood) return 'green';
     if (hasLimited) return 'yellow';
+    if (hasSoldOut) return 'gray';
+
+    // Fallback: if PriceFrom > 0, treat as available
+    const hasPrice = perfs.some(p => p.PriceFrom > 0);
+    if (hasPrice) return 'green';
+
     return 'gray';
   };
 
   const handleDayClick = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    if (perfsByDate[dateStr]) {
+    const perfs = perfsByDate[dateStr];
+    // Only allow click if there are performances and not all sold out
+    if (perfs && perfs.some(p => p.TicketsAvailability !== 0 || p.PriceFrom > 0)) {
       onSelectDate(dateStr);
     }
   };
@@ -152,11 +164,11 @@ function MiniCalendar({
             <button
               key={day}
               onClick={() => handleDayClick(day)}
-              disabled={!hasPerfs}
+              disabled={!hasPerfs || color === 'gray'}
               className={`aspect-square flex flex-col items-center justify-center rounded-lg text-[11px] font-semibold transition-all ${
                 isSelected
                   ? 'bg-[#2B7FFF] text-white'
-                  : hasPerfs
+                  : hasPerfs && color !== 'gray'
                   ? 'hover:bg-[#F1F5F9] text-[#0F172A]'
                   : 'text-[#CBD5E1] cursor-not-allowed'
               }`}
@@ -223,7 +235,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Price filter state */
   const [priceBands, setPriceBands] = useState<number[]>([]);
-  const [selectedPriceBand, setSelectedPriceBand] = useState<number | null>(null);
+  const [priceFilter, setPriceFilter] = useState<number | null>(null);
 
   /* Basket state */
   const [basketCreating, setBasketCreating] = useState(false);
@@ -252,6 +264,13 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           const dateKey = perf.PerformanceDate.slice(0, 10);
           setSelectedDate(dateKey);
         }
+
+        // Extract unique sorted price bands from all performances
+        const prices = perfs
+          .map(p => p.PriceFrom)
+          .filter((p): p is number => typeof p === 'number' && p > 0);
+        const uniquePrices = Array.from(new Set(prices)).sort((a, b) => a - b);
+        setPriceBands(uniquePrices);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -346,21 +365,18 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
-    const script = document.createElement('script');
-    script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
-    script.async = true;
-    script.onload = () => {
+    const initSeatPlan = () => {
       const LTD = (window as unknown as Record<string, unknown>).LTD as {
         SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
       if (!LTD?.SeatPlan) return;
 
       LTD.SeatPlan.init({
+        container: '#seatplan-main',
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
         locale: 'en-GB',
         canvasFillMethod: 'contain',
-        filterPriceBands: true,
         event: {
           forceScrollY: false,
           scrollMove: false,
@@ -383,7 +399,22 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       });
     };
 
-    document.head.appendChild(script);
+    // Check if script is already loaded
+    const LTD = (window as unknown as Record<string, unknown>).LTD as {
+      SeatPlan?: { init: (opts: Record<string, unknown>) => void };
+    } | undefined;
+
+    if (LTD?.SeatPlan) {
+      // Script already loaded, init directly
+      initSeatPlan();
+    } else {
+      // Load script and init on load
+      const script = document.createElement('script');
+      script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
+      script.async = true;
+      script.onload = initSeatPlan;
+      document.head.appendChild(script);
+    }
 
     return () => {
       clearTimeout(spinnerTimeout);
@@ -506,7 +537,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                       <div key={ts.PerformanceId} className={`p-2 rounded-lg border ${isCurrent ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E5E7EB]'}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[12px] font-semibold text-[#0F172A]">{formatTime(ts.PerformanceDate)}</span>
-                          <span className="text-[11px] text-[#64748B]">From £{ts.PriceFrom}</span>
+                          <span className="text-[11px] text-[#64748B]">From £{ts.PriceFrom?.toFixed(0) || '0'}</span>
                         </div>
                         {!isCurrent && (
                           <button
@@ -535,10 +566,32 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                 <div className="text-[14px] font-bold text-[#0F172A]">
                   {currentPerf && formatDateShort(currentPerf.PerformanceDate)} - {currentPerf && formatTime(currentPerf.PerformanceDate)}
                 </div>
-                {/* Price filter (from widget or manual) */}
+                {/* Price filter */}
                 <div className="flex items-center gap-2">
                   <span className="text-[12px] text-[#64748B]">Filter seats:</span>
-                  <div className="ltd-legend-prices" />
+                  <button
+                    onClick={() => setPriceFilter(null)}
+                    className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
+                      priceFilter === null
+                        ? 'bg-[#2B7FFF] text-white'
+                        : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
+                    }`}
+                  >
+                    All
+                  </button>
+                  {priceBands.map(price => (
+                    <button
+                      key={price}
+                      onClick={() => setPriceFilter(price)}
+                      className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
+                        priceFilter === price
+                          ? 'bg-[#2B7FFF] text-white'
+                          : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
+                      }`}
+                    >
+                      £{price.toFixed(0)}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -550,7 +603,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                   <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                 </div>
-                <div className="ltd-seatplan w-full h-full" />
+                <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
               </div>
             </div>
 
@@ -622,7 +675,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
               <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
             </div>
-            <div className="ltd-seatplan w-full h-full" />
           </div>
         </div>
 
