@@ -281,8 +281,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     if (seatPlanMounted.current) return;
     seatPlanMounted.current = true;
 
-    let initCalled = false;
-
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
 
@@ -300,13 +298,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       });
     };
 
-    const onAvailabilityFinished = hideSpinner;
-    const onReady = () => {
-      hideSpinner();
-      setTimeout(triggerZoomReset, 200);
-      setTimeout(triggerZoomReset, 800);
-    };
-
     const spinnerTimeout = setTimeout(hideSpinner, 10000);
 
     type LTDInstance = {
@@ -316,18 +307,17 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const getLTDInstance = (): LTDInstance | undefined =>
       (window as unknown as { LTD?: { SeatPlan?: { instance?: LTDInstance } } }).LTD?.SeatPlan?.instance;
 
-    let drawFixApplied = false;
     const triggerZoomReset = () => {
       const btn = document.querySelector('.ltd-seatplan__zoomreset') as HTMLElement | null;
       if (btn) btn.click();
     };
 
+    let drawFixApplied = false;
     const onDrawFinished = () => {
       triggerZoomReset();
       setTimeout(triggerZoomReset, 100);
       setTimeout(triggerZoomReset, 500);
       setTimeout(triggerZoomReset, 1200);
-
       if (drawFixApplied) return;
       drawFixApplied = true;
       const inst = getLTDInstance();
@@ -340,111 +330,57 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       }
     };
 
-    const onAvailFinishedRedraw = () => {
+    const onAvailabilityFinished = () => {
+      hideSpinner();
       setTimeout(() => getLTDInstance()?.draw?.redraw(), 100);
     };
-
-    const onBasketSubmit = () => {
-      goStep2Ref.current();
+    const onReady = () => {
+      hideSpinner();
+      setTimeout(triggerZoomReset, 200);
+      setTimeout(triggerZoomReset, 800);
     };
+    const onBasketSubmit = () => { goStep2Ref.current(); };
 
     document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
-    document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailFinishedRedraw);
     document.addEventListener('LTD.SeatPlan.OnReady', onReady);
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
-    const initSeatPlan = () => {
-      if (initCalled) return;
-      initCalled = true;
-
+    const script = document.createElement('script');
+    script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
+    script.async = true;
+    script.onload = () => {
       const LTD = (window as unknown as Record<string, unknown>).LTD as {
         SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
       if (!LTD?.SeatPlan) return;
-
       LTD.SeatPlan.init({
-        container: '#seatplan-main',
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
         locale: 'en-GB',
         canvasFillMethod: 'contain',
-        event: {
-          forceScrollY: false,
-          scrollMove: false,
-          scrollZoom: true,
-          doubletapZoom: true,
-        },
-        behavior: {
-          formatPrice: (num: number) => `£${num.toFixed(2)}`,
-        },
+        event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
+        behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
         url: {
           availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
         },
-        i18n: {
-          basket: {
-            addSingle: 'Reserve %d seat',
-            addMultiple: 'Reserve %d seats',
-            add: 'Reserve Tickets →',
-          },
-        },
+        i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
       });
     };
-
-    // Check if script is already loaded
-    const LTD = (window as unknown as Record<string, unknown>).LTD as {
-      SeatPlan?: { init: (opts: Record<string, unknown>) => void };
-    } | undefined;
-
-    let script: HTMLScriptElement | null = null;
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-
-    const waitAndInit = () => {
-      // Poll until LTD.SeatPlan is available (handles cached script where onload may not fire)
-      pollInterval = setInterval(() => {
-        const w = window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => void } } };
-        if (w.LTD?.SeatPlan) {
-          if (pollInterval) clearInterval(pollInterval);
-          pollInterval = null;
-          initSeatPlan();
-        }
-      }, 150);
-      // Timeout after 10s
-      setTimeout(() => { if (pollInterval) { clearInterval(pollInterval); pollInterval = null; } }, 10000);
-    };
-
-    if (LTD?.SeatPlan) {
-      // Script already loaded, init directly
-      initSeatPlan();
-    } else {
-      // Check if script tag already in DOM (cached, onload won't fire again)
-      const existing = document.querySelector('script[src="https://finale-cdn.uk/latest/seat-plan.js"]');
-      if (existing) {
-        waitAndInit();
-      } else {
-        script = document.createElement('script');
-        script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
-        script.async = true;
-        script.onload = initSeatPlan;
-        document.head.appendChild(script);
-        // Also poll as fallback in case onload doesn't fire
-        waitAndInit();
-      }
-    }
+    document.head.appendChild(script);
 
     return () => {
       clearTimeout(spinnerTimeout);
-      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      seatPlanMounted.current = false;
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
-      document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailFinishedRedraw);
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
-      if (script && document.head.contains(script)) document.head.removeChild(script);
+      if (document.head.contains(script)) document.head.removeChild(script);
     };
   }, [performanceId]);
 
