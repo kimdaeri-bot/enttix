@@ -8,14 +8,16 @@ import Link from 'next/link';
 interface Performance {
   PerformanceId: number;
   PerformanceDate: string;
-  PriceFrom: number;
-  TicketsAvailability: number; // 0=sold, 1=good, 2=limited
+  MinimumTicketPrice: number;
+  TotalAvailableTickesCount: number; // >0 = available, 0 = sold out
 }
 
 interface EventData {
   event: {
     EventName: string;
     VenueName: string;
+    MainImageUrl?: string;
+    SmallImageUrl?: string;
     Performances: Performance[];
   };
   performances: Performance[];
@@ -93,18 +95,9 @@ function MiniCalendar({
     const perfs = perfsByDate[dateStr];
     if (!perfs || perfs.length === 0) return 'gray';
 
-    // Check TicketsAvailability: 0=sold out, 1=good, 2=limited
-    const hasGood = perfs.some(p => p.TicketsAvailability === 1);
-    const hasLimited = perfs.some(p => p.TicketsAvailability === 2);
-    const hasSoldOut = perfs.some(p => p.TicketsAvailability === 0);
-
-    if (hasGood) return 'green';
-    if (hasLimited) return 'yellow';
-    if (hasSoldOut) return 'gray';
-
-    // Fallback: if PriceFrom > 0, treat as available
-    const hasPrice = perfs.some(p => p.PriceFrom > 0);
-    if (hasPrice) return 'green';
+    // Check TotalAvailableTickesCount: >0 = available, 0 = sold out
+    const hasAvailable = perfs.some(p => p.TotalAvailableTickesCount > 0);
+    if (hasAvailable) return 'green';
 
     return 'gray';
   };
@@ -112,8 +105,8 @@ function MiniCalendar({
   const handleDayClick = (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const perfs = perfsByDate[dateStr];
-    // Only allow click if there are performances and not all sold out
-    if (perfs && perfs.some(p => p.TicketsAvailability !== 0 || p.PriceFrom > 0)) {
+    // Only allow click if there are performances with availability
+    if (perfs && perfs.some(p => p.TotalAvailableTickesCount > 0)) {
       onSelectDate(dateStr);
     }
   };
@@ -176,7 +169,7 @@ function MiniCalendar({
               <span>{day}</span>
               {hasPerfs && !isSelected && (
                 <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
-                  color === 'green' ? 'bg-[#10B981]' : color === 'yellow' ? 'bg-[#F59E0B]' : 'bg-[#94A3B8]'
+                  color === 'green' ? 'bg-[#10B981]' : 'bg-[#94A3B8]'
                 }`} />
               )}
             </button>
@@ -188,11 +181,7 @@ function MiniCalendar({
       <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#E5E7EB]">
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-          <span className="text-[10px] text-[#64748B]">Good</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-          <span className="text-[10px] text-[#64748B]">Limited</span>
+          <span className="text-[10px] text-[#64748B]">Available</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#94A3B8]" />
@@ -267,7 +256,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         // Extract unique sorted price bands from all performances
         const prices = perfs
-          .map(p => p.PriceFrom)
+          .map(p => p.MinimumTicketPrice)
           .filter((p): p is number => typeof p === 'number' && p > 0);
         const uniquePrices = Array.from(new Set(prices)).sort((a, b) => a - b);
         setPriceBands(uniquePrices);
@@ -291,6 +280,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   useEffect(() => {
     if (seatPlanMounted.current) return;
     seatPlanMounted.current = true;
+
+    let initCalled = false;
 
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
@@ -366,6 +357,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
     const initSeatPlan = () => {
+      if (initCalled) return;
+      initCalled = true;
+
       const LTD = (window as unknown as Record<string, unknown>).LTD as {
         SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
@@ -522,9 +516,19 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           {/* LEFT PANEL - 310px, sticky */}
           <div className="w-[310px] flex-shrink-0 sticky top-[70px] self-start space-y-4">
             {/* Event image */}
-            <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#E2E8F0] flex items-center justify-center text-5xl">
-              🎭
-            </div>
+            {eventData.event?.MainImageUrl ? (
+              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#E2E8F0]">
+                <img
+                  src={eventData.event.MainImageUrl}
+                  alt={eventName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <div className="w-full aspect-[4/3] rounded-xl overflow-hidden bg-[#E2E8F0] flex items-center justify-center text-5xl">
+                🎭
+              </div>
+            )}
 
             {/* Event name + venue */}
             <div>
@@ -562,7 +566,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                       <div key={ts.PerformanceId} className={`p-2 rounded-lg border ${isCurrent ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E5E7EB]'}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[12px] font-semibold text-[#0F172A]">{formatTime(ts.PerformanceDate)}</span>
-                          <span className="text-[11px] text-[#64748B]">From £{ts.PriceFrom?.toFixed(0) || '0'}</span>
+                          <span className="text-[11px] text-[#64748B]">From £{ts.MinimumTicketPrice?.toFixed(0) || '0'}</span>
                         </div>
                         {!isCurrent && (
                           <button
@@ -628,7 +632,15 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                   <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                 </div>
-                <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
+                <div className="booking-seatplan-content w-full h-full">
+                  <div className="seat-plan w-full h-full">
+                    <div className="sticky-content w-full h-full">
+                      <div className="seating-plan--big w-full h-full">
+                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -699,6 +711,15 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
               <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
+            </div>
+            <div className="booking-seatplan-content w-full h-full">
+              <div className="seat-plan w-full h-full">
+                <div className="sticky-content w-full h-full">
+                  <div className="seating-plan--big w-full h-full">
+                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
