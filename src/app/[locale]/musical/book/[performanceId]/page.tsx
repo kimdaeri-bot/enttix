@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, use, Suspense, useRef } from 'react';
+import React, { useState, useEffect, use, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
@@ -127,13 +127,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [selectedAreaName, setSelectedAreaName] = useState('');
   const [qty, setQty] = useState(1);
 
-  /* Seating Plan state — seatPlanReady는 ref로 관리 (리렌더링 방지) */
-  const seatPlanReadyRef = useRef(false);
+  /* Seating Plan — state는 리렌더링 방지를 위해 최소화, ref로 직접 제어 */
   const seatSpinnerRef = useRef<HTMLDivElement>(null);
   const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
   const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
   const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
   const seatPlanMounted = useRef(false);
+  /* goStep2를 이벤트 핸들러에서 접근하기 위한 ref */
+  const goStep2Ref = useRef<() => void>(() => {});
 
   /* Step 2 state */
   const [firstName, setFirstName] = useState('');
@@ -182,14 +183,40 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     if (step !== 1 || seatPlanMounted.current) return;
     seatPlanMounted.current = true;
 
+    // ── 좌석 데이터 타입 (위젯 내부 형식) ──
+    type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
+    type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
+
+    // ── 선택 상태 업데이트 ──
+    const updateSelection = (e: Event) => {
+      const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
+      setSelectedTicketIds(sel.map(s => Number(s.Tid)).filter(Boolean));
+      setSelectedSeatLabels(sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()));
+      setSelectedSeatTotal(sel.reduce((sum, s) => sum + (s.SP ?? 0), 0));
+    };
+
+    // ── 가용성 로드 완료 → 스피너 숨기기 ──
+    const onAvailabilityFinished = () => {
+      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
+    };
+
+    // ── 바스켓 제출 버튼 클릭 → Step 2 진행 ──
+    const onBasketSubmit = () => {
+      goStep2Ref.current();
+    };
+
+    document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
+    document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
+    document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+    document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
+
+    // ── 스크립트 로드 ──
     const script = document.createElement('script');
     script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
     script.async = true;
     script.onload = () => {
       const LTD = (window as unknown as Record<string, unknown>).LTD as {
-        SeatPlan: {
-          init: (opts: Record<string, unknown>) => void;
-        };
+        SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
       if (!LTD?.SeatPlan) return;
 
@@ -197,36 +224,27 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
         locale: 'en-GB',
+        filterPriceBands: true,
+        behavior: {
+          formatPrice: (num: number) => `£${num.toFixed(2)}`,
+        },
+        i18n: {
+          basket: {
+            addSingle: 'Reserve %d seat',
+            addMultiple: 'Reserve %d seats',
+            add: 'Proceed to Booking →',
+          },
+        },
       });
-      /* 스피너 숨기기 — setState 대신 DOM 직접 조작으로 리렌더링 방지 */
-      seatPlanReadyRef.current = true;
-      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
-
-      type SeatEvent = { ticketId?: number; TicketId?: number; price?: number; Price?: number; areaName?: string; AreaName?: string; row?: string; Row?: string; seat?: string; Seat?: string };
-      type SeatDetail = { seat?: SeatEvent; selection?: SeatEvent[] };
-
-      const updateSelection = (e: Event) => {
-        const detail = (e as CustomEvent<SeatDetail>).detail;
-        const selection: SeatEvent[] = detail?.selection || [];
-        setSelectedTicketIds(selection.map(s => s.ticketId ?? s.TicketId ?? 0).filter(Boolean));
-        setSelectedSeatLabels(selection.map(s => {
-          const row = s.row ?? s.Row ?? '';
-          const seat = s.seat ?? s.Seat ?? '';
-          const area = s.areaName ?? s.AreaName ?? '';
-          return `${area} ${row}${seat}`.trim();
-        }));
-        setSelectedSeatTotal(selection.reduce((sum, s) => sum + (s.price ?? s.Price ?? 0), 0));
-      };
-
-      document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
-      document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
     };
 
     document.head.appendChild(script);
 
     return () => {
-      document.removeEventListener('LTD.SeatPlan.OnSeatSelected', () => {});
-      document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', () => {});
+      document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
+      document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
+      document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+      document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
       if (document.head.contains(script)) document.head.removeChild(script);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -244,6 +262,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     setAgreePrivacy(v);
     setAgreeThird(v);
   }
+
+  /* goStep2Ref 항상 최신 함수 유지 */
+  useEffect(() => {
+    goStep2Ref.current = goStep2;
+  });
 
   /* Step 1 → 2: Create basket + add tickets */
   async function goStep2() {
@@ -432,50 +455,38 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         {/* ── LTD Embedded Seating Plan ── */}
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
           <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-5 py-4">
-            <h2 className="text-[16px] font-extrabold text-white">🪑 좌석 선택</h2>
-            <p className="text-[#BFDBFE] text-[12px] mt-0.5">원하시는 좌석을 직접 선택하세요</p>
+            <h2 className="text-[16px] font-extrabold text-white">🪑 Select Your Seats</h2>
+            <p className="text-[#BFDBFE] text-[12px] mt-0.5">Click on a seat to select · Blue = available · Grey = unavailable</p>
           </div>
 
           <div className="p-4">
-            {/* 가격 범례 */}
-            <div className="ltd-legend mb-3" />
+            {/* 가격 범례 (위젯이 자동 생성) */}
+            <div className="ltd-legend mb-2" />
 
             {/* 로딩 스피너 — ref로 직접 제어, 리렌더링 없음 */}
             <div ref={seatSpinnerRef} className="flex flex-col items-center py-12 gap-3">
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-              <p className="text-[#94A3B8] text-sm">좌석 배치도를 불러오는 중...</p>
+              <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
             </div>
 
-            {/* 좌석 맵 컨테이너 — 항상 렌더링, 위젯이 여기에 canvas 삽입 */}
+            {/* 좌석 맵 (위젯이 canvas 삽입) */}
             <div className="ltd-seatplan" />
 
-            {/* 선택된 좌석 요약 */}
-            {selectedTicketIds.length > 0 && (
-              <div className="mt-4 bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[14px] font-bold text-[#1D4ED8]">
-                    ✅ {selectedTicketIds.length}석 선택됨
-                  </p>
-                  <p className="text-[18px] font-extrabold text-[#2B7FFF]">
-                    £{selectedSeatTotal.toFixed(2)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedSeatLabels.map((label, i) => (
-                    <span
-                      key={i}
-                      className="text-[12px] bg-white border border-[#BFDBFE] text-[#1D4ED8] px-2.5 py-1 rounded-lg font-semibold"
-                    >
-                      {label || `Seat ${i + 1}`}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* 바스켓 UI — 위젯이 자동으로 선택 좌석 목록 + "Proceed to Booking" 버튼 생성 */}
+            {/* display-tickets: 선택 좌석 리스트 표시 / display-submit: 결제 진행 버튼 표시 */}
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <div
+              className="ltd-basket mt-4"
+              {...{
+                'display-tickets': '',
+                'display-submit': '',
+                'submit-class': 'w-full py-4 mt-3 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] cursor-pointer border-none',
+              } as React.HTMLAttributes<HTMLDivElement>}
+            />
           </div>
         </div>
 
-        {/* ── BestSeats Fallback (구역 선택) — 위젯 로드 실패 시 노출 안 함 ── */}
+        {/* ── BestSeats Fallback (구역 선택) — 비활성화, 위젯이 모든 것 처리 ── */}
         {false && areasLoading === false && (
           <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
             <div className="bg-gradient-to-r from-[#64748B] to-[#475569] px-5 py-4">
@@ -536,32 +547,16 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           </div>
         )}
 
-        {/* CTA */}
-        {(() => {
-          const canProceed = selectedTicketIds.length > 0 || selectedPrice > 0;
-          const label = basketCreating
-            ? '좌석 확보 중...'
-            : selectedTicketIds.length > 0
-              ? `다음 단계 → (${selectedTicketIds.length}석 · £${selectedSeatTotal.toFixed(2)})`
-              : selectedPrice > 0
-                ? '다음 단계 →'
-                : '좌석을 선택하세요';
-          return (
-            <button
-              onClick={goStep2}
-              disabled={!canProceed || basketCreating}
-              className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all mb-3 ${
-                canProceed && !basketCreating
-                  ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
-                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
-              }`}
-            >
-              {basketCreating
-                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-[#94A3B8] border-t-transparent animate-spin" />좌석 확보 중...</span>
-                : label}
-            </button>
-          );
-        })()}
+        {/* basketCreating 중 오버레이 */}
+        {basketCreating && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-2xl px-8 py-6 flex flex-col items-center gap-3 shadow-xl">
+              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+              <p className="text-[15px] font-bold text-[#0F172A]">Reserving your seats...</p>
+              <p className="text-[12px] text-[#64748B]">Please wait while we confirm availability</p>
+            </div>
+          </div>
+        )}
 
         {/* No refund badge */}
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-center text-[12px] font-semibold">
