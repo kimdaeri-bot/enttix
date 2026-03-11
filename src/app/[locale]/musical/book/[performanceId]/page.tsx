@@ -217,16 +217,18 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
     let drawFixApplied = false;
     const onDrawFinished = () => {
+      // zoom reset → 맵 전체가 컨테이너에 fit되도록
+      const zoomResetBtn = document.querySelector('.ltd-seatplan__zoomreset') as HTMLElement | null;
+      if (zoomResetBtn) zoomResetBtn.click();
+
       if (drawFixApplied) return;
       drawFixApplied = true;
       const inst = getLTDInstance();
       const avail = inst?.availability;
       if (avail && avail._done === 0) {
-        // fetch 재시작
         avail._firstFetch = undefined;
         avail._attempts = 3;
         avail.fetch(true);
-        // 2초 후 redraw (fetch 완료 대기)
         setTimeout(() => inst?.draw?.redraw(), 2000);
       }
     };
@@ -265,8 +267,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         locale: 'en-GB',
         canvasFillMethod: 'contain',
         stretchToCanvas: true,
+        seatRadius: 5,
+        seatRadiusMin: 3,
+        margin: 20,
         event: {
-          forceScrollY: false,  // 수직 스크롤을 페이지에 위임 (맵 안에서 스크롤해도 페이지 스크롤 가능)
+          forceScrollY: false,
           scrollMove: false,
           scrollZoom: true,
           doubletapZoom: true,
