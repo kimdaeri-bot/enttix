@@ -261,6 +261,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
         locale: 'en-GB',
+        canvasFillMethod: 'contain',
+        stretchToCanvas: true,
         behavior: {
           formatPrice: (num: number) => `£${num.toFixed(2)}`,
         },
@@ -501,40 +503,42 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         {/* ── LTD Embedded Seating Plan — full width ── */}
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
-          <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-5 py-4">
-            <h2 className="text-[16px] font-extrabold text-white">🪑 Select Your Seats</h2>
-            <p className="text-[#BFDBFE] text-[12px] mt-0.5">Click on a seat to select · Blue = available · Grey = unavailable</p>
+          <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-4 py-3">
+            <h2 className="text-[15px] font-extrabold text-white">🪑 Select Your Seats</h2>
           </div>
 
-          <div className="p-4">
-            {/* 가격 범례 (위젯이 자동 생성) */}
+          <div className="p-2 sm:p-4">
+            {/* 가격 범례 */}
             <div className="ltd-legend mb-2" />
 
-            {/* 로딩 스피너 — ref로 직접 제어, 리렌더링 없음 */}
-            <div ref={seatSpinnerRef} className="flex flex-col items-center py-12 gap-3">
+            {/* 로딩 스피너 */}
+            <div ref={seatSpinnerRef} className="flex flex-col items-center py-10 gap-3">
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
               <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
             </div>
 
-            {/* 좌석 맵 (위젯이 canvas 삽입) */}
-            <div className="ltd-seatplan" style={{ minHeight: 600 }} />
+            {/* 좌석 맵 — 모바일 화면에 꽉 차게 */}
+            <div
+              className="ltd-seatplan w-full"
+              style={{ height: 'min(90vw, 600px)' }}
+            />
 
-            {/* 바스켓 UI — 선택 좌석 목록만 표시 (submit 버튼은 아래 커스텀 버튼 사용) */}
+            {/* 바스켓 UI — 선택 좌석 목록 */}
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <div
-              className="ltd-basket mt-4 max-w-[680px] mx-auto"
+              className="ltd-basket mt-3 max-w-[680px] mx-auto"
               {...{
                 'display-tickets': '',
               } as React.HTMLAttributes<HTMLDivElement>}
             />
 
-            {/* 커스텀 Proceed 버튼 — selectedTicketIds > 0 일 때만 활성화 */}
+            {/* 커스텀 Proceed 버튼 */}
             {selectedTicketIds.length > 0 && (
-              <div className="max-w-[680px] mx-auto mt-3">
+              <div className="max-w-[680px] mx-auto mt-3 px-1">
                 <button
                   onClick={() => goStep2Ref.current()}
                   disabled={basketCreating}
-                  className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] disabled:opacity-60 cursor-pointer border-none transition-colors"
+                  className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:bg-[#1558c0] disabled:opacity-60 cursor-pointer border-none transition-colors"
                 >
                   {basketCreating ? '처리 중...' : `Proceed to Booking → (${selectedTicketIds.length}석 선택됨)`}
                 </button>
