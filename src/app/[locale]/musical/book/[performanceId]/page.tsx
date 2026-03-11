@@ -127,6 +127,13 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [selectedAreaName, setSelectedAreaName] = useState('');
   const [qty, setQty] = useState(1);
 
+  /* Seating Plan state */
+  const [seatPlanReady, setSeatPlanReady] = useState(false);
+  const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
+  const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
+  const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
+  const seatPlanMounted = useRef(false);
+
   /* Step 2 state */
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -151,7 +158,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [paymentUrl, setPaymentUrl] = useState('');
   const [showPayModal, setShowPayModal] = useState(false);
 
-  /* Load areas */
+  /* Load areas (fallback only) */
   useEffect(() => {
     fetch(`/api/ltd/performance/${performanceId}/areas`)
       .then(r => {
@@ -169,6 +176,67 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       .finally(() => setAreasLoading(false));
   }, [performanceId]);
 
+  /* LTD Embedded Seating Plan */
+  useEffect(() => {
+    if (step !== 1 || seatPlanMounted.current) return;
+    seatPlanMounted.current = true;
+
+    const script = document.createElement('script');
+    script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
+    script.async = true;
+    script.onload = () => {
+      const LTD = (window as unknown as Record<string, unknown>).LTD as {
+        SeatPlan: {
+          init: (opts: Record<string, unknown>) => void;
+        };
+      } | undefined;
+      if (!LTD?.SeatPlan) return;
+
+      LTD.SeatPlan.init({
+        clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
+        performanceId: performanceId,
+        locale: 'ko',
+        filterPriceBands: true,
+        i18n: {
+          basket: {
+            addSingle: '%d석 선택',
+            addMultiple: '%d석 선택',
+            add: '선택 완료',
+          },
+        },
+      });
+      setSeatPlanReady(true);
+
+      type SeatEvent = { ticketId?: number; TicketId?: number; price?: number; Price?: number; areaName?: string; AreaName?: string; row?: string; Row?: string; seat?: string; Seat?: string };
+      type SeatDetail = { seat?: SeatEvent; selection?: SeatEvent[] };
+
+      const updateSelection = (e: Event) => {
+        const detail = (e as CustomEvent<SeatDetail>).detail;
+        const selection: SeatEvent[] = detail?.selection || [];
+        setSelectedTicketIds(selection.map(s => s.ticketId ?? s.TicketId ?? 0).filter(Boolean));
+        setSelectedSeatLabels(selection.map(s => {
+          const row = s.row ?? s.Row ?? '';
+          const seat = s.seat ?? s.Seat ?? '';
+          const area = s.areaName ?? s.AreaName ?? '';
+          return `${area} ${row}${seat}`.trim();
+        }));
+        setSelectedSeatTotal(selection.reduce((sum, s) => sum + (s.price ?? s.Price ?? 0), 0));
+      };
+
+      document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
+      document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      document.removeEventListener('LTD.SeatPlan.OnSeatSelected', () => {});
+      document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', () => {});
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   /* Agree all sync */
   useEffect(() => {
     if (agreeFare && agreePrivacy && agreeThird) setAgreeAll(true);
@@ -184,7 +252,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Step 1 → 2: Create basket + add tickets */
   async function goStep2() {
-    if (!selectedPrice) return;
+    const usingSeatPlan = selectedTicketIds.length > 0;
+    if (!usingSeatPlan && !selectedPrice) return;
     setBasketCreating(true);
     setBasketCreateError('');
     try {
@@ -194,23 +263,38 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (!d1.basketId) throw new Error(d1.error || '바스켓 생성에 실패했습니다.');
       setBasketId(d1.basketId);
 
-      /* Add tickets */
-      const areaId = areasError ? 0 : (selectedArea?.AreaId ?? 0);
-      const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          basketId: d1.basketId,
-          performanceId: Number(performanceId),
-          areaId,
-          seatsCount: qty,
-          price: selectedPrice,
-        }),
-      });
-      const d2 = await r2.json();
+      let d2;
+      if (usingSeatPlan) {
+        /* 방법 A: Seating Plan에서 선택한 TicketId 배열 직접 사용 */
+        const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ basketId: d1.basketId, tickets: selectedTicketIds }),
+        });
+        d2 = await r2.json();
+        /* 선택 수량·금액 동기화 */
+        setQty(selectedTicketIds.length);
+        setSelectedPrice(selectedSeatTotal / selectedTicketIds.length);
+        setSelectedAreaName(selectedSeatLabels[0]?.split(' ')[0] || '');
+      } else {
+        /* 방법 B: BestSeats fallback */
+        const areaId = areasError ? 0 : (selectedArea?.AreaId ?? 0);
+        const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            basketId: d1.basketId,
+            performanceId: Number(performanceId),
+            areaId,
+            seatsCount: qty,
+            price: selectedPrice,
+          }),
+        });
+        d2 = await r2.json();
+      }
+
       if (d2.error) throw new Error(d2.error);
 
-      /* Extract expiration date from basket response */
       const expDate = d2.basket?.MinExpirationDate;
       if (expDate) setExpirationDate(expDate);
 
@@ -350,163 +434,105 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         {/* Summary */}
         <SummaryCard />
 
-        {/* Area selection */}
+        {/* ── LTD Embedded Seating Plan ── */}
         <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
           <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-5 py-4">
-            <h2 className="text-[16px] font-extrabold text-white">구역 / 가격 선택</h2>
-            <p className="text-[#BFDBFE] text-[12px] mt-0.5">원하시는 구역을 선택하세요</p>
+            <h2 className="text-[16px] font-extrabold text-white">🪑 좌석 선택</h2>
+            <p className="text-[#BFDBFE] text-[12px] mt-0.5">원하시는 좌석을 직접 선택하세요</p>
           </div>
 
-          <div className="p-5">
-            {areasLoading ? (
+          <div className="p-4">
+            {/* 가격 범례 */}
+            <div className="ltd-legend mb-3" />
+
+            {/* 좌석 맵 */}
+            {!seatPlanReady && (
               <div className="flex flex-col items-center py-12 gap-3">
                 <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                <p className="text-[#94A3B8] text-sm">좌석 정보를 불러오는 중...</p>
-              </div>
-            ) : areasError ? (
-              /* Fallback: BestSeats */
-              <div className="space-y-3">
-                <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-3 mb-3">
-                  <p className="text-[12px] text-[#92400E]">* 실시간 구역별 좌석 선택은 정식 파트너 키가 필요합니다. 현재는 최적 좌석 자동 배정으로 예매합니다.</p>
-                </div>
-                {(() => {
-                  const isSelected = selectedAreaName === 'Best Available';
-                  return (
-                    <button
-                      onClick={() => {
-                        setSelectedArea(null);
-                        setSelectedPrice(Number(minPrice));
-                        setSelectedAreaName('Best Available');
-                      }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                        isSelected
-                          ? 'border-[#2B7FFF] bg-[#EFF6FF]'
-                          : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50 hover:bg-[#F8FAFC]'
-                      }`}
-                    >
-                      <div className="relative w-8 h-8 flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#EEF2FF', border: '2px solid #6366F1' }}>
-                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: '#6366F1' }} />
-                        </div>
-                        {isSelected && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2B7FFF] flex items-center justify-center">
-                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2"><path d="M2 6l3 3 5-5"/></svg>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[14px] font-bold text-[#0F172A]">Best Available</p>
-                        <p className="text-[12px] text-[#94A3B8]">최적 좌석 자동 배정</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-[20px] font-extrabold text-[#2B7FFF]">£{minPrice}</p>
-                        <p className="text-[11px] text-[#94A3B8]">per ticket</p>
-                      </div>
-                    </button>
-                  );
-                })()}
-              </div>
-            ) : (
-              /* Real areas */
-              <div className="space-y-2">
-                {areas.flatMap((area, ai) =>
-                  (area.Prices || []).map((pr, pi) => {
-                    const colorIdx = (ai * 3 + pi) % AREA_COLORS.length;
-                    const color = AREA_COLORS[colorIdx];
-                    const isSelected = selectedArea?.AreaId === area.AreaId && selectedPrice === pr.Price;
-                    return (
-                      <button
-                        key={`${area.AreaId}-${pi}`}
-                        onClick={() => {
-                          setSelectedArea(area);
-                          setSelectedPrice(pr.Price);
-                          setSelectedAreaName(area.AreaName);
-                        }}
-                        className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
-                          isSelected
-                            ? 'border-[#2B7FFF] bg-[#EFF6FF]'
-                            : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50 hover:bg-[#F8FAFC]'
-                        }`}
-                      >
-                        {/* Color dot with checkbox */}
-                        <div className="relative w-8 h-8 flex-shrink-0">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: color.bg, border: `2px solid ${color.border}` }}
-                          >
-                            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color.dot }} />
-                          </div>
-                          {isSelected && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2B7FFF] flex items-center justify-center">
-                              <svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2"><path d="M2 6l3 3 5-5"/></svg>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-bold text-[#0F172A] truncate">{area.AreaName}</p>
-                          <p className="text-[11px] text-[#94A3B8]">Face value £{pr.FaceValue}</p>
-                          {pr.AvailableSeatsCount > 0 && (
-                            <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount} seats left</p>
-                          )}
-                        </div>
-
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-[20px] font-extrabold text-[#2B7FFF]">£{pr.Price}</p>
-                          <p className="text-[11px] text-[#94A3B8]">per ticket</p>
-                        </div>
-                      </button>
-                    );
-                  })
-                )}
+                <p className="text-[#94A3B8] text-sm">좌석 배치도를 불러오는 중...</p>
               </div>
             )}
+            <div
+              className="ltd-seatplan"
+              style={{ minHeight: seatPlanReady ? 'auto' : 0 }}
+            />
 
-            {/* Qty + Total */}
-            {selectedPrice > 0 && (
-              <div className="mt-4 bg-[#F8FAFC] rounded-xl p-4 border border-[#E2E8F0] space-y-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-[14px] font-semibold text-[#0F172A]">티켓 수량</p>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setQty(Math.max(1, qty - 1))}
-                      className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-[#374151] hover:border-[#2B7FFF] hover:text-[#2B7FFF] text-xl font-bold transition-colors"
-                    >−</button>
-                    <span className="text-[18px] font-bold text-[#0F172A] w-8 text-center">{qty}</span>
-                    <button
-                      onClick={() => setQty(Math.min(6, qty + 1))}
-                      className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-[#374151] hover:border-[#2B7FFF] hover:text-[#2B7FFF] text-xl font-bold transition-colors"
-                    >+</button>
-                  </div>
+            {/* 선택된 좌석 요약 */}
+            {selectedTicketIds.length > 0 && (
+              <div className="mt-4 bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[14px] font-bold text-[#1D4ED8]">
+                    ✅ {selectedTicketIds.length}석 선택됨
+                  </p>
+                  <p className="text-[18px] font-extrabold text-[#2B7FFF]">
+                    £{selectedSeatTotal.toFixed(2)}
+                  </p>
                 </div>
-                <div className="border-t border-[#E2E8F0] pt-3">
-                  <div className="flex justify-between text-[13px] mb-1">
-                    <span className="text-[#64748B]">{selectedAreaName} × {qty}</span>
-                    <span className="font-semibold text-[#374151]">£{(selectedPrice * qty).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-[#E2E8F0]">
-                    <span className="text-[15px] font-bold text-[#0F172A]">합계</span>
-                    <span className="text-[20px] font-extrabold text-[#2B7FFF]">£{totalAmount.toFixed(2)}</span>
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedSeatLabels.map((label, i) => (
+                    <span
+                      key={i}
+                      className="text-[12px] bg-white border border-[#BFDBFE] text-[#1D4ED8] px-2.5 py-1 rounded-lg font-semibold"
+                    >
+                      {label || `Seat ${i + 1}`}
+                    </span>
+                  ))}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Seating Plan Image */}
-        {seatmapUrl && (
+        {/* ── BestSeats Fallback (구역 선택) ── */}
+        {seatPlanReady === false && areasLoading === false && (
           <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
-            <div className="px-5 py-3 border-b border-[#F1F5F9]">
-              <h3 className="text-[14px] font-bold text-[#0F172A]">🪑 좌석 배치도</h3>
-              <p className="text-[11px] text-[#94A3B8] mt-0.5">{venue}</p>
+            <div className="bg-gradient-to-r from-[#64748B] to-[#475569] px-5 py-4">
+              <h2 className="text-[16px] font-extrabold text-white">구역 선택</h2>
+              <p className="text-[#CBD5E1] text-[12px] mt-0.5">최적 좌석 자동 배정</p>
             </div>
-            <div className="p-3 bg-[#F8FAFC]">
-              <img
-                src={seatmapUrl}
-                alt="좌석 배치도"
-                className="w-full rounded-lg object-contain"
-              />
+            <div className="p-5 space-y-2">
+              {areasError ? (
+                <button
+                  onClick={() => { setSelectedPrice(Number(minPrice)); setSelectedAreaName('Best Available'); }}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${selectedAreaName === 'Best Available' ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50'}`}
+                >
+                  <div className="flex-1"><p className="text-[14px] font-bold text-[#0F172A]">Best Available</p></div>
+                  <p className="text-[20px] font-extrabold text-[#2B7FFF]">£{minPrice}</p>
+                </button>
+              ) : (
+                areas.flatMap((area, ai) =>
+                  (area.Prices || []).map((pr, pi) => {
+                    const color = AREA_COLORS[(ai * 3 + pi) % AREA_COLORS.length];
+                    const isSelected = selectedArea?.AreaId === area.AreaId && selectedPrice === pr.Price;
+                    return (
+                      <button
+                        key={`${area.AreaId}-${pi}`}
+                        onClick={() => { setSelectedArea(area); setSelectedPrice(pr.Price); setSelectedAreaName(area.AreaName); }}
+                        className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${isSelected ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50 hover:bg-[#F8FAFC]'}`}
+                      >
+                        <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: color.bg, border: `2px solid ${color.border}` }}>
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color.dot }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-[#0F172A] truncate">{area.AreaName}</p>
+                          {pr.AvailableSeatsCount > 0 && <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount} seats left</p>}
+                        </div>
+                        <div className="text-right"><p className="text-[20px] font-extrabold text-[#2B7FFF]">£{pr.Price}</p></div>
+                      </button>
+                    );
+                  })
+                )
+              )}
+              {selectedPrice > 0 && (
+                <div className="mt-3 bg-[#F8FAFC] rounded-xl p-3 border border-[#E2E8F0] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-8 h-8 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-xl font-bold hover:border-[#2B7FFF]">−</button>
+                    <span className="text-[16px] font-bold w-6 text-center">{qty}</span>
+                    <button onClick={() => setQty(Math.min(6, qty + 1))} className="w-8 h-8 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-xl font-bold hover:border-[#2B7FFF]">+</button>
+                  </div>
+                  <p className="text-[18px] font-extrabold text-[#2B7FFF]">£{totalAmount.toFixed(2)}</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -519,22 +545,31 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         )}
 
         {/* CTA */}
-        <button
-          onClick={goStep2}
-          disabled={!selectedPrice || basketCreating}
-          className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all mb-3 ${
-            selectedPrice && !basketCreating
-              ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
-              : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
-          }`}
-        >
-          {basketCreating ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 rounded-full border-2 border-[#94A3B8] border-t-transparent animate-spin" />
-              좌석 확보 중...
-            </span>
-          ) : selectedPrice ? '다음 단계 →' : '구역을 선택하세요'}
-        </button>
+        {(() => {
+          const canProceed = selectedTicketIds.length > 0 || selectedPrice > 0;
+          const label = basketCreating
+            ? '좌석 확보 중...'
+            : selectedTicketIds.length > 0
+              ? `다음 단계 → (${selectedTicketIds.length}석 · £${selectedSeatTotal.toFixed(2)})`
+              : selectedPrice > 0
+                ? '다음 단계 →'
+                : '좌석을 선택하세요';
+          return (
+            <button
+              onClick={goStep2}
+              disabled={!canProceed || basketCreating}
+              className={`w-full py-4 rounded-xl text-[16px] font-bold transition-all mb-3 ${
+                canProceed && !basketCreating
+                  ? 'bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:scale-[0.98] shadow-lg shadow-[#2B7FFF]/25'
+                  : 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
+              }`}
+            >
+              {basketCreating
+                ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 rounded-full border-2 border-[#94A3B8] border-t-transparent animate-spin" />좌석 확보 중...</span>
+                : label}
+            </button>
+          );
+        })()}
 
         {/* No refund badge */}
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-center text-[12px] font-semibold">
