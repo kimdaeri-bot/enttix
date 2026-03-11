@@ -404,12 +404,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       SeatPlan?: { init: (opts: Record<string, unknown>) => void };
     } | undefined;
 
+    let script: HTMLScriptElement | null = null;
+
     if (LTD?.SeatPlan) {
       // Script already loaded, init directly
       initSeatPlan();
     } else {
       // Load script and init on load
-      const script = document.createElement('script');
+      script = document.createElement('script');
       script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
       script.async = true;
       script.onload = initSeatPlan;
@@ -425,7 +427,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
-      if (document.head.contains(script)) document.head.removeChild(script);
+      if (script && document.head.contains(script)) document.head.removeChild(script);
     };
   }, [performanceId]);
 
