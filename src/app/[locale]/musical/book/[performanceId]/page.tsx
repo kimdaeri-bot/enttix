@@ -196,12 +196,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     };
 
     // ── OnAvailabilityFinished / OnReady → 스피너 숨기기 ──
-    const onAvailabilityFinished = () => {
+    const hideSpinner = () => {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
     };
-    const onReady = () => {
-      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
-    };
+    const onAvailabilityFinished = hideSpinner;
+    const onReady = hideSpinner;
+
+    // 10초 후 강제 스피너 숨기기 (이벤트 미발생 대비)
+    const spinnerTimeout = setTimeout(hideSpinner, 10000);
 
     // ── OnDrawFinished → availability 강제 재fetch + redraw (타이밍 버그 해결) ──
     // 문제: scheme 렌더링 전에 availability fetch가 실행 → draw.promise chain 막힘 → _done=0
@@ -288,6 +290,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.head.appendChild(script);
 
     return () => {
+      clearTimeout(spinnerTimeout);
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
@@ -519,17 +522,16 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="ltd-legend" style={{ minWidth: 'max-content' }} />
             </div>
 
-            {/* 로딩 스피너 */}
-            <div ref={seatSpinnerRef} className="flex flex-col items-center py-10 gap-3">
-              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-              <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
+            {/* 좌석 맵 래퍼 — 스피너 overlay 포함 */}
+            <div className="relative w-full" style={{ height: 580 }}>
+              {/* 스피너 — absolute overlay, 로드 완료 시 숨김 */}
+              <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
+              </div>
+              {/* 좌석 맵 — 항상 렌더링, 위젯이 canvas 삽입 */}
+              <div className="ltd-seatplan w-full h-full" />
             </div>
-
-            {/* 좌석 맵 — 전체 맵이 보이도록 충분한 높이 */}
-            <div
-              className="ltd-seatplan w-full"
-              style={{ height: 580 }}
-            />
 
             {/* 바스켓 UI — 선택 좌석 목록 */}
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
