@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -115,6 +116,10 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
   /* Reviews */
   const [reviews, setReviews] = useState<{ConsumerName?: string; Stars?: number; CreatedAt?: string; Content?: string}[]>([]);
 
+  /* LTD Calendar Widget */
+  const [eventUrlId, setEventUrlId] = useState('');
+  const calendarMounted = useRef(false);
+
   /* Tabs */
   const [activeTab, setActiveTab] = useState<Tab>('about');
 
@@ -124,6 +129,10 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
       .then(r => r.json())
       .then(d => {
         setEvent(d.event);
+        /* EventDetailUrl → eventUrlId 추출 (달력 위젯용) */
+        const detailUrl: string = d.event?.EventDetailUrl || '';
+        const urlId = detailUrl.split('/').pop() || '';
+        if (urlId) setEventUrlId(urlId);
         const now = new Date();
         const up = ((d.performances || []) as Performance[])
           .filter(p => new Date(p.PerformanceDate) >= now && p.DirectlyBookablePerformance)
@@ -575,8 +584,43 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
           {/* ── RIGHT COLUMN (35%) — Sticky booking panel ── */}
           <div className="w-full lg:w-[380px] flex-shrink-0 lg:sticky lg:top-6 space-y-4">
 
-            {/* Calendar panel */}
+            {/* ── LTD Calendar Widget ── */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+              {/* 로딩 중 placeholder */}
+              {!eventUrlId && (
+                <div className="px-5 py-10 text-center">
+                  <div className="w-8 h-8 rounded-full border-3 border-[#2B7FFF] border-t-transparent animate-spin mx-auto mb-3" />
+                  <p className="text-[#94A3B8] text-sm">Loading calendar...</p>
+                </div>
+              )}
+              {/* 달력 위젯 컨테이너 */}
+              <div id="calendarWidget" />
+
+              {/* 달력 위젯 스크립트 */}
+              {eventUrlId && !calendarMounted.current && (() => {
+                calendarMounted.current = true;
+                return (
+                  <Script
+                    src="https://calendar.finale-cdn.uk/latest/calendar.js"
+                    strategy="afterInteractive"
+                    onLoad={() => {
+                      const LTD = (window as unknown as { LTD?: { Calendar: { init: (o: Record<string, unknown>) => void } } }).LTD;
+                      LTD?.Calendar.init({
+                        rootElementId: 'calendarWidget',
+                        affiliateId: '775854e9-b102-48d9-99bc-4b288a67b538',
+                        eventUrlId,
+                        performanceSelectionRedirectUrl: window.location.origin,
+                        isStickyMobileFooter: true,
+                      });
+                    }}
+                  />
+                );
+              })()}
+            </div>
+
+            {/* ── 기존 달력 패널 (LEGACY — hidden, schedule tab에서만 사용) ── */}
+            <div className="hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
               <div className="px-5 py-4 border-b border-[#F1F5F9] bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5]">
                 <h2 className="text-white font-bold text-[15px]">Select Date</h2>
                 <p className="text-[#BFDBFE] text-[12px] mt-0.5">{performances.length} performances available</p>
@@ -703,6 +747,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                 </>
               )}
             </div>
+            </div> {/* end .hidden legacy calendar */}
 
             {/* Trust signals */}
             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-3">

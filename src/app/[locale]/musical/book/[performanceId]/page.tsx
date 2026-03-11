@@ -195,8 +195,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       setSelectedSeatTotal(sel.reduce((sum, s) => sum + (s.SP ?? 0), 0));
     };
 
-    // ── 가용성 로드 완료 → 스피너 숨기기 ──
+    // ── OnReady: 좌석 맵 완전 준비 → 스피너 숨기기 ──
     const onAvailabilityFinished = () => {
+      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
+    };
+    const onReady = () => {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
     };
 
@@ -208,6 +211,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+    document.addEventListener('LTD.SeatPlan.OnReady', onReady);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
     // ── 스크립트 로드 ──
@@ -244,6 +248,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+      document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
       if (document.head.contains(script)) document.head.removeChild(script);
     };
