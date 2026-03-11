@@ -405,21 +405,44 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     } | undefined;
 
     let script: HTMLScriptElement | null = null;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+
+    const waitAndInit = () => {
+      // Poll until LTD.SeatPlan is available (handles cached script where onload may not fire)
+      pollInterval = setInterval(() => {
+        const w = window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => void } } };
+        if (w.LTD?.SeatPlan) {
+          if (pollInterval) clearInterval(pollInterval);
+          pollInterval = null;
+          initSeatPlan();
+        }
+      }, 150);
+      // Timeout after 10s
+      setTimeout(() => { if (pollInterval) { clearInterval(pollInterval); pollInterval = null; } }, 10000);
+    };
 
     if (LTD?.SeatPlan) {
       // Script already loaded, init directly
       initSeatPlan();
     } else {
-      // Load script and init on load
-      script = document.createElement('script');
-      script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
-      script.async = true;
-      script.onload = initSeatPlan;
-      document.head.appendChild(script);
+      // Check if script tag already in DOM (cached, onload won't fire again)
+      const existing = document.querySelector('script[src="https://finale-cdn.uk/latest/seat-plan.js"]');
+      if (existing) {
+        waitAndInit();
+      } else {
+        script = document.createElement('script');
+        script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
+        script.async = true;
+        script.onload = initSeatPlan;
+        document.head.appendChild(script);
+        // Also poll as fallback in case onload doesn't fire
+        waitAndInit();
+      }
     }
 
     return () => {
       clearTimeout(spinnerTimeout);
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
