@@ -267,9 +267,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         locale: 'en-GB',
         canvasFillMethod: 'contain',
         stretchToCanvas: true,
-        seatRadius: 5,
-        seatRadiusMin: 3,
-        margin: 20,
         event: {
           forceScrollY: false,
           scrollMove: false,
@@ -515,37 +512,33 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           <SummaryCard />
         </div>
 
-        {/* ── LTD Embedded Seating Plan — full width ── */}
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
-          <div className="bg-gradient-to-r from-[#2B7FFF] to-[#1D6AE5] px-4 py-3">
-            <h2 className="text-[15px] font-extrabold text-white">🪑 Select Your Seats</h2>
-          </div>
+        {/* ── LTD Embedded Seating Plan — 런던쇼 동일 구조 ── */}
+        <div className="booking-seatplan-content mb-4">
+          {/* 회색 배경 (런던쇼 .seat-plan) */}
+          <div className="seat-plan rounded-2xl overflow-hidden">
+            {/* sticky 맵 컨테이너 */}
+            <div className="sticky-content">
+              <div className="seating-plan--big">
+                {/* 가격 범례 — 6열 그리드 */}
+                <div className="ltd-legend" />
 
-          <div className="p-2 sm:p-4 pb-24">
-            {/* 가격 범례 — 가로 스크롤 허용 */}
-            <div className="overflow-x-auto mb-3">
-              <div className="ltd-legend" style={{ minWidth: 'max-content' }} />
-            </div>
+                {/* 맵 래퍼 — 스피너 overlay */}
+                <div className="relative w-full" style={{ height: 580 }}>
+                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white rounded-lg">
+                    <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                    <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
+                  </div>
+                  <div className="ltd-seatplan w-full h-full" />
+                </div>
 
-            {/* 좌석 맵 래퍼 — 스피너 overlay 포함 */}
-            <div className="relative w-full" style={{ height: 580 }}>
-              {/* 스피너 — absolute overlay, 로드 완료 시 숨김 */}
-              <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
+                {/* 바스켓 — 선택 좌석 목록 */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <div
+                  className="ltd-basket mt-3"
+                  {...{ "display-tickets": "" } as React.HTMLAttributes<HTMLDivElement>}
+                />
               </div>
-              {/* 좌석 맵 — 항상 렌더링, 위젯이 canvas 삽입 */}
-              <div className="ltd-seatplan w-full h-full" />
             </div>
-
-            {/* 바스켓 UI — 선택 좌석 목록 */}
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <div
-              className="ltd-basket mt-3 max-w-[680px] mx-auto"
-              {...{
-                'display-tickets': '',
-              } as React.HTMLAttributes<HTMLDivElement>}
-            />
           </div>
         </div>
 
