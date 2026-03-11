@@ -203,21 +203,35 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
     };
 
-    // ── OnDrawFinished → availability 강제 재fetch (타이밍 버그 해결) ──
-    // scheme 렌더링 완료 전에 availability fetch가 실행되면 내부 Promise chain이 막힘
-    // draw가 끝난 시점에 done===0이면 강제 재시작
+    // ── OnDrawFinished → availability 강제 재fetch + redraw (타이밍 버그 해결) ──
+    // 문제: scheme 렌더링 전에 availability fetch가 실행 → draw.promise chain 막힘 → _done=0
+    // 해결: draw 완료 후 done===0이면 fetch 재시작 + redraw() 호출로 색상 강제 반영
+    type LTDInstance = {
+      availability?: { _done: number; _firstFetch: unknown; _attempts: number; fetch: (e: boolean) => void };
+      draw?: { redraw: () => void };
+    };
+    const getLTDInstance = (): LTDInstance | undefined =>
+      (window as unknown as { LTD?: { SeatPlan?: { instance?: LTDInstance } } }).LTD?.SeatPlan?.instance;
+
     let drawFixApplied = false;
     const onDrawFinished = () => {
       if (drawFixApplied) return;
       drawFixApplied = true;
-      const avail = (window as unknown as Record<string, unknown> & {
-        LTD?: { SeatPlan?: { instance?: { availability?: { _done: number; _firstFetch: unknown; _attempts: number; fetch: (e: boolean) => void } } } }
-      }).LTD?.SeatPlan?.instance?.availability;
+      const inst = getLTDInstance();
+      const avail = inst?.availability;
       if (avail && avail._done === 0) {
+        // fetch 재시작
         avail._firstFetch = undefined;
         avail._attempts = 3;
         avail.fetch(true);
+        // 2초 후 redraw (fetch 완료 대기)
+        setTimeout(() => inst?.draw?.redraw(), 2000);
       }
+    };
+
+    // availability 완료 후 redraw 보장
+    const onAvailFinishedRedraw = () => {
+      setTimeout(() => getLTDInstance()?.draw?.redraw(), 100);
     };
 
     // ── 바스켓 제출 버튼 클릭 → Step 2 진행 ──
@@ -228,6 +242,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+    document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailFinishedRedraw);
     document.addEventListener('LTD.SeatPlan.OnReady', onReady);
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
@@ -266,6 +281,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
+      document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailFinishedRedraw);
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
