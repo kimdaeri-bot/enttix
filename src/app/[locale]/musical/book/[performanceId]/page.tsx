@@ -117,6 +117,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Step state */
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [showSeatModal, setShowSeatModal] = useState(false);
 
   /* Step 1 state */
   const [areas, setAreas] = useState<Area[]>([]);
@@ -180,7 +181,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    if (step !== 1 || seatPlanMounted.current) return;
+    if (step !== 1 || !showSeatModal || seatPlanMounted.current) return;
     seatPlanMounted.current = true;
 
     // ── 좌석 데이터 타입 (위젯 내부 형식) ──
@@ -314,7 +315,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (document.head.contains(script)) document.head.removeChild(script);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [step, showSeatModal]);
 
   /* Agree all sync */
   useEffect(() => {
@@ -523,43 +524,102 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           <SummaryCard />
         </div>
 
-        {/* ── LTD Embedded Seating Plan — 런던쇼 동일 구조 ── */}
-        <div className="booking-seatplan-content mb-4">
-          {/* 가격 범례 — 6열 그리드, 맵 위 */}
-          <div className="ltd-legend mb-2" />
-
-          {/* 회색 배경 (런던쇼 .seat-plan) */}
-          <div className="seat-plan">
-            {/* sticky 맵 컨테이너 */}
-            <div className="sticky-content">
-              <div className="seating-plan--big">
-                {/* 맵 래퍼 — 스피너 overlay */}
-                <div className="relative w-full" style={{ height: 580 }}>
-                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                    <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                    <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-                  </div>
-                  <div className="ltd-seatplan w-full h-full" />
-                </div>
+        {/* ── 좌석 직접 선택 버튼 ── */}
+        <div className="max-w-[680px] mx-auto mb-4">
+          <button
+            onClick={() => setShowSeatModal(true)}
+            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-dashed border-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center group-hover:bg-[#DBEAFE]">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                </svg>
+              </div>
+              <div className="text-left">
+                <p className="text-[14px] font-bold text-[#0F172A]">좌석 직접 선택</p>
+                <p className="text-[12px] text-[#64748B]">
+                  {selectedTicketIds.length > 0
+                    ? `${selectedTicketIds.length}석 선택됨 · £${selectedSeatTotal.toFixed(2)}`
+                    : '좌석표에서 원하는 좌석을 직접 선택하세요'}
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* 바스켓 — 런던쇼처럼 선택 좌석 카드 + 예약 버튼 위젯 자체 UI 사용 */}
-          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-          <div
-            className="ltd-basket"
-            {...{
-              'display-tickets': '',
-              'display-submit': '',
-            } as React.HTMLAttributes<HTMLDivElement>}
-          />
-
-          {/* 에러 메시지 */}
-          {basketCreateError && (
-            <p className="text-red-500 text-sm mt-2 px-4 text-center">{basketCreateError}</p>
-          )}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2" className="flex-shrink-0">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
+
+        {/* ── Fullscreen Seat Plan Modal ── */}
+        {showSeatModal && (
+          <div className="fixed inset-0 z-[9999] bg-white">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setShowSeatModal(false);
+                    seatPlanMounted.current = false;
+                  }}
+                  className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center hover:bg-[#F8FAFC] transition-colors"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                </button>
+                <div>
+                  <p className="text-[14px] font-bold text-[#0F172A]">좌석 선택</p>
+                  <p className="text-[11px] text-[#64748B]">{eventName}</p>
+                </div>
+              </div>
+              {selectedTicketIds.length > 0 && (
+                <div className="text-right">
+                  <p className="text-[12px] text-[#64748B]">{selectedTicketIds.length}석 선택</p>
+                  <p className="text-[14px] font-bold text-[#2B7FFF]">£{selectedSeatTotal.toFixed(2)}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Seat Map Content */}
+            <div className="booking-seatplan-content h-[calc(100vh-64px)] overflow-auto">
+              {/* 가격 범례 — 6열 그리드, 맵 위 */}
+              <div className="ltd-legend mb-2" />
+
+              {/* 회색 배경 (런던쇼 .seat-plan) */}
+              <div className="seat-plan">
+                {/* sticky 맵 컨테이너 */}
+                <div className="sticky-content">
+                  <div className="seating-plan--big">
+                    {/* 맵 래퍼 — 스피너 overlay */}
+                    <div className="relative w-full" style={{ height: 580 }}>
+                      <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                        <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                        <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
+                      </div>
+                      <div className="ltd-seatplan w-full h-full" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 바스켓 — 런던쇼처럼 선택 좌석 카드 + 예약 버튼 위젯 자체 UI 사용 */}
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <div
+                className="ltd-basket"
+                {...{
+                  'display-tickets': '',
+                  'display-submit': '',
+                } as React.HTMLAttributes<HTMLDivElement>}
+              />
+
+              {/* 에러 메시지 */}
+              {basketCreateError && (
+                <p className="text-red-500 text-sm mt-2 px-4 text-center">{basketCreateError}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── BestSeats Fallback (구역 선택) — 비활성화, 위젯이 모든 것 처리 ── */}
         {false && areasLoading === false && (
