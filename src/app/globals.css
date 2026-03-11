@@ -100,3 +100,39 @@ a, button { transition: all 0.2s ease; }
   from { opacity: 0; transform: translate(-50%, -20px); }
   to { opacity: 1; transform: translate(-50%, 0); }
 }
+
+/* ── LTD SeatPlan Widget — 모바일/데스크톱 일관성 강제 ── */
+.ltd-seatplan,
+.ltd-seatplan--mobile .ltd-seatplan__container.ltd-seatplan {
+  height: 580px !important;
+  width: 100% !important;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* 범례 — 모바일에서 가로 스크롤, 줄바꿈 없음 */
+.ltd-legend {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  overflow-x: auto !important;
+  padding-bottom: 4px !important;
+}
+
+.ltd-legend__band {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+}
+
+/* 바스켓 — 선택 좌석 목록 */
+.ltd-basket__wrap {
+  font-size: 13px !important;
+}
+
+/* 줌 컨트롤 위치 */
+.ltd-seatplan__zoomer {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 10;
+}
