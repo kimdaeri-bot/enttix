@@ -127,8 +127,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [selectedAreaName, setSelectedAreaName] = useState('');
   const [qty, setQty] = useState(1);
 
-  /* Seating Plan state */
-  const [seatPlanReady, setSeatPlanReady] = useState(false);
+  /* Seating Plan state — seatPlanReady는 ref로 관리 (리렌더링 방지) */
+  const seatPlanReadyRef = useRef(false);
+  const seatSpinnerRef = useRef<HTMLDivElement>(null);
   const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
   const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
   const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
@@ -195,17 +196,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       LTD.SeatPlan.init({
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
-        locale: 'ko',
-        filterPriceBands: true,
-        i18n: {
-          basket: {
-            addSingle: '%d석 선택',
-            addMultiple: '%d석 선택',
-            add: '선택 완료',
-          },
-        },
+        locale: 'en-GB',
       });
-      setSeatPlanReady(true);
+      /* 스피너 숨기기 — setState 대신 DOM 직접 조작으로 리렌더링 방지 */
+      seatPlanReadyRef.current = true;
+      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
 
       type SeatEvent = { ticketId?: number; TicketId?: number; price?: number; Price?: number; areaName?: string; AreaName?: string; row?: string; Row?: string; seat?: string; Seat?: string };
       type SeatDetail = { seat?: SeatEvent; selection?: SeatEvent[] };
@@ -445,17 +440,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             {/* 가격 범례 */}
             <div className="ltd-legend mb-3" />
 
-            {/* 좌석 맵 */}
-            {!seatPlanReady && (
-              <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                <p className="text-[#94A3B8] text-sm">좌석 배치도를 불러오는 중...</p>
-              </div>
-            )}
-            <div
-              className="ltd-seatplan"
-              style={{ minHeight: seatPlanReady ? 'auto' : 0 }}
-            />
+            {/* 로딩 스피너 — ref로 직접 제어, 리렌더링 없음 */}
+            <div ref={seatSpinnerRef} className="flex flex-col items-center py-12 gap-3">
+              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+              <p className="text-[#94A3B8] text-sm">좌석 배치도를 불러오는 중...</p>
+            </div>
+
+            {/* 좌석 맵 컨테이너 — 항상 렌더링, 위젯이 여기에 canvas 삽입 */}
+            <div className="ltd-seatplan" />
 
             {/* 선택된 좌석 요약 */}
             {selectedTicketIds.length > 0 && (
@@ -483,8 +475,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           </div>
         </div>
 
-        {/* ── BestSeats Fallback (구역 선택) ── */}
-        {seatPlanReady === false && areasLoading === false && (
+        {/* ── BestSeats Fallback (구역 선택) — 위젯 로드 실패 시 노출 안 함 ── */}
+        {false && areasLoading === false && (
           <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
             <div className="bg-gradient-to-r from-[#64748B] to-[#475569] px-5 py-4">
               <h2 className="text-[16px] font-extrabold text-white">구역 선택</h2>
