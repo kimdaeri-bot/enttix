@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
         const res = await fetch(`${LTD_BASE_URL}/Baskets/${body.basketId}/Tickets`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ Tickets: body.tickets.map((id: number) => ({ TicketId: id })) }),
+          body: JSON.stringify({ Tickets: body.tickets }),
         });
         const data = await res.json();
         if (data.Message && !data.Success) {

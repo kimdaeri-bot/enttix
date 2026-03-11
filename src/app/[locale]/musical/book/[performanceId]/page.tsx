@@ -519,16 +519,30 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             {/* 좌석 맵 (위젯이 canvas 삽입) */}
             <div className="ltd-seatplan" style={{ minHeight: 600 }} />
 
-            {/* 바스켓 UI */}
+            {/* 바스켓 UI — 선택 좌석 목록만 표시 (submit 버튼은 아래 커스텀 버튼 사용) */}
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <div
               className="ltd-basket mt-4 max-w-[680px] mx-auto"
               {...{
                 'display-tickets': '',
-                'display-submit': '',
-                'submit-class': 'w-full py-4 mt-3 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] cursor-pointer border-none',
               } as React.HTMLAttributes<HTMLDivElement>}
             />
+
+            {/* 커스텀 Proceed 버튼 — selectedTicketIds > 0 일 때만 활성화 */}
+            {selectedTicketIds.length > 0 && (
+              <div className="max-w-[680px] mx-auto mt-3">
+                <button
+                  onClick={() => goStep2Ref.current()}
+                  disabled={basketCreating}
+                  className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] disabled:opacity-60 cursor-pointer border-none transition-colors"
+                >
+                  {basketCreating ? '처리 중...' : `Proceed to Booking → (${selectedTicketIds.length}석 선택됨)`}
+                </button>
+                {basketCreateError && (
+                  <p className="text-red-500 text-sm mt-2 text-center">{basketCreateError}</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
