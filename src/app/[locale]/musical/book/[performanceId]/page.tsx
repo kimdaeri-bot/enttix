@@ -228,7 +228,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
     // ── OnAvailabilityFinished / OnReady → 스피너 숨기기 ──
     const hideSpinner = () => {
+      // ref + querySelectorAll 모두 숨기기 (PC/모바일 두 스피너 동시 처리)
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
+      document.querySelectorAll('[data-seat-spinner]').forEach(el => {
+        (el as HTMLElement).style.display = 'none';
+      });
     };
     const onAvailabilityFinished = hideSpinner;
     const onReady = () => {
@@ -598,7 +602,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="seat-plan rounded-xl">
                 <div className="seating-plan--big overflow-hidden">
                   <div className="relative w-full" style={{ height: 700 }}>
-                    <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                    <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                       <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                       <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                     </div>
@@ -634,7 +638,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             <div className="seat-plan">
               <div className="seating-plan--big overflow-hidden">
                 <div className="relative w-full" style={{ height: 520 }}>
-                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                  <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                     <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                     <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                   </div>
