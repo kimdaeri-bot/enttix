@@ -117,7 +117,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Step state */
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [showSeatModal, setShowSeatModal] = useState(false);
 
   /* Step 1 state */
   const [areas, setAreas] = useState<Area[]>([]);
@@ -127,6 +126,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [selectedPrice, setSelectedPrice] = useState(0);
   const [selectedAreaName, setSelectedAreaName] = useState('');
   const [qty, setQty] = useState(1);
+
+  /* Performance date/time state */
+  const [performanceDate, setPerformanceDate] = useState<string>();
+  const [performanceTime, setPerformanceTime] = useState<string>();
 
   /* Seating Plan — state는 리렌더링 방지를 위해 최소화, ref로 직접 제어 */
   const seatSpinnerRef = useRef<HTMLDivElement>(null);
@@ -179,10 +182,36 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       .finally(() => setAreasLoading(false));
   }, [performanceId]);
 
+  /* Fetch performance date/time */
+  useEffect(() => {
+    if (!performanceId) return;
+    // Fetch performance date from LTD
+    fetch(`/api/ltd/event/${eventId || "0"}`)
+      .then(r => r.json())
+      .then(d => {
+        // Find matching performance in event data
+        const perfs = d.event?.Performances || [];
+        const perf = perfs.find((p: { PerformanceId: number; PerformanceDate: string }) => String(p.PerformanceId) === String(performanceId));
+        if (perf?.PerformanceDate) {
+          const dt = new Date(perf.PerformanceDate);
+          const y = dt.getFullYear();
+          const m = String(dt.getMonth()+1).padStart(2,'0');
+          const day = String(dt.getDate()).padStart(2,'0');
+          setPerformanceDate(`${y}.${m}.${day}`);
+          setPerformanceTime(`${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`);
+        } else if (dateParam) {
+          // fallback to URL param
+          setPerformanceDate(dateParam.replace(/-/g, '.').slice(0,10));
+        }
+      })
+      .catch(() => {
+        if (dateParam) setPerformanceDate(dateParam.replace(/-/g, '.').slice(0,10));
+      });
+  }, [performanceId, eventId, dateParam]);
+
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
-    if (step !== 1 || (!showSeatModal && isMobile) || seatPlanMounted.current) return;
+    if (step !== 1 || seatPlanMounted.current) return;
     seatPlanMounted.current = true;
 
     // ── 좌석 데이터 타입 (위젯 내부 형식) ──
@@ -315,7 +344,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
       if (document.head.contains(script)) document.head.removeChild(script);
     };
-  }, [step, showSeatModal]);
+  }, [step]);
 
   /* Agree all sync */
   useEffect(() => {
@@ -509,38 +538,65 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         {/* PC 2열 레이아웃 */}
         <div className="hidden lg:flex gap-6 items-start">
           {/* 왼쪽 패널 320px */}
-          <div className="w-[320px] flex-shrink-0">
-            {/* Back button */}
-            <Link
-              href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
-              className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-4 transition-colors group"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
+          <div className="w-[320px] flex-shrink-0 sticky top-[64px] self-start">
+            {/* Back */}
+            <Link href={eventId ? `/musical/event/${eventId}` : "/musical/west-end"}
+              className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-4 transition-colors group">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
               {eventName}로 돌아가기
             </Link>
             <StepBar />
-            <SummaryCard />
-            {/* 바스켓 — 선택좌석 카드 + 예약버튼 */}
+
+            {/* 공연 정보 카드 */}
+            <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-3">
+              {/* 관람일 */}
+              <div className="px-4 py-3 text-center border-b border-[#E5E7EB]">
+                <p className="text-[12px] text-[#64748B] mb-1">관람일</p>
+                <p className="text-[18px] font-extrabold text-[#d60c5b]">
+                  {performanceDate || dateParam || "—"} {performanceTime || ""}
+                </p>
+              </div>
+              {/* 다른 날짜 선택 */}
+              <div className="px-4 py-3 border-b border-[#E5E7EB]">
+                <Link
+                  href={eventId ? `/musical/event/${eventId}` : "/musical/west-end"}
+                  className="flex items-center justify-center w-full py-2 px-4 rounded-full border-2 border-[#2B7FFF] text-[#2B7FFF] text-[14px] font-bold hover:bg-[#EFF6FF] transition-colors"
+                >
+                  다른 날짜 선택
+                </Link>
+              </div>
+              {/* 티켓 수 + 합계 */}
+              <div className="px-4 py-3 flex items-center justify-between border-b border-[#E5E7EB]">
+                <span className="text-[14px] font-bold text-[#0F172A]">티켓 : {selectedTicketIds.length > 0 ? selectedTicketIds.length : qty}</span>
+                <div className="text-right">
+                  <p className="text-[11px] text-[#64748B]">합계</p>
+                  <p className="text-[18px] font-extrabold text-[#7B1FA2]">
+                    £{selectedTicketIds.length > 0 ? selectedSeatTotal.toFixed(2) : (qty * selectedPrice).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              {/* 환불 불가 배너 */}
+              <div className="bg-gradient-to-r from-[#d60c5b] to-[#d60c5b]/70 px-4 py-2 flex items-center gap-2">
+                <span className="text-white text-[13px] font-bold">🚫 환불 및 변경 불가</span>
+              </div>
+            </div>
+
+            {/* 바스켓 — 선택 좌석 카드 + 예약 버튼 */}
             <div
-              className="ltd-basket mt-3"
-              {...{
-                'display-tickets': '',
-                'display-submit': '',
-              } as React.HTMLAttributes<HTMLDivElement>}
+              className="ltd-basket"
+              {...{ "display-tickets": "", "display-submit": "" } as React.HTMLAttributes<HTMLDivElement>}
             />
             {basketCreateError && <p className="text-red-500 text-sm mt-2">{basketCreateError}</p>}
           </div>
 
           {/* 오른쪽 — 맵 전체 */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             {/* 가격 범례 */}
             <div className="ltd-legend mb-3" />
             {/* 맵 */}
             <div className="booking-seatplan-content">
               <div className="seat-plan rounded-xl">
-                <div className="seating-plan--big">
+                <div className="seating-plan--big overflow-hidden">
                   <div className="relative w-full" style={{ height: 700 }}>
                     <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                       <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
@@ -556,117 +612,66 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         {/* 모바일 레이아웃 */}
         <div className="lg:hidden">
-          <div className="max-w-[680px] mx-auto">
-            <Link
-              href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
-              className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-5 transition-colors group"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-              {eventName}로 돌아가기
-            </Link>
-
-            <StepBar />
-
-            {/* Summary */}
-            <SummaryCard />
+          {/* 관람일 카드 */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm mb-3 overflow-hidden">
+            <div className="px-4 py-3 text-center border-b border-[#E5E7EB]">
+              <p className="text-[12px] text-[#64748B] mb-1">관람일</p>
+              <p className="text-[16px] font-extrabold text-[#d60c5b]">
+                {performanceDate || dateParam || "—"} {performanceTime || ""}
+              </p>
+            </div>
+            <div className="px-4 py-3">
+              <Link href={eventId ? `/musical/event/${eventId}` : "/musical/west-end"}
+                className="flex items-center justify-center w-full py-2 px-4 rounded-full border-2 border-[#2B7FFF] text-[#2B7FFF] text-[13px] font-bold hover:bg-[#EFF6FF] transition-colors">
+                다른 날짜 선택
+              </Link>
+            </div>
           </div>
 
-          {/* 좌석 직접 선택 버튼 */}
-          <button
-            onClick={() => setShowSeatModal(true)}
-            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-dashed border-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors mb-4 group max-w-[680px] mx-auto"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <p className="text-[14px] font-bold text-[#0F172A]">좌석 직접 선택</p>
-                <p className="text-[12px] text-[#64748B]">
-                  {selectedTicketIds.length > 0
-                    ? `${selectedTicketIds.length}석 선택됨 · £${selectedSeatTotal.toFixed(2)}`
-                    : '좌석 지도에서 원하는 자리를 직접 고르세요'}
-                </p>
-              </div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </button>
-        </div>
-
-        {/* Fullscreen modal (both PC/mobile, but primarily for mobile) */}
-        {showSeatModal && (
-          <div className="fixed inset-0 z-[9999] bg-white">
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-[#E2E8F0] px-4 py-3 flex items-center justify-between z-10">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setShowSeatModal(false);
-                    seatPlanMounted.current = false;
-                  }}
-                  className="w-9 h-9 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center hover:bg-[#F8FAFC] transition-colors"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                  </svg>
-                </button>
-                <div>
-                  <p className="text-[14px] font-bold text-[#0F172A]">좌석 선택</p>
-                  <p className="text-[11px] text-[#64748B]">{eventName}</p>
-                </div>
-              </div>
-              {selectedTicketIds.length > 0 && (
-                <div className="text-right">
-                  <p className="text-[12px] text-[#64748B]">{selectedTicketIds.length}석 선택</p>
-                  <p className="text-[14px] font-bold text-[#2B7FFF]">£{selectedSeatTotal.toFixed(2)}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Seat Map Content */}
-            <div className="booking-seatplan-content h-[calc(100vh-64px)] overflow-auto">
-              {/* 가격 범례 — 6열 그리드, 맵 위 */}
-              <div className="ltd-legend mb-2" />
-
-              {/* 회색 배경 (런던쇼 .seat-plan) */}
-              <div className="seat-plan">
-                {/* sticky 맵 컨테이너 */}
-                <div className="sticky-content">
-                  <div className="seating-plan--big">
-                    {/* 맵 래퍼 — 스피너 overlay */}
-                    <div className="relative w-full" style={{ height: 580 }}>
-                      <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                        <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                        <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-                      </div>
-                      <div className="ltd-seatplan w-full h-full" />
-                    </div>
+          {/* 좌석 맵 — 인라인 (모달 아님) */}
+          <div className="booking-seatplan-content mb-24">
+            <div className="ltd-legend mb-2" />
+            <div className="seat-plan">
+              <div className="seating-plan--big overflow-hidden">
+                <div className="relative w-full" style={{ height: 520 }}>
+                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                    <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                    <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                   </div>
+                  <div className="ltd-seatplan w-full h-full" />
                 </div>
               </div>
-
-              {/* 바스켓 — 런던쇼처럼 선택 좌석 카드 + 예약 버튼 위젯 자체 UI 사용 */}
-              <div
-                className="ltd-basket"
-                {...{
-                  'display-tickets': '',
-                  'display-submit': '',
-                } as React.HTMLAttributes<HTMLDivElement>}
-              />
-
-              {/* 에러 메시지 */}
-              {basketCreateError && (
-                <p className="text-red-500 text-sm mt-2 px-4 text-center">{basketCreateError}</p>
-              )}
             </div>
           </div>
-        )}
+
+          {/* Sticky bottom bar — 좌석 선택 시 표시 */}
+          {selectedTicketIds.length > 0 && (
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
+              {/* 선택 좌석 요약 */}
+              <div className="px-4 pt-3 pb-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[13px] font-bold text-[#0F172A]">{selectedTicketIds.length}석 선택됨</span>
+                  <span className="text-[16px] font-extrabold text-[#7B1FA2]">£{selectedSeatTotal.toFixed(2)}</span>
+                </div>
+                {/* 선택 좌석 라벨 목록 */}
+                <div className="flex gap-2 flex-wrap max-h-[60px] overflow-y-auto mb-2">
+                  {selectedSeatLabels.map((label, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-[#d60c5b] text-white text-[11px] rounded-full font-medium">{label}</span>
+                  ))}
+                </div>
+                {/* 예약 버튼 */}
+                <button
+                  onClick={() => goStep2Ref.current()}
+                  disabled={basketCreating}
+                  className="w-full py-3 rounded-xl text-[15px] font-bold bg-[#22c55e] text-white border-none cursor-pointer disabled:opacity-60 mb-2"
+                >
+                  {basketCreating ? "처리 중..." : `${selectedTicketIds.length}개의 좌석 예약`}
+                </button>
+                {basketCreateError && <p className="text-red-500 text-[12px] text-center mb-2">{basketCreateError}</p>}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* basketCreating 중 오버레이 */}
         {basketCreating && (
