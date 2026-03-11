@@ -200,7 +200,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
     };
     const onAvailabilityFinished = hideSpinner;
-    const onReady = hideSpinner;
+    const onReady = () => {
+      hideSpinner();
+      // onReady에서도 zoom reset (모바일 타이밍 보장)
+      setTimeout(triggerZoomReset, 200);
+      setTimeout(triggerZoomReset, 800);
+    };
 
     // 10초 후 강제 스피너 숨기기 (이벤트 미발생 대비)
     const spinnerTimeout = setTimeout(hideSpinner, 10000);
@@ -216,10 +221,17 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       (window as unknown as { LTD?: { SeatPlan?: { instance?: LTDInstance } } }).LTD?.SeatPlan?.instance;
 
     let drawFixApplied = false;
+    const triggerZoomReset = () => {
+      const btn = document.querySelector('.ltd-seatplan__zoomreset') as HTMLElement | null;
+      if (btn) btn.click();
+    };
+
     const onDrawFinished = () => {
-      // zoom reset → 맵 전체가 컨테이너에 fit되도록
-      const zoomResetBtn = document.querySelector('.ltd-seatplan__zoomreset') as HTMLElement | null;
-      if (zoomResetBtn) zoomResetBtn.click();
+      // zoom reset — 모바일 타이밍 대응: 100/500/1200ms 반복 실행
+      triggerZoomReset();
+      setTimeout(triggerZoomReset, 100);
+      setTimeout(triggerZoomReset, 500);
+      setTimeout(triggerZoomReset, 1200);
 
       if (drawFixApplied) return;
       drawFixApplied = true;
@@ -266,7 +278,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         performanceId: performanceId,
         locale: 'en-GB',
         canvasFillMethod: 'contain',
-        stretchToCanvas: true,
         event: {
           forceScrollY: false,
           scrollMove: false,
