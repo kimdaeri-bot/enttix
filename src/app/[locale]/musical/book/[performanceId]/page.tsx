@@ -263,6 +263,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         locale: 'en-GB',
         canvasFillMethod: 'contain',
         stretchToCanvas: true,
+        event: {
+          forceScrollY: false,  // 수직 스크롤을 페이지에 위임 (맵 안에서 스크롤해도 페이지 스크롤 가능)
+          scrollMove: false,
+          scrollZoom: true,
+          doubletapZoom: true,
+        },
         behavior: {
           formatPrice: (num: number) => `£${num.toFixed(2)}`,
         },
@@ -507,9 +513,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             <h2 className="text-[15px] font-extrabold text-white">🪑 Select Your Seats</h2>
           </div>
 
-          <div className="p-2 sm:p-4">
-            {/* 가격 범례 */}
-            <div className="ltd-legend mb-2" />
+          <div className="p-2 sm:p-4 pb-24">
+            {/* 가격 범례 — 가로 스크롤 허용 */}
+            <div className="overflow-x-auto mb-3">
+              <div className="ltd-legend" style={{ minWidth: 'max-content' }} />
+            </div>
 
             {/* 로딩 스피너 */}
             <div ref={seatSpinnerRef} className="flex flex-col items-center py-10 gap-3">
@@ -517,10 +525,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <p className="text-[#94A3B8] text-sm">Loading live seat availability...</p>
             </div>
 
-            {/* 좌석 맵 — 모바일 화면에 꽉 차게 */}
+            {/* 좌석 맵 — 전체 맵이 보이도록 충분한 높이 */}
             <div
               className="ltd-seatplan w-full"
-              style={{ height: 'min(90vw, 600px)' }}
+              style={{ height: 580 }}
             />
 
             {/* 바스켓 UI — 선택 좌석 목록 */}
@@ -531,24 +539,30 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                 'display-tickets': '',
               } as React.HTMLAttributes<HTMLDivElement>}
             />
-
-            {/* 커스텀 Proceed 버튼 */}
-            {selectedTicketIds.length > 0 && (
-              <div className="max-w-[680px] mx-auto mt-3 px-1">
-                <button
-                  onClick={() => goStep2Ref.current()}
-                  disabled={basketCreating}
-                  className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:bg-[#1558c0] disabled:opacity-60 cursor-pointer border-none transition-colors"
-                >
-                  {basketCreating ? '처리 중...' : `Proceed to Booking → (${selectedTicketIds.length}석 선택됨)`}
-                </button>
-                {basketCreateError && (
-                  <p className="text-red-500 text-sm mt-2 text-center">{basketCreateError}</p>
-                )}
-              </div>
-            )}
           </div>
         </div>
+
+        {/* ── 예약하기 버튼 — 하단 fixed, 좌석 선택 시 표시 ── */}
+        {selectedTicketIds.length > 0 && (
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#E5E7EB] px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.10)]">
+            <div className="max-w-[680px] mx-auto">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[13px] text-[#64748B]">{selectedTicketIds.length}석 선택됨</span>
+                <span className="text-[15px] font-bold text-[#0F172A]">합계 £{selectedSeatTotal.toFixed(2)}</span>
+              </div>
+              <button
+                onClick={() => goStep2Ref.current()}
+                disabled={basketCreating}
+                className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:bg-[#1558c0] disabled:opacity-60 cursor-pointer border-none transition-colors"
+              >
+                {basketCreating ? '처리 중...' : '예약하기 →'}
+              </button>
+              {basketCreateError && (
+                <p className="text-red-500 text-sm mt-1 text-center">{basketCreateError}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ── BestSeats Fallback (구역 선택) — 비활성화, 위젯이 모든 것 처리 ── */}
         {false && areasLoading === false && (
