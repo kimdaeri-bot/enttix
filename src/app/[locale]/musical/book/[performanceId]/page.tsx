@@ -348,7 +348,31 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
+    // Already loaded check
+    if ((window as unknown as { LTD?: { SeatPlan?: unknown } }).LTD?.SeatPlan) {
+      // seat-plan.js already loaded, init directly
+      const LTD2 = (window as unknown as Record<string, unknown>).LTD as {
+        SeatPlan: { init: (opts: Record<string, unknown>) => void };
+      } | undefined;
+      if (LTD2?.SeatPlan) {
+        LTD2.SeatPlan.init({
+          clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
+          performanceId: performanceId,
+          locale: 'en-GB',
+          canvasFillMethod: 'contain',
+          event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
+          behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
+          url: {
+            availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
+          },
+          i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
+        });
+      }
+    }
+
+    const existingScript = document.querySelector('script[src="https://finale-cdn.uk/latest/seat-plan.js"]');
     const script = document.createElement('script');
+    if (!existingScript) {
     script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
     script.async = true;
     script.onload = () => {
@@ -370,10 +394,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       });
     };
     document.head.appendChild(script);
+    } // end if !existingScript
 
     return () => {
       clearTimeout(spinnerTimeout);
-      seatPlanMounted.current = false;
       document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
