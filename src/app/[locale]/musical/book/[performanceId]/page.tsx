@@ -181,7 +181,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    if (step !== 1 || !showSeatModal || seatPlanMounted.current) return;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+    if (step !== 1 || (!showSeatModal && isMobile) || seatPlanMounted.current) return;
     seatPlanMounted.current = true;
 
     // ── 좌석 데이터 타입 (위젯 내부 형식) ──
@@ -314,7 +315,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
       if (document.head.contains(script)) document.head.removeChild(script);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, showSeatModal]);
 
   /* Agree all sync */
@@ -506,32 +506,80 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   if (step === 1) {
     return (
       <div className="w-full max-w-[1400px] mx-auto px-4 py-8">
-        {/* Back + StepBar + Summary — 중앙 680px */}
-        <div className="max-w-[680px] mx-auto">
-          <Link
-            href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
-            className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-5 transition-colors group"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            {eventName}로 돌아가기
-          </Link>
+        {/* PC 2열 레이아웃 */}
+        <div className="hidden lg:flex gap-6 items-start">
+          {/* 왼쪽 패널 320px */}
+          <div className="w-[320px] flex-shrink-0">
+            {/* Back button */}
+            <Link
+              href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
+              className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-4 transition-colors group"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              {eventName}로 돌아가기
+            </Link>
+            <StepBar />
+            <SummaryCard />
+            {/* 바스켓 — 선택좌석 카드 + 예약버튼 */}
+            <div
+              className="ltd-basket mt-3"
+              {...{
+                'display-tickets': '',
+                'display-submit': '',
+              } as React.HTMLAttributes<HTMLDivElement>}
+            />
+            {basketCreateError && <p className="text-red-500 text-sm mt-2">{basketCreateError}</p>}
+          </div>
 
-          <StepBar />
-
-          {/* Summary */}
-          <SummaryCard />
+          {/* 오른쪽 — 맵 전체 */}
+          <div className="flex-1 min-w-0">
+            {/* 가격 범례 */}
+            <div className="ltd-legend mb-3" />
+            {/* 맵 */}
+            <div className="booking-seatplan-content">
+              <div className="seat-plan rounded-xl">
+                <div className="seating-plan--big">
+                  <div className="relative w-full" style={{ height: 700 }}>
+                    <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                      <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+                      <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
+                    </div>
+                    <div className="ltd-seatplan w-full h-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* ── 좌석 직접 선택 버튼 ── */}
-        <div className="max-w-[680px] mx-auto mb-4">
+        {/* 모바일 레이아웃 */}
+        <div className="lg:hidden">
+          <div className="max-w-[680px] mx-auto">
+            <Link
+              href={eventId ? `/musical/event/${eventId}` : '/musical/west-end'}
+              className="flex items-center gap-2 text-[13px] text-[#64748B] hover:text-[#2B7FFF] mb-5 transition-colors group"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:-translate-x-0.5 transition-transform">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+              {eventName}로 돌아가기
+            </Link>
+
+            <StepBar />
+
+            {/* Summary */}
+            <SummaryCard />
+          </div>
+
+          {/* 좌석 직접 선택 버튼 */}
           <button
             onClick={() => setShowSeatModal(true)}
-            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-dashed border-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors group"
+            className="w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-dashed border-[#2B7FFF] hover:bg-[#EFF6FF] transition-colors mb-4 group max-w-[680px] mx-auto"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center group-hover:bg-[#DBEAFE]">
+              <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
                   <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
                 </svg>
@@ -541,17 +589,17 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                 <p className="text-[12px] text-[#64748B]">
                   {selectedTicketIds.length > 0
                     ? `${selectedTicketIds.length}석 선택됨 · £${selectedSeatTotal.toFixed(2)}`
-                    : '좌석표에서 원하는 좌석을 직접 선택하세요'}
+                    : '좌석 지도에서 원하는 자리를 직접 고르세요'}
                 </p>
               </div>
             </div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2" className="flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2B7FFF" strokeWidth="2">
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </button>
         </div>
 
-        {/* ── Fullscreen Seat Plan Modal ── */}
+        {/* Fullscreen modal (both PC/mobile, but primarily for mobile) */}
         {showSeatModal && (
           <div className="fixed inset-0 z-[9999] bg-white">
             {/* Header */}
@@ -604,7 +652,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               </div>
 
               {/* 바스켓 — 런던쇼처럼 선택 좌석 카드 + 예약 버튼 위젯 자체 UI 사용 */}
-              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <div
                 className="ltd-basket"
                 {...{
@@ -621,67 +668,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           </div>
         )}
 
-        {/* ── BestSeats Fallback (구역 선택) — 비활성화, 위젯이 모든 것 처리 ── */}
-        {false && areasLoading === false && (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden mb-4">
-            <div className="bg-gradient-to-r from-[#64748B] to-[#475569] px-5 py-4">
-              <h2 className="text-[16px] font-extrabold text-white">구역 선택</h2>
-              <p className="text-[#CBD5E1] text-[12px] mt-0.5">최적 좌석 자동 배정</p>
-            </div>
-            <div className="p-5 space-y-2">
-              {areasError ? (
-                <button
-                  onClick={() => { setSelectedPrice(Number(minPrice)); setSelectedAreaName('Best Available'); }}
-                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${selectedAreaName === 'Best Available' ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50'}`}
-                >
-                  <div className="flex-1"><p className="text-[14px] font-bold text-[#0F172A]">Best Available</p></div>
-                  <p className="text-[20px] font-extrabold text-[#2B7FFF]">£{minPrice}</p>
-                </button>
-              ) : (
-                areas.flatMap((area, ai) =>
-                  (area.Prices || []).map((pr, pi) => {
-                    const color = AREA_COLORS[(ai * 3 + pi) % AREA_COLORS.length];
-                    const isSelected = selectedArea?.AreaId === area.AreaId && selectedPrice === pr.Price;
-                    return (
-                      <button
-                        key={`${area.AreaId}-${pi}`}
-                        onClick={() => { setSelectedArea(area); setSelectedPrice(pr.Price); setSelectedAreaName(area.AreaName); }}
-                        className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${isSelected ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E2E8F0] hover:border-[#2B7FFF]/50 hover:bg-[#F8FAFC]'}`}
-                      >
-                        <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center" style={{ backgroundColor: color.bg, border: `2px solid ${color.border}` }}>
-                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color.dot }} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[14px] font-bold text-[#0F172A] truncate">{area.AreaName}</p>
-                          {pr.AvailableSeatsCount > 0 && <p className="text-[11px] text-[#10B981]">{pr.AvailableSeatsCount} seats left</p>}
-                        </div>
-                        <div className="text-right"><p className="text-[20px] font-extrabold text-[#2B7FFF]">£{pr.Price}</p></div>
-                      </button>
-                    );
-                  })
-                )
-              )}
-              {selectedPrice > 0 && (
-                <div className="mt-3 bg-[#F8FAFC] rounded-xl p-3 border border-[#E2E8F0] flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setQty(Math.max(1, qty - 1))} className="w-8 h-8 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-xl font-bold hover:border-[#2B7FFF]">−</button>
-                    <span className="text-[16px] font-bold w-6 text-center">{qty}</span>
-                    <button onClick={() => setQty(Math.min(6, qty + 1))} className="w-8 h-8 rounded-full border-2 border-[#E2E8F0] flex items-center justify-center text-xl font-bold hover:border-[#2B7FFF]">+</button>
-                  </div>
-                  <p className="text-[18px] font-extrabold text-[#2B7FFF]">£{totalAmount.toFixed(2)}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Basket create error */}
-        {basketCreateError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-3">
-            <p className="text-[13px] text-red-700">{basketCreateError}</p>
-          </div>
-        )}
-
         {/* basketCreating 중 오버레이 */}
         {basketCreating && (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
@@ -694,7 +680,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         )}
 
         {/* No refund badge */}
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-center text-[12px] font-semibold">
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-center text-[12px] font-semibold max-w-[680px] mx-auto lg:max-w-none">
           ⚠️ 환불 및 변경 불가 · No Refunds or Exchanges
         </div>
       </div>
