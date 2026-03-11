@@ -195,12 +195,29 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       setSelectedSeatTotal(sel.reduce((sum, s) => sum + (s.SP ?? 0), 0));
     };
 
-    // ── OnReady: 좌석 맵 완전 준비 → 스피너 숨기기 ──
+    // ── OnAvailabilityFinished / OnReady → 스피너 숨기기 ──
     const onAvailabilityFinished = () => {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
     };
     const onReady = () => {
       if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
+    };
+
+    // ── OnDrawFinished → availability 강제 재fetch (타이밍 버그 해결) ──
+    // scheme 렌더링 완료 전에 availability fetch가 실행되면 내부 Promise chain이 막힘
+    // draw가 끝난 시점에 done===0이면 강제 재시작
+    let drawFixApplied = false;
+    const onDrawFinished = () => {
+      if (drawFixApplied) return;
+      drawFixApplied = true;
+      const avail = (window as unknown as Record<string, unknown> & {
+        LTD?: { SeatPlan?: { instance?: { availability?: { _done: number; _firstFetch: unknown; _attempts: number; fetch: (e: boolean) => void } } } }
+      }).LTD?.SeatPlan?.instance?.availability;
+      if (avail && avail._done === 0) {
+        avail._firstFetch = undefined;
+        avail._attempts = 3;
+        avail.fetch(true);
+      }
     };
 
     // ── 바스켓 제출 버튼 클릭 → Step 2 진행 ──
@@ -212,6 +229,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
     document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
     document.addEventListener('LTD.SeatPlan.OnReady', onReady);
+    document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
     // ── 스크립트 로드 ──
@@ -249,6 +267,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
       document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
+      document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
       if (document.head.contains(script)) document.head.removeChild(script);
     };
