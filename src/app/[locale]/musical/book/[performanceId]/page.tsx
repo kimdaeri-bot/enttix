@@ -261,7 +261,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
         performanceId: performanceId,
         locale: 'en-GB',
-        filterPriceBands: true,
         behavior: {
           formatPrice: (num: number) => `£${num.toFixed(2)}`,
         },
@@ -330,10 +329,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           body: JSON.stringify({ basketId: d1.basketId, tickets: selectedTicketIds }),
         });
         d2 = await r2.json();
-        /* 선택 수량·금액 동기화 */
-        setQty(selectedTicketIds.length);
-        setSelectedPrice(selectedSeatTotal / selectedTicketIds.length);
-        setSelectedAreaName(selectedSeatLabels[0]?.split(' ')[0] || '');
       } else {
         /* 방법 B: BestSeats fallback */
         const areaId = areasError ? 0 : (selectedArea?.AreaId ?? 0);
@@ -352,6 +347,13 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       }
 
       if (d2.error) throw new Error(d2.error);
+
+      /* 선택 수량·금액 동기화 (usingSeatPlan일 때만) */
+      if (usingSeatPlan) {
+        setQty(selectedTicketIds.length);
+        setSelectedPrice(selectedSeatTotal / selectedTicketIds.length);
+        setSelectedAreaName(selectedSeatLabels[0]?.split(' ')[0] || '');
+      }
 
       const expDate = d2.basket?.MinExpirationDate;
       if (expDate) setExpirationDate(expDate);
