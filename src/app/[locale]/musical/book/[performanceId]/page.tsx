@@ -514,55 +514,41 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         {/* ── LTD Embedded Seating Plan — 런던쇼 동일 구조 ── */}
         <div className="booking-seatplan-content mb-4">
+          {/* 가격 범례 — 6열 그리드, 맵 위 */}
+          <div className="ltd-legend mb-2" />
+
           {/* 회색 배경 (런던쇼 .seat-plan) */}
-          <div className="seat-plan rounded-2xl overflow-hidden">
+          <div className="seat-plan">
             {/* sticky 맵 컨테이너 */}
             <div className="sticky-content">
               <div className="seating-plan--big">
-                {/* 가격 범례 — 6열 그리드 */}
-                <div className="ltd-legend" />
-
                 {/* 맵 래퍼 — 스피너 overlay */}
                 <div className="relative w-full" style={{ height: 580 }}>
-                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white rounded-lg">
+                  <div ref={seatSpinnerRef} className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                     <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                     <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
                   </div>
                   <div className="ltd-seatplan w-full h-full" />
                 </div>
-
-                {/* 바스켓 — 선택 좌석 목록 */}
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                <div
-                  className="ltd-basket mt-3"
-                  {...{ "display-tickets": "" } as React.HTMLAttributes<HTMLDivElement>}
-                />
               </div>
             </div>
           </div>
+
+          {/* 바스켓 — 런던쇼처럼 선택 좌석 카드 + 예약 버튼 위젯 자체 UI 사용 */}
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <div
+            className="ltd-basket"
+            {...{
+              'display-tickets': '',
+              'display-submit': '',
+            } as React.HTMLAttributes<HTMLDivElement>}
+          />
+
+          {/* 에러 메시지 */}
+          {basketCreateError && (
+            <p className="text-red-500 text-sm mt-2 px-4 text-center">{basketCreateError}</p>
+          )}
         </div>
-
-        {/* ── 예약하기 버튼 — 하단 fixed, 좌석 선택 시 표시 ── */}
-        {selectedTicketIds.length > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#E5E7EB] px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.10)]">
-            <div className="max-w-[680px] mx-auto">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[13px] text-[#64748B]">{selectedTicketIds.length}석 선택됨</span>
-                <span className="text-[15px] font-bold text-[#0F172A]">합계 £{selectedSeatTotal.toFixed(2)}</span>
-              </div>
-              <button
-                onClick={() => goStep2Ref.current()}
-                disabled={basketCreating}
-                className="w-full py-4 rounded-xl text-[15px] font-bold bg-[#2B7FFF] text-white hover:bg-[#1D6AE5] active:bg-[#1558c0] disabled:opacity-60 cursor-pointer border-none transition-colors"
-              >
-                {basketCreating ? '처리 중...' : '예약하기 →'}
-              </button>
-              {basketCreateError && (
-                <p className="text-red-500 text-sm mt-1 text-center">{basketCreateError}</p>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* ── BestSeats Fallback (구역 선택) — 비활성화, 위젯이 모든 것 처리 ── */}
         {false && areasLoading === false && (
