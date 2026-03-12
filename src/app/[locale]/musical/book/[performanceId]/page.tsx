@@ -234,7 +234,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [basketCreateError, setBasketCreateError] = useState('');
 
   /* Responsive layout */
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
     check();
@@ -319,9 +319,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    // isMobile이 결정된 후에만 init (DOM에 #seatplan-main이 있어야 함)
-    if (isMobile === null) return;
-
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
     const perfKey = `${performanceId}_${isMobile ? 'm' : 'pc'}`;
@@ -508,15 +505,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   /* ──────────────────────────────
      PC LAYOUT (>=1024px)
   ────────────────────────────── */
-  // isMobile null = 아직 결정 전 (hydration)
-  if (isMobile === null) {
-    return (
-      <div className="flex justify-center py-20">
-        <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <>
       {/* PC Layout */}
