@@ -233,6 +233,15 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [basketCreating, setBasketCreating] = useState(false);
   const [basketCreateError, setBasketCreateError] = useState('');
 
+  /* Responsive layout */
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   /* eventId 없을 때 performanceId로 조회 */
   useEffect(() => {
     if (eventId) return;
@@ -486,10 +495,19 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   /* ──────────────────────────────
      PC LAYOUT (>=1024px)
   ────────────────────────────── */
+  // isMobile null = 아직 결정 전 (hydration)
+  if (isMobile === null) {
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <>
       {/* PC Layout */}
-      <div className="hidden lg:block w-full max-w-[1400px] mx-auto px-4 py-6">
+      {!isMobile && <div className="w-full max-w-[1400px] mx-auto px-4 py-6">
         <div className="flex gap-6 items-start">
           {/* LEFT PANEL - 310px, sticky */}
           <div className="w-[310px] flex-shrink-0 sticky top-[70px] self-start space-y-4">
@@ -655,10 +673,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* MOBILE LAYOUT (<1024px) */}
-      <div className="lg:hidden px-4 py-4">
+      {isMobile && <div className="px-4 py-4">
         {/* Compact top bar */}
         <div className="flex items-center justify-between mb-4">
           <Link href={eventId ? `/musical/event/${eventId}` : "/musical/west-end"} className="text-[#2B7FFF] text-[13px] font-semibold">
@@ -736,7 +754,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             {basketCreateError && <p className="text-red-500 text-[11px] text-center mt-2">{basketCreateError}</p>}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* basketCreating overlay */}
       {basketCreating && (
