@@ -392,10 +392,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
+    const seatplanEl = document.getElementById('seatplan-main');
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
-      container: '#seatplan-main',
+      ctx: seatplanEl,
       locale: 'en-GB',
       canvasFillMethod: 'contain',
       event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
