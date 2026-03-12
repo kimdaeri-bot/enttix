@@ -269,7 +269,22 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         if (!r.ok) throw new Error('failed');
         return r.json();
       })
-      .then((d: EventData) => {
+      .then((d: EventData & { error?: string }) => {
+        // eventId가 틀렸을 경우 (Tixstock ID 등) → performanceId로 정확한 eventId 재조회
+        if (d.error === 'Event not found') {
+          return fetch(`/api/ltd/performance/${performanceId}`)
+            .then(r => r.json())
+            .then(p => {
+              if (p.eventId && String(p.eventId) !== eventId) {
+                setEventId(String(p.eventId));
+                if (p.eventName) setEventName(p.eventName);
+                if (p.venueName) setVenue(p.venueName);
+              } else {
+                setError(true);
+                setLoading(false);
+              }
+            });
+        }
         setEventData(d);
         // Find current performance
         const perfs = d.event?.Performances || d.performances || [];
@@ -304,10 +319,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
+    // isMobile이 결정된 후에만 init (DOM에 #seatplan-main이 있어야 함)
+    if (isMobile === null) return;
+
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
-    if (w.__seatPlanPerf === performanceId) return;
-    w.__seatPlanPerf = performanceId;
+    const perfKey = `${performanceId}_${isMobile ? 'm' : 'pc'}`;
+    if (w.__seatPlanPerf === perfKey) return;
+    w.__seatPlanPerf = perfKey;
 
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
@@ -433,7 +452,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
     };
-  }, [performanceId]);
+  }, [performanceId, isMobile]);
 
   /* goStep2Ref */
   useEffect(() => {
