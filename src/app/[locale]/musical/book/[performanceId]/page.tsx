@@ -402,8 +402,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       performanceId: performanceId,
       ctx: seatplanEl,
       locale: 'en-GB',
-      canvasFillMethod: 'contain',
-      event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
+      canvasFillMethod: 'cover',
+      event: { forceScrollY: true, scrollMove: false, scrollZoom: true, doubletapZoom: true },
       behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
       url: {
         availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
@@ -637,14 +637,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="seat-plan w-full h-full">
                     <div className="sticky-content w-full h-full">
                       <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
+                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               {/* LTD legend — required by controller.js */}
-              <div id="ltd-legend" className="ltd-legend mt-3" />
+              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
             </div>
 
             {/* Fixed bottom bar */}
@@ -719,14 +719,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="seat-plan w-full h-full">
                 <div className="sticky-content w-full h-full">
                   <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" />
+                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
           {/* LTD legend — required by controller.js */}
-          <div id="ltd-legend" className="ltd-legend px-3 pb-2" />
+          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
         </div>
 
         {/* Fixed bottom bar - mobile */}
