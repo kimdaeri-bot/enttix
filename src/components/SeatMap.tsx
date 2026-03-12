@@ -55,6 +55,12 @@ export default function SeatMap({
   const [hoveredSection, setHoveredSection] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [tooltipText, setTooltipText] = useState('');
+  // Mobile pan/zoom state
+  const [scale, setScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
+  const lastTouchRef = useRef<{ x: number; y: number } | null>(null);
+  const lastPinchRef = useRef<number | null>(null);
+  const [mobileToast, setMobileToast] = useState<string | null>(null);
 
   // Refs for listener closures
   const sectionsRef = useRef(sections);
@@ -108,8 +114,27 @@ export default function SeatMap({
           g.style.cursor = 'default';
         }
 
+        const buildTip = () => {
+          if (!sec) return '';
+          const label = sec.displayName || secKey.replace(/_/g, ' ').replace(/-/g, ' ');
+          let tip = label.replace(/\b\w/g, (c) => c.toUpperCase());
+          if (sec.minPrice) tip += ` · £${sec.minPrice.toFixed(0)}`;
+          if (sec.count) tip += ` · ${sec.count} tkts`;
+          return tip;
+        };
+
         g.onclick = () => {
           if (!sec) return;
+          onClickRef.current?.(selectedRef.current === secKey ? null : secKey);
+        };
+
+        // Touch: tap to select + show toast
+        g.ontouchend = (e) => {
+          if (!sec) return;
+          e.preventDefault();
+          const tip = buildTip();
+          setMobileToast(tip);
+          setTimeout(() => setMobileToast(null), 2000);
           onClickRef.current?.(selectedRef.current === secKey ? null : secKey);
         };
 
@@ -119,11 +144,7 @@ export default function SeatMap({
           const rect = container.getBoundingClientRect();
           const gRect = g.getBoundingClientRect();
           setTooltipPos({ x: gRect.left - rect.left + gRect.width / 2, y: gRect.top - rect.top });
-          const label = sec.displayName || secKey.replace(/_/g, ' ').replace(/-/g, ' ');
-          let tip = label.replace(/\b\w/g, (c) => c.toUpperCase());
-          if (sec.minPrice) tip += ` · £${sec.minPrice.toFixed(0)}`;
-          if (sec.count) tip += ` · ${sec.count} tkts`;
-          setTooltipText(tip);
+          setTooltipText(buildTip());
         };
         g.onmouseleave = () => setHoveredSection(null);
       });
@@ -204,7 +225,39 @@ export default function SeatMap({
       </div>
 
       {/* Map area */}
-      <div ref={containerRef} className="relative select-none flex-1 overflow-hidden flex items-center justify-center p-4">
+      <div
+        ref={containerRef}
+        className="relative select-none flex-1 overflow-hidden flex items-center justify-center p-4"
+        onTouchStart={(e) => {
+          if (e.touches.length === 1) {
+            lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            lastPinchRef.current = null;
+          } else if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            lastPinchRef.current = Math.hypot(dx, dy);
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 1 && lastTouchRef.current && scale > 1) {
+            const dx = e.touches[0].clientX - lastTouchRef.current.x;
+            const dy = e.touches[0].clientY - lastTouchRef.current.y;
+            setTranslate((prev) => ({ x: prev.x + dx, y: prev.y + dy }));
+            lastTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          } else if (e.touches.length === 2 && lastPinchRef.current !== null) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const ratio = dist / lastPinchRef.current;
+            setScale((prev) => Math.min(Math.max(prev * ratio, 1), 4));
+            lastPinchRef.current = dist;
+          }
+        }}
+        onTouchEnd={() => {
+          lastTouchRef.current = null;
+          if (scale <= 1) setTranslate({ x: 0, y: 0 });
+        }}
+      >
         {loading && (
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 border-2 border-[#2B7FFF] border-t-transparent rounded-full animate-spin" />
@@ -212,9 +265,15 @@ export default function SeatMap({
           </div>
         )}
         {!loading && svgContent && (
-          <div ref={svgDivRef} className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:max-h-full" dangerouslySetInnerHTML={{ __html: svgContent }} />
+          <div
+            ref={svgDivRef}
+            className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:max-h-full touch-none"
+            style={{ transform: `scale(${scale}) translate(${translate.x / scale}px, ${translate.y / scale}px)`, transformOrigin: 'center', transition: 'transform 0.05s' }}
+            dangerouslySetInnerHTML={{ __html: svgContent }}
+          />
         )}
 
+        {/* Desktop tooltip */}
         {hoveredSection && tooltipText && (
           <div
             className="absolute z-20 pointer-events-none"
@@ -229,6 +288,33 @@ export default function SeatMap({
             </div>
           </div>
         )}
+
+        {/* Mobile toast */}
+        {mobileToast && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 pointer-events-none md:hidden">
+            <div className="bg-[#0F172A] text-white rounded-[12px] px-4 py-2.5 shadow-xl text-[13px] font-medium whitespace-nowrap animate-fade-in">
+              {mobileToast}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile zoom reset button */}
+        {scale > 1 && (
+          <button
+            className="absolute top-3 right-3 z-30 bg-white border border-[#E5E7EB] rounded-full px-3 py-1 text-[12px] text-[#374151] shadow-md md:hidden"
+            onClick={() => { setScale(1); setTranslate({ x: 0, y: 0 }); }}
+          >
+            Reset zoom
+          </button>
+        )}
+      </div>
+
+      {/* Mobile legend */}
+      <div className="flex md:hidden items-center justify-center gap-4 px-4 py-2 border-t border-[#E5E7EB] text-[10px] text-[#6B7280] bg-white flex-shrink-0">
+        <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#22C55E] inline-block"/> Budget</div>
+        <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#F59E0B] inline-block"/> Mid</div>
+        <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#EF4444] inline-block"/> Premium</div>
+        <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-[#CBD5E1] inline-block"/> None</div>
       </div>
     </div>
   );
