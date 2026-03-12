@@ -361,12 +361,36 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (btn) btn.click();
     };
 
+    // Resize the seat map container to fit the full map, then zoom-to-fit
+    const resizeContainerToFitMap = () => {
+      const inst = getLTDInstance();
+      const draw = (inst as unknown as { draw?: { _references?: { state?: { originalWidth?: number; originalHeight?: number; containerWidth?: number } }; fitToScreen?: () => void } })?.draw;
+      const state = draw?._references?.state;
+      if (!state?.originalWidth || !state?.originalHeight) return;
+      const mapW = state.originalWidth;
+      const mapH = state.originalHeight;
+      const el = document.getElementById('seatplan-main');
+      if (!el) return;
+      const cw = el.offsetWidth || state.containerWidth || 800;
+      // When cw >= mapW, LTD uses scale=1 → need height >= mapH to show full map
+      // When cw < mapW, LTD uses minScale (cw/mapW) → needed height = mapH * cw/mapW
+      const neededH = cw >= mapW ? mapH : Math.ceil(cw * mapH / mapW);
+      const outerEl = el.closest('[data-seat-container]') as HTMLElement | null;
+      if (outerEl && neededH > (outerEl.offsetHeight || 0)) {
+        outerEl.style.height = `${neededH + 10}px`; // +10px breathing room
+        // After DOM update, call fitToScreen to recalculate scale
+        requestAnimationFrame(() => {
+          draw?.fitToScreen?.();
+          setTimeout(() => draw?.fitToScreen?.(), 200);
+        });
+      } else {
+        draw?.fitToScreen?.();
+      }
+    };
+
     let drawFixApplied = false;
     const onDrawFinished = () => {
-      triggerZoomReset();
-      setTimeout(triggerZoomReset, 100);
-      setTimeout(triggerZoomReset, 500);
-      setTimeout(triggerZoomReset, 1200);
+      resizeContainerToFitMap();
       if (drawFixApplied) return;
       drawFixApplied = true;
       const inst = getLTDInstance();
@@ -385,8 +409,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     };
     const onReady = () => {
       hideSpinner();
-      setTimeout(triggerZoomReset, 200);
-      setTimeout(triggerZoomReset, 800);
+      setTimeout(resizeContainerToFitMap, 300);
     };
     const onBasketSubmit = () => { goStep2Ref.current(); };
 
@@ -628,7 +651,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
             {/* Seat map container */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden mb-4">
-              <div className="relative w-full" style={{ height: 700 }}>
+              <div data-seat-container className="relative w-full" style={{ height: 700 }}>
                 <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                   <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                   <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
@@ -710,7 +733,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         {/* Seat map full width inline */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden mb-24">
-          <div className="relative w-full" style={{ height: 520 }}>
+          <div data-seat-container className="relative w-full" style={{ height: 520 }}>
             <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
               <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
