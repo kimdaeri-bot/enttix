@@ -319,6 +319,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
+    // DOM에 #seatplan-main이 없을 때(로딩 중)는 skip — loading=false 후 re-run됨
+    if (loading) return;
+    const seatplanEl = document.getElementById('seatplan-main');
+    if (!seatplanEl) return;
+
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
     const perfKey = `${performanceId}_${isMobile ? 'm' : 'pc'}`;
@@ -392,7 +397,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
-    const seatplanEl = document.getElementById('seatplan-main');
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
@@ -443,7 +447,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
     };
-  }, [performanceId, isMobile]);
+  }, [performanceId, isMobile, loading]);
 
   /* goStep2Ref */
   useEffect(() => {
