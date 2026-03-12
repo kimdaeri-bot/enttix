@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, use, Suspense, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import Header from '@/components/Header';
 import Link from 'next/link';
 
@@ -198,9 +198,12 @@ function MiniCalendar({
 function BookingContent({ performanceId }: { performanceId: string }) {
   const params = useSearchParams();
   const router = useRouter();
-  const eventId = params.get('eventId') || '';
-  const eventName = params.get('eventName') || 'Show';
-  const venue = params.get('venue') || '';
+  const routeParams = useParams();
+  const locale = (routeParams?.locale as string) || 'en';
+
+  const [eventId, setEventId] = useState(params.get('eventId') || '');
+  const [eventName, setEventName] = useState(params.get('eventName') || 'Show');
+  const [venue, setVenue] = useState(params.get('venue') || '');
 
   /* Event & Performances state */
   const [eventData, setEventData] = useState<EventData | null>(null);
@@ -230,13 +233,27 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [basketCreating, setBasketCreating] = useState(false);
   const [basketCreateError, setBasketCreateError] = useState('');
 
+  /* eventId 없을 때 performanceId로 조회 */
+  useEffect(() => {
+    if (eventId) return;
+    fetch(`/api/ltd/performance/${performanceId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.eventId) {
+          setEventId(String(d.eventId));
+          if (!params.get('eventName') && d.eventName) setEventName(d.eventName);
+          if (!params.get('venue') && d.venueName) setVenue(d.venueName);
+        } else {
+          setError(true);
+          setLoading(false);
+        }
+      })
+      .catch(() => { setError(true); setLoading(false); });
+  }, [performanceId, eventId]);
+
   /* Load event data */
   useEffect(() => {
-    if (!eventId) {
-      setError(true);
-      setLoading(false);
-      return;
-    }
+    if (!eventId) return;
 
     fetch(`/api/ltd/event/${eventId}`)
       .then(r => {
@@ -278,8 +295,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    if (seatPlanMounted.current) return;
-    seatPlanMounted.current = true;
+    // Use window flag to survive Strict Mode double-mount
+    const w = window as unknown as Record<string, unknown>;
+    if (w.__seatPlanPerf === performanceId) return;
+    w.__seatPlanPerf = performanceId;
 
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
@@ -404,7 +423,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
-      if (document.head.contains(script)) document.head.removeChild(script);
     };
   }, [performanceId]);
 
@@ -444,7 +462,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   }
 
   const handleTimeSlotClick = (perf: Performance) => {
-    router.push(`/musical/book/${perf.PerformanceId}?eventId=${eventId}&eventName=${encodeURIComponent(eventName)}&venue=${encodeURIComponent(venue)}`);
+    router.push(`/${locale}/musical/book/${perf.PerformanceId}?eventId=${eventId}&eventName=${encodeURIComponent(eventName)}&venue=${encodeURIComponent(venue)}`);
   };
 
   if (loading) {
