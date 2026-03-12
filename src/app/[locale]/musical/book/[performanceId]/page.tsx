@@ -395,6 +395,22 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
     document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
 
+    const seatContainer = document.getElementById('seatplan-main');
+
+    const initOpts = {
+      clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
+      performanceId: performanceId,
+      container: seatContainer,
+      locale: 'en-GB',
+      canvasFillMethod: 'contain',
+      event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
+      behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
+      url: {
+        availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
+      },
+      i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
+    };
+
     // Already loaded check
     if ((window as unknown as { LTD?: { SeatPlan?: unknown } }).LTD?.SeatPlan) {
       // seat-plan.js already loaded, init directly
@@ -402,18 +418,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
       if (LTD2?.SeatPlan) {
-        LTD2.SeatPlan.init({
-          clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
-          performanceId: performanceId,
-          locale: 'en-GB',
-          canvasFillMethod: 'contain',
-          event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
-          behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
-          url: {
-            availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
-          },
-          i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
-        });
+        LTD2.SeatPlan.init(initOpts);
       }
     }
 
@@ -427,18 +432,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         SeatPlan: { init: (opts: Record<string, unknown>) => void };
       } | undefined;
       if (!LTD?.SeatPlan) return;
-      LTD.SeatPlan.init({
-        clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
-        performanceId: performanceId,
-        locale: 'en-GB',
-        canvasFillMethod: 'contain',
-        event: { forceScrollY: false, scrollMove: false, scrollZoom: true, doubletapZoom: true },
-        behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
-        url: {
-          availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
-        },
-        i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
-      });
+      LTD.SeatPlan.init(initOpts);
     };
     document.head.appendChild(script);
     } // end if !existingScript
