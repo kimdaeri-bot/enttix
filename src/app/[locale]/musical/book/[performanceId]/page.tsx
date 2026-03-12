@@ -643,6 +643,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   </div>
                 </div>
               </div>
+              {/* LTD legend — required by controller.js */}
+              <div id="ltd-legend" className="ltd-legend mt-3" />
             </div>
 
             {/* Fixed bottom bar */}
@@ -723,6 +725,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               </div>
             </div>
           </div>
+          {/* LTD legend — required by controller.js */}
+          <div id="ltd-legend" className="ltd-legend px-3 pb-2" />
         </div>
 
         {/* Fixed bottom bar - mobile */}
