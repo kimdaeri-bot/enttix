@@ -120,6 +120,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
       }
 
+      // Fetch available delivery types for this basket
+      let deliveryType = 2; // Default: ETicket
+      try {
+        const delRes = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}/AvailableDeliveries`, {
+          headers: { 'Api-Key': LTD_API_KEY },
+        });
+        const deliveries = await delRes.json();
+        if (Array.isArray(deliveries) && deliveries.length > 0) {
+          deliveryType = deliveries[0].Id || deliveries[0].DeliveryId || deliveries[0].DeliveryType || deliveries[0].id || 2;
+        }
+      } catch { /* use default */ }
+
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app';
       const submitBody: Record<string, unknown> = {
         AffiliateId: affiliateId || '775854e9-b102-48d9-99bc-4b288a67b538',
@@ -128,7 +140,7 @@ export async function POST(req: NextRequest) {
         Name: leadCustomer.firstName,
         LastName: leadCustomer.lastName,
         Email: leadCustomer.email,
-        DeliveryType: 1,
+        DeliveryType: deliveryType,
       };
 
       if (leadCustomer.phone) {
