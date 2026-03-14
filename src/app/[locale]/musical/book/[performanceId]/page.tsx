@@ -728,14 +728,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="seat-plan w-full h-full">
                 <div className="sticky-content w-full h-full">
                   <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
+                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
           {/* LTD legend — required by controller.js */}
-          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning />
+          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
         </div>
 
         {/* Fixed bottom bar - mobile */}
