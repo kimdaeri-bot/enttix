@@ -37,19 +37,23 @@ function CheckoutContent() {
   /* Fetch basket expiration */
   useEffect(() => {
     if (!basketId) return;
+    const fallback = () => setExpiresAt(new Date(Date.now() + 10 * 60 * 1000));
     fetch(`/api/ltd/basket?basketId=${basketId}`)
       .then(r => r.json())
       .then(data => {
         if (data.expirationDate) {
-          setExpiresAt(new Date(data.expirationDate));
+          const exp = new Date(data.expirationDate);
+          // Only use API date if it's in the future; otherwise use fallback
+          if (!isNaN(exp.getTime()) && exp.getTime() > Date.now()) {
+            setExpiresAt(exp);
+          } else {
+            fallback();
+          }
         } else {
-          // Fallback: 10 minutes from now
-          setExpiresAt(new Date(Date.now() + 10 * 60 * 1000));
+          fallback();
         }
       })
-      .catch(() => {
-        setExpiresAt(new Date(Date.now() + 10 * 60 * 1000));
-      });
+      .catch(fallback);
   }, [basketId]);
 
   /* Countdown timer */

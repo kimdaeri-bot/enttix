@@ -17,9 +17,23 @@ export async function GET(req: NextRequest) {
 
   const res = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}`, { headers: { 'Api-Key': LTD_API_KEY } });
   const data = await res.json();
+
+  // Parse MinExpirationDate — LTD may return .NET format "/Date(1234567890000)/"
+  let expirationIso: string | null = null;
+  const raw = data.MinExpirationDate;
+  if (raw) {
+    const dotnetMatch = typeof raw === 'string' && raw.match(/\/Date\((\d+)\)\//);
+    if (dotnetMatch) {
+      expirationIso = new Date(Number(dotnetMatch[1])).toISOString();
+    } else {
+      const d = new Date(raw);
+      expirationIso = isNaN(d.getTime()) ? null : d.toISOString();
+    }
+  }
+
   return NextResponse.json({
     basketId: data.BasketId,
-    expirationDate: data.MinExpirationDate,
+    expirationDate: expirationIso,
     items: data.Items || [],
   });
 }
