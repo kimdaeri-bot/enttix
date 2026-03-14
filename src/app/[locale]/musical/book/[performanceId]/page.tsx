@@ -635,44 +635,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
           {/* RIGHT PANEL - flex-1 */}
           <div className="flex-1 min-w-0">
-            {/* Sticky header bar */}
-            <div className="sticky top-[70px] z-40 bg-white border border-[#E5E7EB] rounded-xl p-3 mb-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="text-[14px] font-bold text-[#0F172A]">
-                  {currentPerf && formatDateShort(currentPerf.PerformanceDate)} - {currentPerf && formatTime(currentPerf.PerformanceDate)}
-                </div>
-                {/* Price filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-[#64748B]">Filter seats:</span>
-                  <button
-                    onClick={() => setPriceFilter(null)}
-                    className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
-                      priceFilter === null
-                        ? 'bg-[#2B7FFF] text-white'
-                        : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {priceBands.map(price => (
-                    <button
-                      key={price}
-                      onClick={() => setPriceFilter(price)}
-                      className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
-                        priceFilter === price
-                          ? 'bg-[#2B7FFF] text-white'
-                          : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
-                      }`}
-                    >
-                      £{price.toFixed(0)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* Seat map container */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
+              {/* LTD legend — 최상단 고정 */}
+              <div id="ltd-legend" className="ltd-legend px-3 pt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
               <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}>
                 <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                   <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
@@ -682,14 +648,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="seat-plan w-full h-full">
                     <div className="sticky-content w-full h-full">
                       <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
+                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* LTD legend — required by controller.js */}
-              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning />
             </div>
 
             {/* Fixed bottom bar */}
