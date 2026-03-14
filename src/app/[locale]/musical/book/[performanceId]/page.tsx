@@ -316,8 +316,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         const perf = perfs.find(p => String(p.PerformanceId) === String(performanceId));
         if (perf) {
           setCurrentPerf(perf);
-          const dateKey = perf.PerformanceDate.slice(0, 10);
-          setSelectedDate(dateKey);
+          const dateKey = perf.PerformanceDate?.slice(0, 10);
+          if (dateKey) setSelectedDate(dateKey);
         }
 
         // Extract unique sorted price bands from all performances
@@ -682,14 +682,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="seat-plan w-full h-full">
                     <div className="sticky-content w-full h-full">
                       <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
+                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               {/* LTD legend — required by controller.js */}
-              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning />
+              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
             </div>
 
             {/* Fixed bottom bar */}
@@ -764,14 +764,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="seat-plan w-full h-full">
                 <div className="sticky-content w-full h-full">
                   <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
+                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
                   </div>
                 </div>
               </div>
             </div>
           </div>
           {/* LTD legend — required by controller.js */}
-          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning />
+          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
         </div>
 
         {/* Fixed bottom bar - mobile */}
