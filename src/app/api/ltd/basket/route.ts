@@ -106,17 +106,19 @@ export async function POST(req: NextRequest) {
       // Step 3: Submit order → get payment URL
       const { basketId, affiliateId, leadCustomer, successUrl, failureUrl } = await req.json();
 
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app';
       const submitBody: Record<string, unknown> = {
         AffiliateId: affiliateId || '775854e9-b102-48d9-99bc-4b288a67b538',
-        SuccessReturnUrl: successUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app'}/musical/payment/success`,
-        FailureReturnUrl: failureUrl || `${process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app'}/musical/payment/fail`,
+        SuccessReturnUrl: successUrl || `${siteUrl}/musical/payment/success`,
+        FailureReturnUrl: failureUrl || `${siteUrl}/musical/payment/fail`,
+        // Required by LTD API — use leadCustomer if provided, otherwise defaults
+        Name: leadCustomer?.firstName || 'Guest',
+        LastName: leadCustomer?.lastName || 'Customer',
+        Email: leadCustomer?.email || 'guest@enttix.com',
+        DeliveryType: 1,
       };
 
-      if (leadCustomer) {
-        submitBody.Name = `${leadCustomer.firstName} ${leadCustomer.lastName}`;
-        submitBody.FirstName = leadCustomer.firstName;
-        submitBody.LastName = leadCustomer.lastName;
-        submitBody.Email = leadCustomer.email;
+      if (leadCustomer?.phone) {
         submitBody.Phone = leadCustomer.phone;
       }
 
