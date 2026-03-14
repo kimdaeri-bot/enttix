@@ -273,7 +273,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   /* Seating Plan state — stored in ref to avoid React re-render on seat
      selection, which would cause React reconciliation to destroy LTD's DOM.
      A single version counter triggers re-render only for the bottom bar UI. */
-  const seatDataRef = useRef({ ticketIds: [] as number[], labels: [] as string[], total: 0 });
+  type SeatInfo = { tid: number; label: string; price: number; description: string };
+  const seatDataRef = useRef({ seats: [] as SeatInfo[], ticketIds: [] as number[], total: 0 });
   const [seatVersion, setSeatVersion] = useState(0);
   const goStep2Ref = useRef<() => void>(() => {});
 
@@ -406,44 +407,43 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     if (w.__seatPlanPerf === perfKey) return;
     w.__seatPlanPerf = perfKey;
 
-    type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string };
+    type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string; D?: string; SN?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
+
+    const seatToInfo = (s: LTDSeat): SeatInfo => ({
+      tid: Number(s.Tid) || 0,
+      label: `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim(),
+      price: s.SP ?? 0,
+      description: s.D || s.SN || '',
+    });
 
     const updateSelection = (e: Event) => {
       try {
         const detail = (e as CustomEvent<LTDSeatDetail>).detail;
-        const sel: LTDSeat[] = detail?.selection || [];
+        const prevSelection: LTDSeat[] = detail?.selection || [];
         const seat = detail?.seat;
         const isSelect = e.type === 'LTD.SeatPlan.OnSeatSelected';
 
-        if (sel.length > 0) {
-          // LTD provides full selection array — use it directly
-          seatDataRef.current = {
-            ticketIds: sel.map(s => Number(s.Tid)).filter(Boolean),
-            labels: sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()),
-            total: sel.reduce((sum, s) => sum + (s.SP ?? 0), 0),
-          };
-        } else if (seat) {
-          // LTD only provides single seat — accumulate manually
-          const tid = Number(seat.Tid);
-          const prev = seatDataRef.current;
-          if (isSelect && tid && !prev.ticketIds.includes(tid)) {
-            seatDataRef.current = {
-              ticketIds: [...prev.ticketIds, tid],
-              labels: [...prev.labels, `${seat.A || ''} Row ${seat.R || ''} Seat ${seat.S || ''}`.trim()],
-              total: prev.total + (seat.SP ?? 0),
-            };
-          } else if (!isSelect && tid) {
-            const idx = prev.ticketIds.indexOf(tid);
-            if (idx >= 0) {
-              seatDataRef.current = {
-                ticketIds: prev.ticketIds.filter((_, i) => i !== idx),
-                labels: prev.labels.filter((_, i) => i !== idx),
-                total: prev.total - (seat.SP ?? 0),
-              };
-            }
+        // detail.selection is the state BEFORE the change — manually add/remove detail.seat
+        let currentSeats: LTDSeat[];
+        if (seat) {
+          const seatTid = String(seat.Tid);
+          if (isSelect) {
+            const alreadyIn = prevSelection.some(s => String(s.Tid) === seatTid);
+            currentSeats = alreadyIn ? prevSelection : [...prevSelection, seat];
+          } else {
+            currentSeats = prevSelection.filter(s => String(s.Tid) !== seatTid);
           }
+        } else {
+          currentSeats = prevSelection;
         }
+
+        const infos = currentSeats.map(seatToInfo).filter(s => s.tid > 0);
+        seatDataRef.current = {
+          seats: infos,
+          ticketIds: infos.map(s => s.tid),
+          total: infos.reduce((sum, s) => sum + s.price, 0),
+        };
         setSeatVersion(v => v + 1);
       } catch (err) {
         console.error('[Seat selection error]', err);
@@ -654,7 +654,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* Read seat data from ref (seatVersion triggers re-render when it changes) */
   void seatVersion;
-  const { ticketIds: selectedTicketIds, labels: selectedSeatLabels, total: selectedSeatTotal } = seatDataRef.current;
+  const { seats: selectedSeats, ticketIds: selectedTicketIds, total: selectedSeatTotal } = seatDataRef.current;
 
   /* ──────────────────────────────
      PC LAYOUT (>=1024px)
@@ -695,23 +695,32 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             </div>
 
             {/* Info box — updates when seats are selected */}
-            <div className={`rounded-xl p-3 text-[12px] border ${
-              selectedTicketIds.length > 0
-                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
-                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]'
-            }`}>
-              {selectedTicketIds.length > 0 ? (
-                <>
-                  <p className="font-bold mb-1">{selectedTicketIds.length}석 선택됨 — £{selectedSeatTotal.toFixed(2)}</p>
-                  {selectedSeatLabels.slice(0, 4).map((label, i) => (
-                    <p key={i} className="text-[11px]">{label}</p>
+            {selectedSeats.length > 0 ? (
+              <div className="bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl p-3 text-[12px] text-[#166534]">
+                {currentPerf && (
+                  <p className="font-bold mb-2 text-[#0F172A]">
+                    {formatDateShort(currentPerf.PerformanceDate)} · {formatTime(currentPerf.PerformanceDate)}
+                  </p>
+                )}
+                <p className="font-bold mb-1">{selectedSeats.length}석 선택됨 — £{selectedSeatTotal.toFixed(2)}</p>
+                <div className="space-y-1.5 mt-2">
+                  {selectedSeats.slice(0, 6).map((seat, i) => (
+                    <div key={seat.tid || i} className="text-[11px]">
+                      <span className="font-semibold">{seat.label}</span>
+                      {seat.description && (
+                        <span className="text-[#64748B] italic ml-1">— {seat.description}</span>
+                      )}
+                      <span className="text-[#166534] ml-1">£{seat.price.toFixed(2)}</span>
+                    </div>
                   ))}
-                  {selectedSeatLabels.length > 4 && <p className="text-[11px]">+{selectedSeatLabels.length - 4}석 더</p>}
-                </>
-              ) : (
-                '달력에서 날짜를 선택하고, 좌석을 클릭해 선택하세요.'
-              )}
-            </div>
+                  {selectedSeats.length > 6 && <p className="text-[11px]">+{selectedSeats.length - 6}석 더</p>}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-3 text-[12px] text-[#1E40AF]">
+                달력에서 날짜를 선택하고, 좌석을 클릭해 선택하세요.
+              </div>
+            )}
 
             {/* Mini calendar */}
             <MiniCalendar
@@ -832,8 +841,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div>
                     <p className="text-[13px] font-bold text-[#0F172A]">{selectedTicketIds.length} seat(s) selected</p>
                     <div className="flex gap-1 flex-wrap mt-1">
-                      {selectedSeatLabels.slice(0, 3).map((label, i) => (
-                        <span key={i} className="px-1.5 py-0.5 bg-[#d60c5b] text-white text-[9px] rounded-full font-medium">{label}</span>
+                      {selectedSeats.slice(0, 3).map((seat, i) => (
+                        <span key={seat.tid || i} className="px-1.5 py-0.5 bg-[#d60c5b] text-white text-[9px] rounded-full font-medium">{seat.label}</span>
                       ))}
                     </div>
                   </div>
