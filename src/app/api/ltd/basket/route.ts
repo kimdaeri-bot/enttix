@@ -41,8 +41,12 @@ export async function POST(req: NextRequest) {
       const body = await req.json();
 
       // 방법 A: 특정 TicketId 배열 (Seating Plan 직접 선택)
+      // LTD API expects flat integer array: { "Tickets": [141745744, 141745743] }
       if (body.tickets && Array.isArray(body.tickets) && body.tickets.length > 0) {
-        const ltdBody = { Tickets: body.tickets };
+        const ticketIds = body.tickets.map((t: number | { TId?: number; TicketId?: number }) =>
+          typeof t === 'number' ? t : (t.TId ?? t.TicketId ?? 0)
+        ).filter((id: number) => id > 0);
+        const ltdBody = { Tickets: ticketIds };
         console.log('[LTD basket add-tickets] URL:', `${LTD_BASE_URL}/Baskets/${body.basketId}/Tickets`);
         console.log('[LTD basket add-tickets] Request body:', JSON.stringify(ltdBody));
         const res = await fetch(`${LTD_BASE_URL}/Baskets/${body.basketId}/Tickets`, {
