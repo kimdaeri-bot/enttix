@@ -218,12 +218,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   /* Current performance state */
   const [currentPerf, setCurrentPerf] = useState<Performance | null>(null);
 
-  /* Seating Plan state */
-  const seatSpinnerRef = useRef<HTMLDivElement>(null);
-  const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
-  const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
-  const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
-  const seatPlanMounted = useRef(false);
+  /* Seating Plan state — stored in ref to avoid React re-render on seat
+     selection, which would cause React reconciliation to destroy LTD's DOM.
+     A single version counter triggers re-render only for the bottom bar UI. */
+  const seatDataRef = useRef({ ticketIds: [] as number[], labels: [] as string[], total: 0 });
+  const [seatVersion, setSeatVersion] = useState(0);
   const goStep2Ref = useRef<() => void>(() => {});
 
   /* Price filter state */
@@ -359,14 +358,20 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
 
     const updateSelection = (e: Event) => {
-      const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
-      setSelectedTicketIds(sel.map(s => Number(s.Tid)).filter(Boolean));
-      setSelectedSeatLabels(sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()));
-      setSelectedSeatTotal(sel.reduce((sum, s) => sum + (s.SP ?? 0), 0));
+      try {
+        const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
+        seatDataRef.current = {
+          ticketIds: sel.map(s => Number(s.Tid)).filter(Boolean),
+          labels: sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()),
+          total: sel.reduce((sum, s) => sum + (s.SP ?? 0), 0),
+        };
+        setSeatVersion(v => v + 1);
+      } catch (err) {
+        console.error('[Seat selection error]', err);
+      }
     };
 
     const hideSpinner = () => {
-      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
       document.querySelectorAll('[data-seat-spinner]').forEach(el => {
         (el as HTMLElement).style.display = 'none';
       });
@@ -500,7 +505,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   });
 
   async function goStep2() {
-    if (selectedTicketIds.length === 0) return;
+    const { ticketIds } = seatDataRef.current;
+    if (ticketIds.length === 0) return;
     setBasketCreating(true);
     setBasketCreateError('');
     try {
@@ -511,7 +517,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId: d1.basketId, tickets: selectedTicketIds }),
+        body: JSON.stringify({ basketId: d1.basketId, tickets: ticketIds }),
       });
       const d2 = await r2.json();
       if (d2.error) throw new Error(d2.error);
@@ -550,6 +556,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   }
 
   const performances = eventData.event?.Performances || eventData.performances || [];
+
+  /* Read seat data from ref (seatVersion triggers re-render when it changes) */
+  void seatVersion;
+  const { ticketIds: selectedTicketIds, labels: selectedSeatLabels, total: selectedSeatTotal } = seatDataRef.current;
 
   /* ──────────────────────────────
      PC LAYOUT (>=1024px)
@@ -635,25 +645,29 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
           {/* RIGHT PANEL - flex-1 */}
           <div className="flex-1 min-w-0">
-            {/* Seat map container */}
+            {/* Seat map container — entire inner DOM is unmanaged by React
+                so the LTD library can freely add tooltips / overlays / popups
+                without breaking React reconciliation on re-render */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
-              {/* LTD legend — 최상단 고정 */}
               <div id="ltd-legend" className="ltd-legend px-3 pt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
-              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}>
-                <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                  <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                  <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-                </div>
-                <div className="booking-seatplan-content w-full h-full">
-                  <div className="seat-plan w-full h-full">
-                    <div className="sticky-content w-full h-full">
-                      <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{__html: `
+                  <div data-seat-spinner class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                    <div class="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin"></div>
+                    <p class="text-[#94A3B8] text-sm">Loading seat map...</p>
+                  </div>
+                  <div class="booking-seatplan-content w-full h-full">
+                    <div class="seat-plan w-full h-full">
+                      <div class="sticky-content w-full h-full">
+                        <div class="seating-plan--big w-full h-full">
+                          <div id="seatplan-main" class="ltd-seatplan w-full h-full"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                `}}
+              />
             </div>
 
             {/* Fixed bottom bar */}
@@ -717,24 +731,26 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           <div className="ltd-legend-prices inline-flex gap-2" />
         </div>
 
-        {/* Seat map full width inline */}
+        {/* Seat map full width inline — entire inner DOM unmanaged by React */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] mb-24">
-          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}>
-            <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-              <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-            </div>
-            <div className="booking-seatplan-content w-full h-full">
-              <div className="seat-plan w-full h-full">
-                <div className="sticky-content w-full h-full">
-                  <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{__html: `
+              <div data-seat-spinner class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                <div class="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin"></div>
+                <p class="text-[#94A3B8] text-sm">Loading seat map...</p>
+              </div>
+              <div class="booking-seatplan-content w-full h-full">
+                <div class="seat-plan w-full h-full">
+                  <div class="sticky-content w-full h-full">
+                    <div class="seating-plan--big w-full h-full">
+                      <div id="seatplan-main" class="ltd-seatplan w-full h-full"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          {/* LTD legend — required by controller.js */}
+            `}}
+          />
           <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
         </div>
 
@@ -788,6 +804,37 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   );
 }
 
+/* ── Error Boundary — prevents seat-plan errors from crashing the entire page ── */
+class BookingErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(err: Error) {
+    return { hasError: true, message: err?.message || 'Unknown error' };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-lg mx-auto px-4 py-20 text-center">
+          <p className="text-red-600 text-lg font-bold mb-2">Something went wrong</p>
+          <p className="text-[#64748B] text-sm mb-4">{this.state.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold hover:bg-[#1D6AE5]"
+          >
+            Reload page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ══════════════════════════════════════════
    PAGE WRAPPER
 ══════════════════════════════════════════ */
@@ -796,13 +843,15 @@ export default function BookingPage({ params }: { params: Promise<{ performanceI
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
       <div className="bg-[#0F172A]"><Header hideSearch /></div>
-      <Suspense fallback={
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-        </div>
-      }>
-        <BookingContent performanceId={performanceId} />
-      </Suspense>
+      <BookingErrorBoundary>
+        <Suspense fallback={
+          <div className="flex justify-center py-20">
+            <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+          </div>
+        }>
+          <BookingContent performanceId={performanceId} />
+        </Suspense>
+      </BookingErrorBoundary>
     </main>
   );
 }
