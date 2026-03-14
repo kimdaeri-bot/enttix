@@ -193,6 +193,58 @@ function MiniCalendar({
   );
 }
 
+/* ── Memoized Seat Plan Area ──
+   React.memo with () => true ensures this component NEVER re-renders
+   after initial mount. This protects LTD's DOM from being destroyed
+   by React reconciliation when other state changes (seat selection,
+   calendar date, time slots, etc.) trigger a parent re-render. */
+const SeatPlanArea = React.memo(function SeatPlanArea({
+  containerHeight,
+  mobile,
+}: {
+  containerHeight: number;
+  mobile?: boolean;
+}) {
+  const height = mobile
+    ? Math.max(Math.round(containerHeight * 0.75), 520)
+    : containerHeight;
+  const outerClass = mobile
+    ? 'bg-white rounded-xl border border-[#E5E7EB] mb-24'
+    : 'bg-white rounded-xl border border-[#E5E7EB] mb-4';
+
+  return (
+    <div className={outerClass}>
+      {!mobile && (
+        <div id="ltd-legend" className="ltd-legend px-3 pt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+      )}
+      <div
+        data-seat-container
+        className="relative w-full"
+        style={{ height }}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{__html: `
+          <div data-seat-spinner class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+            <div class="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin"></div>
+            <p class="text-[#94A3B8] text-sm">Loading seat map...</p>
+          </div>
+          <div class="booking-seatplan-content w-full h-full">
+            <div class="seat-plan w-full h-full">
+              <div class="sticky-content w-full h-full">
+                <div class="seating-plan--big w-full h-full">
+                  <div id="seatplan-main" class="ltd-seatplan w-full h-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `}}
+      />
+      {mobile && (
+        <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+      )}
+    </div>
+  );
+}, () => true); // Always return true = props always "equal" = NEVER re-render
+
 /* ══════════════════════════════════════════
    BOOKING CONTENT
 ══════════════════════════════════════════ */
@@ -650,26 +702,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
           {/* RIGHT PANEL - flex-1 */}
           <div className="flex-1 min-w-0">
-            {/* Seat map container — #seatplan-main and #ltd-legend use
-                dangerouslySetInnerHTML to prevent React from touching LTD's DOM */}
-            <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
-              <div id="ltd-legend" className="ltd-legend px-3 pt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
-              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}>
-                <div data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                  <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                  <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-                </div>
-                <div className="booking-seatplan-content w-full h-full">
-                  <div className="seat-plan w-full h-full">
-                    <div className="sticky-content w-full h-full">
-                      <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Seat plan — wrapped in React.memo, never re-renders */}
+            <SeatPlanArea containerHeight={seatContainerHeight} />
 
             {/* Fixed bottom bar */}
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
@@ -732,25 +766,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           <div className="ltd-legend-prices inline-flex gap-2" />
         </div>
 
-        {/* Seat map full width inline */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] mb-24">
-          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}>
-            <div data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-              <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-            </div>
-            <div className="booking-seatplan-content w-full h-full">
-              <div className="seat-plan w-full h-full">
-                <div className="sticky-content w-full h-full">
-                  <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
-        </div>
+        {/* Seat plan — wrapped in React.memo, never re-renders */}
+        <SeatPlanArea containerHeight={seatContainerHeight} mobile />
 
         {/* Fixed bottom bar - mobile */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
