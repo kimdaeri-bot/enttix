@@ -315,8 +315,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         const perf = perfs.find(p => String(p.PerformanceId) === String(performanceId));
         if (perf) {
           setCurrentPerf(perf);
-          const dateKey = perf.PerformanceDate?.slice(0, 10);
-          if (dateKey) setSelectedDate(dateKey);
+          const dateKey = perf.PerformanceDate.slice(0, 10);
+          setSelectedDate(dateKey);
         }
 
         // Extract unique sorted price bands from all performances
@@ -558,7 +558,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const performances = eventData.event?.Performances || eventData.performances || [];
 
   /* Read seat data from ref (seatVersion triggers re-render when it changes) */
-  void seatVersion; // ensure React knows this state is used
+  void seatVersion;
   const { ticketIds: selectedTicketIds, labels: selectedSeatLabels, total: selectedSeatTotal } = seatDataRef.current;
 
   /* ──────────────────────────────
@@ -645,46 +645,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
           {/* RIGHT PANEL - flex-1 */}
           <div className="flex-1 min-w-0">
-            {/* Sticky header bar */}
-            <div className="sticky top-[70px] z-40 bg-white border border-[#E5E7EB] rounded-xl p-3 mb-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="text-[14px] font-bold text-[#0F172A]">
-                  {currentPerf && formatDateShort(currentPerf.PerformanceDate)} - {currentPerf && formatTime(currentPerf.PerformanceDate)}
-                </div>
-                {/* Price filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[12px] text-[#64748B]">Filter seats:</span>
-                  <button
-                    onClick={() => setPriceFilter(null)}
-                    className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
-                      priceFilter === null
-                        ? 'bg-[#2B7FFF] text-white'
-                        : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {priceBands.map(price => (
-                    <button
-                      key={price}
-                      onClick={() => setPriceFilter(price)}
-                      className={`px-3 py-1 text-[11px] font-semibold rounded-lg transition-colors ${
-                        priceFilter === price
-                          ? 'bg-[#2B7FFF] text-white'
-                          : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
-                      }`}
-                    >
-                      £{price.toFixed(0)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* Seat map container — entire inner DOM is unmanaged by React
                 so the LTD library can freely add tooltips / overlays / popups
                 without breaking React reconciliation on re-render */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
+              <div id="ltd-legend" className="ltd-legend px-3 pt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
               <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}
                 suppressHydrationWarning
                 dangerouslySetInnerHTML={{__html: `
@@ -703,7 +668,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   </div>
                 `}}
               />
-              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
             </div>
 
             {/* Fixed bottom bar */}
