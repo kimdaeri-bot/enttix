@@ -233,6 +233,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [basketCreating, setBasketCreating] = useState(false);
   const [basketCreateError, setBasketCreateError] = useState('');
 
+  /* Seat container height — calculated from scheme API map dimensions */
+  const [seatContainerHeight, setSeatContainerHeight] = useState(900);
+
   /* Responsive layout */
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -241,6 +244,27 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  /* Fetch map dimensions from scheme API → calculate correct container height */
+  useEffect(() => {
+    if (!performanceId) return;
+    fetch(`/api/ltd/scheme?performanceId=${performanceId}`)
+      .then(r => r.json())
+      .then((data: { Width?: number; Height?: number }) => {
+        const mapW = data.Width;
+        const mapH = data.Height;
+        if (!mapW || !mapH || mapW === 0) return;
+        // Container width = viewport - left panel (310px) - gaps (~70px)
+        const containerW = Math.max(
+          (typeof window !== 'undefined' ? window.innerWidth : 1280) - 400,
+          600
+        );
+        // With canvasFillMethod:'cover', scale = containerW/mapW, canvas height = mapH * scale
+        const neededH = Math.ceil(containerW * mapH / mapW) + 30;
+        setSeatContainerHeight(Math.max(neededH, 700));
+      })
+      .catch(() => {});
+  }, [performanceId]);
 
   /* eventId 없을 때 performanceId로 조회 */
   useEffect(() => {
@@ -372,19 +396,16 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const el = document.getElementById('seatplan-main');
       if (!el) return;
       const cw = el.offsetWidth || state.containerWidth || 800;
-      // When cw >= mapW, LTD uses scale=1 → need height >= mapH to show full map
-      // When cw < mapW, LTD uses minScale (cw/mapW) → needed height = mapH * cw/mapW
-      const neededH = cw >= mapW ? mapH : Math.ceil(cw * mapH / mapW);
+      // canvasFillMethod:'cover' → scale = cw/mapW → canvas height = mapH * cw/mapW
+      const neededH = Math.ceil(cw * mapH / mapW) + 30;
       const outerEl = el.closest('[data-seat-container]') as HTMLElement | null;
-      if (outerEl && neededH > (outerEl.offsetHeight || 0)) {
-        outerEl.style.height = `${neededH + 10}px`; // +10px breathing room
-        // After DOM update, call fitToScreen to recalculate scale
+      if (outerEl) {
+        outerEl.style.height = `${neededH}px`;
+        // After DOM update, force LTD to redraw at new dimensions
         requestAnimationFrame(() => {
           draw?.fitToScreen?.();
-          setTimeout(() => draw?.fitToScreen?.(), 200);
+          setTimeout(() => { draw?.fitToScreen?.(); draw?.redraw?.(); }, 300);
         });
-      } else {
-        draw?.fitToScreen?.();
       }
     };
 
@@ -650,8 +671,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             </div>
 
             {/* Seat map container */}
-            <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden mb-4">
-              <div data-seat-container className="relative w-full" style={{ height: 700 }}>
+            <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
+              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}>
                 <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
                   <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
                   <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
@@ -732,8 +753,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         </div>
 
         {/* Seat map full width inline */}
-        <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden mb-24">
-          <div data-seat-container className="relative w-full" style={{ height: 520 }}>
+        <div className="bg-white rounded-xl border border-[#E5E7EB] mb-24">
+          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}>
             <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
               <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
               <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
