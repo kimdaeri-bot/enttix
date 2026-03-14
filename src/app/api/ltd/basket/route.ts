@@ -125,16 +125,20 @@ export async function POST(req: NextRequest) {
       }
 
       // Fetch available delivery types for this basket
-      let deliveryType = 2; // Default: ETicket
+      let deliveryType = 0;
       try {
         const delRes = await fetch(`${LTD_BASE_URL}/Baskets/${basketId}/AvailableDeliveries`, {
           headers: { 'Api-Key': LTD_API_KEY },
         });
         const deliveries = await delRes.json();
-        if (Array.isArray(deliveries) && deliveries.length > 0) {
-          deliveryType = deliveries[0].Id || deliveries[0].DeliveryId || deliveries[0].DeliveryType || deliveries[0].id || 2;
+        console.log('[LTD AvailableDeliveries]', JSON.stringify(deliveries));
+        // Try to extract from array or object — field name varies
+        const list = Array.isArray(deliveries) ? deliveries : deliveries?.Deliveries || deliveries?.Items || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const first = list[0];
+          deliveryType = first.Id ?? first.DeliveryId ?? first.DeliveryType ?? first.id ?? first.Type ?? 0;
         }
-      } catch { /* use default */ }
+      } catch (err) { console.log('[LTD AvailableDeliveries error]', err); }
 
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app';
       const submitBody: Record<string, unknown> = {
@@ -144,8 +148,10 @@ export async function POST(req: NextRequest) {
         Name: leadCustomer.firstName,
         LastName: leadCustomer.lastName,
         Email: leadCustomer.email,
-        DeliveryType: deliveryType,
       };
+      if (deliveryType > 0) {
+        submitBody.DeliveryType = deliveryType;
+      }
 
       if (leadCustomer.phone) {
         submitBody.Phone = leadCustomer.phone;
