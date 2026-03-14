@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       console.log('[LTD SubmitOrder] Request:', JSON.stringify(submitBody));
       console.log('[LTD SubmitOrder] Response:', JSON.stringify(data));
-      const paymentUrl = data.PaymentUrl || data.Url || data.url;
+      const paymentUrl = data.PaymentRedirectUrl || data.PaymentUrl || data.Url || data.url;
       if (!paymentUrl) {
         return NextResponse.json({
           error: data.MessageDetail || data.Message || 'Payment redirect failed',
