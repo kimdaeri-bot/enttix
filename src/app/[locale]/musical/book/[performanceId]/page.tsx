@@ -599,13 +599,13 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const d1 = await r1.json();
       if (!d1.basketId) throw new Error(d1.error || 'Failed to create basket');
 
-      // Step 2: Add tickets — LTD API expects { TicketId: number }[] format
+      // Step 2: Add tickets — LTD API expects { TId: number }[] format
       const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           basketId: d1.basketId,
-          tickets: ticketIds.map(tid => ({ TicketId: tid })),
+          tickets: ticketIds.map(tid => ({ TId: tid })),
         }),
       });
       const d2 = await r2.json();

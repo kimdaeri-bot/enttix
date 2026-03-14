@@ -42,21 +42,25 @@ export async function POST(req: NextRequest) {
 
       // 방법 A: 특정 TicketId 배열 (Seating Plan 직접 선택)
       if (body.tickets && Array.isArray(body.tickets) && body.tickets.length > 0) {
+        const ltdBody = { Tickets: body.tickets };
+        console.log('[LTD basket add-tickets] URL:', `${LTD_BASE_URL}/Baskets/${body.basketId}/Tickets`);
+        console.log('[LTD basket add-tickets] Request body:', JSON.stringify(ltdBody));
         const res = await fetch(`${LTD_BASE_URL}/Baskets/${body.basketId}/Tickets`, {
           method: 'POST',
           headers,
-          body: JSON.stringify({ Tickets: body.tickets }),
+          body: JSON.stringify(ltdBody),
         });
         const data = await res.json();
+        console.log('[LTD basket add-tickets] Response:', JSON.stringify(data));
         if (data.Message && !data.Success) {
-          return NextResponse.json({ error: data.MessageDetail || data.Message }, { status: 502 });
+          return NextResponse.json({ error: data.MessageDetail || data.Message, raw: data }, { status: 502 });
         }
         if (!data.Success) {
           const reason = data.FailureReason || 0;
           const msg = reason === 1 ? '선택한 좌석이 매진되었습니다.' :
                       reason === 2 ? '한 자리 남은 좌석 선택은 불가합니다.' :
                       '티켓 추가에 실패했습니다. 다시 시도해주세요.';
-          return NextResponse.json({ error: msg, reason }, { status: 409 });
+          return NextResponse.json({ error: msg, reason, raw: data }, { status: 409 });
         }
         return NextResponse.json({ success: true, basket: data.GetBasketContentResult });
       }
