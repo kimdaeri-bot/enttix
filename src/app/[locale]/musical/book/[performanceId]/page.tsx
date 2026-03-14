@@ -411,12 +411,39 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
     const updateSelection = (e: Event) => {
       try {
-        const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
-        seatDataRef.current = {
-          ticketIds: sel.map(s => Number(s.Tid)).filter(Boolean),
-          labels: sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()),
-          total: sel.reduce((sum, s) => sum + (s.SP ?? 0), 0),
-        };
+        const detail = (e as CustomEvent<LTDSeatDetail>).detail;
+        const sel: LTDSeat[] = detail?.selection || [];
+        const seat = detail?.seat;
+        const isSelect = e.type === 'LTD.SeatPlan.OnSeatSelected';
+
+        if (sel.length > 0) {
+          // LTD provides full selection array — use it directly
+          seatDataRef.current = {
+            ticketIds: sel.map(s => Number(s.Tid)).filter(Boolean),
+            labels: sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()),
+            total: sel.reduce((sum, s) => sum + (s.SP ?? 0), 0),
+          };
+        } else if (seat) {
+          // LTD only provides single seat — accumulate manually
+          const tid = Number(seat.Tid);
+          const prev = seatDataRef.current;
+          if (isSelect && tid && !prev.ticketIds.includes(tid)) {
+            seatDataRef.current = {
+              ticketIds: [...prev.ticketIds, tid],
+              labels: [...prev.labels, `${seat.A || ''} Row ${seat.R || ''} Seat ${seat.S || ''}`.trim()],
+              total: prev.total + (seat.SP ?? 0),
+            };
+          } else if (!isSelect && tid) {
+            const idx = prev.ticketIds.indexOf(tid);
+            if (idx >= 0) {
+              seatDataRef.current = {
+                ticketIds: prev.ticketIds.filter((_, i) => i !== idx),
+                labels: prev.labels.filter((_, i) => i !== idx),
+                total: prev.total - (seat.SP ?? 0),
+              };
+            }
+          }
+        }
         setSeatVersion(v => v + 1);
       } catch (err) {
         console.error('[Seat selection error]', err);
@@ -567,23 +594,34 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     setBasketCreating(true);
     setBasketCreateError('');
     try {
+      // Step 1: Create basket
       const r1 = await fetch('/api/ltd/basket?action=create', { method: 'POST' });
       const d1 = await r1.json();
       if (!d1.basketId) throw new Error(d1.error || 'Failed to create basket');
 
+      // Step 2: Add tickets — LTD API expects { TicketId: number }[] format
       const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId: d1.basketId, tickets: ticketIds }),
+        body: JSON.stringify({
+          basketId: d1.basketId,
+          tickets: ticketIds.map(tid => ({ TicketId: tid })),
+        }),
       });
       const d2 = await r2.json();
       if (d2.error) throw new Error(d2.error);
 
-      const checkoutUrl = d2.basket?.CheckoutUrl || d1.checkoutUrl;
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      // Step 3: Submit order → get payment URL
+      const r3 = await fetch('/api/ltd/basket?action=submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ basketId: d1.basketId }),
+      });
+      const d3 = await r3.json();
+      if (d3.paymentUrl) {
+        window.location.href = d3.paymentUrl;
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error(d3.error || 'No payment URL returned');
       }
     } catch (err: unknown) {
       setBasketCreateError(err instanceof Error ? err.message : String(err));
@@ -656,9 +694,23 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               </div>
             </div>
 
-            {/* Info box */}
-            <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl p-3 text-[12px] text-[#1E40AF]">
-              달력에서 날짜를 선택하고, 좌석을 클릭해 선택하세요.
+            {/* Info box — updates when seats are selected */}
+            <div className={`rounded-xl p-3 text-[12px] border ${
+              selectedTicketIds.length > 0
+                ? 'bg-[#F0FDF4] border-[#BBF7D0] text-[#166534]'
+                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]'
+            }`}>
+              {selectedTicketIds.length > 0 ? (
+                <>
+                  <p className="font-bold mb-1">{selectedTicketIds.length}석 선택됨 — £{selectedSeatTotal.toFixed(2)}</p>
+                  {selectedSeatLabels.slice(0, 4).map((label, i) => (
+                    <p key={i} className="text-[11px]">{label}</p>
+                  ))}
+                  {selectedSeatLabels.length > 4 && <p className="text-[11px]">+{selectedSeatLabels.length - 4}석 더</p>}
+                </>
+              ) : (
+                '달력에서 날짜를 선택하고, 좌석을 클릭해 선택하세요.'
+              )}
             </div>
 
             {/* Mini calendar */}
