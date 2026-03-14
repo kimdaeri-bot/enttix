@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || '');
+const resend = new Resend(process.env.RESEND_API_KEY || 're_test_placeholder');
 const ADMIN_EMAIL = 'info@cruiselink.co.kr';
 const FROM_EMAIL = '크루즈링크 <newsletter@cruiselink.co.kr>';
 const FROM_NOREPLY = '크루즈링크 <noreply@cruiselink.co.kr>';

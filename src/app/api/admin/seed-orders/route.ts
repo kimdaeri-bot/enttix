@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
 
 // 스크린샷 기반 테스트 주문 데이터
 const HISTORICAL_ORDERS = [
@@ -116,6 +118,7 @@ const HISTORICAL_ORDERS = [
 ];
 
 export async function POST() {
+  const supabase = getSupabase();
   const results = [];
   for (const order of HISTORICAL_ORDERS) {
     // 이미 있으면 스킵
