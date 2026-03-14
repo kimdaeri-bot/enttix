@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
         Email: leadCustomer.email,
       };
       if (deliveryType > 0) {
-        submitBody.DeliveryTypeId = deliveryType;
+        submitBody.DeliveryType = deliveryType;
       }
 
       if (leadCustomer.phone) {
