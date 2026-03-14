@@ -78,7 +78,8 @@ function MiniCalendar({
   // Group performances by date
   const perfsByDate: Record<string, Performance[]> = {};
   performances.forEach(p => {
-    const dateKey = p.PerformanceDate.slice(0, 10);
+    const dateKey = p.PerformanceDate?.slice(0, 10);
+    if (!dateKey) return;
     if (!perfsByDate[dateKey]) perfsByDate[dateKey] = [];
     perfsByDate[dateKey].push(p);
   });
@@ -321,8 +322,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
         // Extract unique sorted price bands from all performances
         const prices = perfs
-          .map(p => p.MinimumTicketPrice)
-          .filter((p): p is number => typeof p === 'number' && p > 0);
+          .map(p => Number(p.MinimumTicketPrice))
+          .filter((p): p is number => !isNaN(p) && p > 0);
         const uniquePrices = Array.from(new Set(prices)).sort((a, b) => a - b);
         setPriceBands(uniquePrices);
       })
@@ -337,7 +338,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       return;
     }
     const perfs = eventData.event?.Performances || eventData.performances || [];
-    const slots = perfs.filter(p => p.PerformanceDate.slice(0, 10) === selectedDate);
+    const slots = perfs.filter(p => p.PerformanceDate && p.PerformanceDate.slice(0, 10) === selectedDate);
     setTimeSlots(slots);
   }, [eventData, selectedDate]);
 
@@ -611,7 +612,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                       <div key={ts.PerformanceId} className={`p-2 rounded-lg border ${isCurrent ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E5E7EB]'}`}>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-[12px] font-semibold text-[#0F172A]">{formatTime(ts.PerformanceDate)}</span>
-                          <span className="text-[11px] text-[#64748B]">From £{ts.MinimumTicketPrice?.toFixed(0) || '0'}</span>
+                          <span className="text-[11px] text-[#64748B]">From £{(Number(ts.MinimumTicketPrice) || 0).toFixed(0)}</span>
                         </div>
                         {!isCurrent && (
                           <button
@@ -681,14 +682,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                   <div className="seat-plan w-full h-full">
                     <div className="sticky-content w-full h-full">
                       <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
               {/* LTD legend — required by controller.js */}
-              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+              <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning />
             </div>
 
             {/* Fixed bottom bar */}
@@ -763,14 +764,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               <div className="seat-plan w-full h-full">
                 <div className="sticky-content w-full h-full">
                   <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning />
                   </div>
                 </div>
               </div>
             </div>
           </div>
           {/* LTD legend — required by controller.js */}
-          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+          <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning />
         </div>
 
         {/* Fixed bottom bar - mobile */}
