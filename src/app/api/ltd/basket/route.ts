@@ -102,19 +102,22 @@ export async function POST(req: NextRequest) {
       // Step 3: Submit order → get payment URL
       const { basketId, affiliateId, leadCustomer, successUrl, failureUrl } = await req.json();
 
+      if (!leadCustomer?.firstName || !leadCustomer?.lastName || !leadCustomer?.email) {
+        return NextResponse.json({ error: 'Customer name and email are required' }, { status: 400 });
+      }
+
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://enttix-omega.vercel.app';
       const submitBody: Record<string, unknown> = {
         AffiliateId: affiliateId || '775854e9-b102-48d9-99bc-4b288a67b538',
         SuccessReturnUrl: successUrl || `${siteUrl}/musical/payment/success`,
         FailureReturnUrl: failureUrl || `${siteUrl}/musical/payment/fail`,
-        // Required by LTD API — use leadCustomer if provided, otherwise defaults
-        Name: leadCustomer?.firstName || 'Guest',
-        LastName: leadCustomer?.lastName || 'Customer',
-        Email: leadCustomer?.email || 'guest@enttix.com',
+        Name: leadCustomer.firstName,
+        LastName: leadCustomer.lastName,
+        Email: leadCustomer.email,
         DeliveryType: 1,
       };
 
-      if (leadCustomer?.phone) {
+      if (leadCustomer.phone) {
         submitBody.Phone = leadCustomer.phone;
       }
 

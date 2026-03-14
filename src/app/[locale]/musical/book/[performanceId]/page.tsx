@@ -589,7 +589,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   });
 
   async function goStep2() {
-    const { ticketIds } = seatDataRef.current;
+    const { ticketIds, seats, total } = seatDataRef.current;
     if (ticketIds.length === 0) return;
     setBasketCreating(true);
     setBasketCreateError('');
@@ -599,7 +599,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const d1 = await r1.json();
       if (!d1.basketId) throw new Error(d1.error || 'Failed to create basket');
 
-      // Step 2: Add tickets — LTD API expects { TId: number }[] format
+      // Step 2: Add tickets — holds seats for ~10 minutes
       const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -611,21 +611,19 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const d2 = await r2.json();
       if (d2.error) throw new Error(d2.error);
 
-      // Step 3: Submit order → get payment URL
-      const r3 = await fetch('/api/ltd/basket?action=submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId: d1.basketId }),
+      // Navigate to checkout page with basket info
+      const checkoutParams = new URLSearchParams({
+        basketId: d1.basketId,
+        eventName,
+        venue,
+        performanceId,
+        performanceDate: currentPerf?.PerformanceDate || '',
+        seats: JSON.stringify(seats),
+        total: String(total),
       });
-      const d3 = await r3.json();
-      if (d3.paymentUrl) {
-        window.location.href = d3.paymentUrl;
-      } else {
-        throw new Error(d3.error || 'No payment URL returned');
-      }
+      router.push(`/${locale}/musical/checkout?${checkoutParams.toString()}`);
     } catch (err: unknown) {
       setBasketCreateError(err instanceof Error ? err.message : String(err));
-    } finally {
       setBasketCreating(false);
     }
   }
