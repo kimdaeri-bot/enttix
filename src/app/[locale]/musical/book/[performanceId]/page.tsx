@@ -389,7 +389,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     // Resize the seat map container to fit the full map, then zoom-to-fit
     const resizeContainerToFitMap = () => {
       const inst = getLTDInstance();
-      const draw = (inst as unknown as { draw?: { _references?: { state?: { originalWidth?: number; originalHeight?: number; containerWidth?: number } }; fitToScreen?: () => void } })?.draw;
+      const draw = (inst as unknown as { draw?: { _references?: { state?: { originalWidth?: number; originalHeight?: number; containerWidth?: number } }; fitToScreen?: () => void; redraw?: () => void } })?.draw;
       const state = draw?._references?.state;
       if (!state?.originalWidth || !state?.originalHeight) return;
       const mapW = state.originalWidth;
