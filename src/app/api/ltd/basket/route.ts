@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
         Email: leadCustomer.email,
       };
       if (deliveryType > 0) {
-        submitBody.DeliveryType = deliveryType;
+        submitBody.DeliveryTypeId = deliveryType;
       }
 
       if (leadCustomer.phone) {
@@ -159,6 +159,8 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify(submitBody),
       });
       const data = await res.json();
+      console.log('[LTD SubmitOrder] Request:', JSON.stringify(submitBody));
+      console.log('[LTD SubmitOrder] Response:', JSON.stringify(data));
       const paymentUrl = data.PaymentUrl || data.Url || data.url;
       if (!paymentUrl) {
         return NextResponse.json({
