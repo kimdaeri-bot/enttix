@@ -133,10 +133,10 @@ export async function POST(req: NextRequest) {
         const deliveries = await delRes.json();
         console.log('[LTD AvailableDeliveries]', JSON.stringify(deliveries));
         // Try to extract from array or object — field name varies
-        const list = Array.isArray(deliveries) ? deliveries : deliveries?.Deliveries || deliveries?.Items || [];
+        const list = Array.isArray(deliveries) ? deliveries : deliveries?.DeliveryTypes || deliveries?.Deliveries || deliveries?.Items || [];
         if (Array.isArray(list) && list.length > 0) {
           const first = list[0];
-          deliveryType = first.Id ?? first.DeliveryId ?? first.DeliveryType ?? first.id ?? first.Type ?? 0;
+          deliveryType = first.DeliveryTypeId ?? first.Id ?? first.DeliveryId ?? first.DeliveryType ?? first.id ?? first.Type ?? 0;
         }
       } catch (err) { console.log('[LTD AvailableDeliveries error]', err); }
 
