@@ -219,11 +219,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [currentPerf, setCurrentPerf] = useState<Performance | null>(null);
 
   /* Seating Plan state */
-  const seatSpinnerRef = useRef<HTMLDivElement>(null);
   const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
   const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
   const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
-  const seatPlanMounted = useRef(false);
   const goStep2Ref = useRef<() => void>(() => {});
 
   /* Price filter state */
@@ -366,7 +364,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     };
 
     const hideSpinner = () => {
-      if (seatSpinnerRef.current) seatSpinnerRef.current.style.display = 'none';
       document.querySelectorAll('[data-seat-spinner]').forEach(el => {
         (el as HTMLElement).style.display = 'none';
       });
@@ -671,24 +668,28 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               </div>
             </div>
 
-            {/* Seat map container */}
+            {/* Seat map container — entire inner DOM is unmanaged by React
+                so the LTD library can freely add tooltips / overlays / popups
+                without breaking React reconciliation on re-render */}
             <div className="bg-white rounded-xl border border-[#E5E7EB] mb-4">
-              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}>
-                <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-                  <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-                  <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-                </div>
-                <div className="booking-seatplan-content w-full h-full">
-                  <div className="seat-plan w-full h-full">
-                    <div className="sticky-content w-full h-full">
-                      <div className="seating-plan--big w-full h-full">
-                        <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+              <div data-seat-container className="relative w-full" style={{ height: seatContainerHeight }}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{__html: `
+                  <div data-seat-spinner class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                    <div class="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin"></div>
+                    <p class="text-[#94A3B8] text-sm">Loading seat map...</p>
+                  </div>
+                  <div class="booking-seatplan-content w-full h-full">
+                    <div class="seat-plan w-full h-full">
+                      <div class="sticky-content w-full h-full">
+                        <div class="seating-plan--big w-full h-full">
+                          <div id="seatplan-main" class="ltd-seatplan w-full h-full"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              {/* LTD legend — required by controller.js */}
+                `}}
+              />
               <div id="ltd-legend" className="ltd-legend mt-3" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
             </div>
 
@@ -753,24 +754,26 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           <div className="ltd-legend-prices inline-flex gap-2" />
         </div>
 
-        {/* Seat map full width inline */}
+        {/* Seat map full width inline — entire inner DOM unmanaged by React */}
         <div className="bg-white rounded-xl border border-[#E5E7EB] mb-24">
-          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}>
-            <div ref={seatSpinnerRef} data-seat-spinner className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
-              <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-              <p className="text-[#94A3B8] text-sm">Loading seat map...</p>
-            </div>
-            <div className="booking-seatplan-content w-full h-full">
-              <div className="seat-plan w-full h-full">
-                <div className="sticky-content w-full h-full">
-                  <div className="seating-plan--big w-full h-full">
-                    <div id="seatplan-main" className="ltd-seatplan w-full h-full" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
+          <div data-seat-container className="relative w-full" style={{ height: Math.max(Math.round(seatContainerHeight * 0.75), 520) }}
+            suppressHydrationWarning
+            dangerouslySetInnerHTML={{__html: `
+              <div data-seat-spinner class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-white">
+                <div class="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin"></div>
+                <p class="text-[#94A3B8] text-sm">Loading seat map...</p>
+              </div>
+              <div class="booking-seatplan-content w-full h-full">
+                <div class="seat-plan w-full h-full">
+                  <div class="sticky-content w-full h-full">
+                    <div class="seating-plan--big w-full h-full">
+                      <div id="seatplan-main" class="ltd-seatplan w-full h-full"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-          {/* LTD legend — required by controller.js */}
+            `}}
+          />
           <div id="ltd-legend" className="ltd-legend px-3 pb-2" suppressHydrationWarning dangerouslySetInnerHTML={{__html:""}} />
         </div>
 
