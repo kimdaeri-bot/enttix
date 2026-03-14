@@ -218,10 +218,11 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   /* Current performance state */
   const [currentPerf, setCurrentPerf] = useState<Performance | null>(null);
 
-  /* Seating Plan state */
-  const [selectedTicketIds, setSelectedTicketIds] = useState<number[]>([]);
-  const [selectedSeatLabels, setSelectedSeatLabels] = useState<string[]>([]);
-  const [selectedSeatTotal, setSelectedSeatTotal] = useState(0);
+  /* Seating Plan state — stored in ref to avoid React re-render on seat
+     selection, which would cause React reconciliation to destroy LTD's DOM.
+     A single version counter triggers re-render only for the bottom bar UI. */
+  const seatDataRef = useRef({ ticketIds: [] as number[], labels: [] as string[], total: 0 });
+  const [seatVersion, setSeatVersion] = useState(0);
   const goStep2Ref = useRef<() => void>(() => {});
 
   /* Price filter state */
@@ -357,10 +358,17 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
 
     const updateSelection = (e: Event) => {
-      const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
-      setSelectedTicketIds(sel.map(s => Number(s.Tid)).filter(Boolean));
-      setSelectedSeatLabels(sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()));
-      setSelectedSeatTotal(sel.reduce((sum, s) => sum + (s.SP ?? 0), 0));
+      try {
+        const sel: LTDSeat[] = (e as CustomEvent<LTDSeatDetail>).detail?.selection || [];
+        seatDataRef.current = {
+          ticketIds: sel.map(s => Number(s.Tid)).filter(Boolean),
+          labels: sel.map(s => `${s.A || ''} Row ${s.R || ''} Seat ${s.S || ''}`.trim()),
+          total: sel.reduce((sum, s) => sum + (s.SP ?? 0), 0),
+        };
+        setSeatVersion(v => v + 1);
+      } catch (err) {
+        console.error('[Seat selection error]', err);
+      }
     };
 
     const hideSpinner = () => {
@@ -497,7 +505,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   });
 
   async function goStep2() {
-    if (selectedTicketIds.length === 0) return;
+    const { ticketIds } = seatDataRef.current;
+    if (ticketIds.length === 0) return;
     setBasketCreating(true);
     setBasketCreateError('');
     try {
@@ -508,7 +517,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const r2 = await fetch('/api/ltd/basket?action=add-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ basketId: d1.basketId, tickets: selectedTicketIds }),
+        body: JSON.stringify({ basketId: d1.basketId, tickets: ticketIds }),
       });
       const d2 = await r2.json();
       if (d2.error) throw new Error(d2.error);
@@ -547,6 +556,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   }
 
   const performances = eventData.event?.Performances || eventData.performances || [];
+
+  /* Read seat data from ref (seatVersion triggers re-render when it changes) */
+  void seatVersion; // ensure React knows this state is used
+  const { ticketIds: selectedTicketIds, labels: selectedSeatLabels, total: selectedSeatTotal } = seatDataRef.current;
 
   /* ──────────────────────────────
      PC LAYOUT (>=1024px)
@@ -827,6 +840,37 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   );
 }
 
+/* ── Error Boundary — prevents seat-plan errors from crashing the entire page ── */
+class BookingErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: '' };
+  }
+  static getDerivedStateFromError(err: Error) {
+    return { hasError: true, message: err?.message || 'Unknown error' };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-lg mx-auto px-4 py-20 text-center">
+          <p className="text-red-600 text-lg font-bold mb-2">Something went wrong</p>
+          <p className="text-[#64748B] text-sm mb-4">{this.state.message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold hover:bg-[#1D6AE5]"
+          >
+            Reload page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 /* ══════════════════════════════════════════
    PAGE WRAPPER
 ══════════════════════════════════════════ */
@@ -835,13 +879,15 @@ export default function BookingPage({ params }: { params: Promise<{ performanceI
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
       <div className="bg-[#0F172A]"><Header hideSearch /></div>
-      <Suspense fallback={
-        <div className="flex justify-center py-20">
-          <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
-        </div>
-      }>
-        <BookingContent performanceId={performanceId} />
-      </Suspense>
+      <BookingErrorBoundary>
+        <Suspense fallback={
+          <div className="flex justify-center py-20">
+            <div className="w-10 h-10 rounded-full border-4 border-[#2B7FFF] border-t-transparent animate-spin" />
+          </div>
+        }>
+          <BookingContent performanceId={performanceId} />
+        </Suspense>
+      </BookingErrorBoundary>
     </main>
   );
 }
