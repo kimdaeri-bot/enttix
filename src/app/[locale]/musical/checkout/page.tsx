@@ -115,17 +115,50 @@ function CheckoutContent() {
     setSubmitting(true);
     setSubmitError('');
     try {
+      // 주문 참조 번호 생성 (ENT-YYYYMMDD-RANDOM6)
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+      const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const orderRef = `ENT-${dateStr}-${rand}`;
+
+      // LTD 결제 URL 요청 (success URL에 ref 포함)
+      const siteUrl = window.location.origin;
+      const successUrl = `${siteUrl}/${locale}/musical/payment/success?ref=${orderRef}`;
+      const failureUrl = `${siteUrl}/${locale}/musical/payment/fail?ref=${orderRef}`;
+
       const r = await fetch('/api/ltd/basket?action=submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           basketId,
           leadCustomer: { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() },
+          successUrl,
+          failureUrl,
         }),
       });
       const d = await r.json();
-      if (d.paymentUrl) window.location.href = d.paymentUrl;
-      else throw new Error(d.error || 'No payment URL returned');
+      if (!d.paymentUrl) throw new Error(d.error || 'No payment URL returned');
+
+      // Supabase에 주문 정보 저장 (결제 이전에 저장 — 결제 완료 후 조회용)
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ref: orderRef,
+          basketId,
+          eventName,
+          venue,
+          performanceDate,
+          seats,
+          total,
+          currency: 'GBP',
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+        }),
+      }).catch(() => {}); // 저장 실패해도 결제 진행
+
+      window.location.href = d.paymentUrl;
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
