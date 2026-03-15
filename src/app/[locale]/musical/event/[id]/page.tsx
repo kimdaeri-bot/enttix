@@ -46,6 +46,8 @@ interface LTDEvent {
   Images: { Url: string }[];
   MultimediaContent: { Type: number; Url: string }[];
   Cast: { Name: string; Description: string }[];
+  AverageScore?: number;
+  TotalReviews?: number;
 }
 interface RelatedEvent {
   EventId: number;
@@ -395,16 +397,16 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               )}
 
               {/* 별점 */}
-              {event.AverageScore > 0 && (
+              {(event.AverageScore ?? 0) > 0 && (
                 <div className="flex items-center gap-1.5 mb-4">
                   {[1,2,3,4,5].map(s => (
                     <svg key={s} width="14" height="14" viewBox="0 0 24 24"
-                      fill={s <= Math.round(event.AverageScore) ? '#FBBF24' : 'none'}
+                      fill={s <= Math.round(event.AverageScore ?? 0) ? '#FBBF24' : 'none'}
                       stroke="#FBBF24" strokeWidth="2">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
                   ))}
-                  <span className="text-[#94A3B8] text-[12px] ml-1">{event.AverageScore.toFixed(1)}{event.TotalReviews > 0 && ` / ${event.TotalReviews.toLocaleString()}`}</span>
+                  <span className="text-[#94A3B8] text-[12px] ml-1">{(event.AverageScore ?? 0).toFixed(1)}{(event.TotalReviews ?? 0) > 0 && ` / ${(event.TotalReviews ?? 0).toLocaleString()}`}</span>
                 </div>
               )}
 
