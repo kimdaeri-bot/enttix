@@ -315,7 +315,21 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     }
     return null;
   };
-  const rawYoutubeUrl = event.MultimediaContent?.find(m => m.Type === 0)?.Url;
+  /* 이벤트별 YouTube + 갤러리 수동 오버라이드 (LTD API 데이터 누락 시) */
+  const MEDIA_OVERRIDE: Record<number, { ytId?: string; images?: string[] }> = {
+    5312: { // Wicked
+      ytId: 'oT-PEKUUqdA',
+      images: [
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46210.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46206.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46208.png',
+      ],
+    },
+  };
+  const override = MEDIA_OVERRIDE[event.EventId];
+  const rawYoutubeUrl = override?.ytId
+    ? `https://www.youtube.com/embed/${override.ytId}`
+    : event.MultimediaContent?.find(m => m.Type === 0)?.Url;
   const youtubeUrl = rawYoutubeUrl ? extractYouTubeEmbedUrl(rawYoutubeUrl) : null;
   const DAYS_HEADER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const venueName = event.VenueName || event.Venue?.Name || '';
@@ -351,6 +365,13 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               if (event.MainImageUrl && !seenUrls.has(event.MainImageUrl)) {
                 seenUrls.add(event.MainImageUrl);
                 mediaImages.push({ type: 'image', url: event.MainImageUrl });
+              }
+              // 수동 오버라이드 이미지
+              for (const url of (override?.images || [])) {
+                if (!seenUrls.has(url)) {
+                  seenUrls.add(url);
+                  mediaImages.push({ type: 'image', url });
+                }
               }
               // LTD 갤러리 이미지 (실사)
               for (const img of (event.Images || [])) {
