@@ -123,7 +123,7 @@ function CheckoutContent() {
 
       // LTD 결제 URL 요청 (success URL에 ref 포함)
       const siteUrl = window.location.origin;
-      const successUrl = `${siteUrl}/${locale}/musical/payment/success?ref=${orderRef}`;
+      const successUrl = `${siteUrl}/${locale}/musical/payment/success?ref=${orderRef}&basketId=${encodeURIComponent(basketId)}`;
       const failureUrl = `${siteUrl}/${locale}/musical/payment/fail?ref=${orderRef}`;
 
       const r = await fetch('/api/ltd/basket?action=submit', {
