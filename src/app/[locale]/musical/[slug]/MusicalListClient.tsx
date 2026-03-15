@@ -88,6 +88,8 @@ const AUDIENCE_CHIPS = [
   { icon: '🧍', label: 'Solo' },
   { icon: '👥', label: 'Friends' },
   { icon: '🎒', label: 'Backpackers' },
+  { icon: '🔒', label: 'Secure checkout' },
+  { icon: '🎟️', label: 'Instant e-ticket' },
 ];
 
 type SortKey = 'popular' | 'price_asc' | 'price_desc';
