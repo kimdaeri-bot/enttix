@@ -83,11 +83,8 @@ const THEATRE_IMAGES: Record<string, string> = {
 };
 
 const AUDIENCE_CHIPS = [
-  { icon: '👫', label: 'Couples' },
-  { icon: '👨‍👩‍👧', label: 'Families' },
-  { icon: '🧍', label: 'Solo' },
-  { icon: '👥', label: 'Friends' },
-  { icon: '🎒', label: 'Backpackers' },
+  { icon: '🚫💰', label: 'No booking fee' },
+  { icon: '🗺️', label: 'Live seat map' },
   { icon: '🔒', label: 'Secure checkout' },
   { icon: '🎟️', label: 'Instant e-ticket' },
 ];
@@ -538,7 +535,7 @@ export default function MusicalListClient({
       <section className="bg-white py-8 border-b border-[#E5E7EB]">
         <div className="max-w-[1280px] mx-auto px-4">
           <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
-            West End shows recommended for
+            Why book with Enttix?
           </h2>
           <div className="flex flex-wrap gap-3">
             {AUDIENCE_CHIPS.map(chip => (
