@@ -5,6 +5,21 @@ import Header from '@/components/Header';
 
 type SeatInfo = { tid: number; label: string; price: number; description: string };
 
+/* ── Privacy Modal ── */
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB] sticky top-0 bg-white">
+          <h3 className="text-[15px] font-bold text-[#0F172A]">{title}</h3>
+          <button onClick={onClose} className="w-7 h-7 rounded-full bg-[#F1F5F9] flex items-center justify-center text-[#64748B] hover:bg-[#E2E8F0] text-lg font-bold">×</button>
+        </div>
+        <div className="px-5 py-4 text-[13px] text-[#374151] leading-relaxed">{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function CheckoutContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -21,20 +36,28 @@ function CheckoutContent() {
   let seats: SeatInfo[] = [];
   try { seats = JSON.parse(params.get('seats') || '[]'); } catch { seats = []; }
 
-  /* Timer state — basket expires in ~10 min */
+  /* Timer */
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [expired, setExpired] = useState(false);
 
-  /* Form state */
+  /* Form */
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  /* Fetch basket expiration */
+  /* Agreements */
+  const [agreeRefund, setAgreeRefund] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+  const [agreeThirdParty, setAgreeThirdParty] = useState(false);
+
+  /* Modals */
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showThirdPartyModal, setShowThirdPartyModal] = useState(false);
+
+  /* Basket expiration */
   useEffect(() => {
     if (!basketId) return;
     const fallback = () => setExpiresAt(new Date(Date.now() + 10 * 60 * 1000));
@@ -43,29 +66,18 @@ function CheckoutContent() {
       .then(data => {
         if (data.expirationDate) {
           const exp = new Date(data.expirationDate);
-          // Only use API date if it's in the future; otherwise use fallback
-          if (!isNaN(exp.getTime()) && exp.getTime() > Date.now()) {
-            setExpiresAt(exp);
-          } else {
-            fallback();
-          }
-        } else {
-          fallback();
-        }
+          if (!isNaN(exp.getTime()) && exp.getTime() > Date.now()) setExpiresAt(exp);
+          else fallback();
+        } else fallback();
       })
       .catch(fallback);
   }, [basketId]);
 
-  /* Countdown timer */
   useEffect(() => {
     if (!expiresAt) return;
     const tick = () => {
       const diff = expiresAt.getTime() - Date.now();
-      if (diff <= 0) {
-        setTimeLeft('0:00');
-        setExpired(true);
-        return;
-      }
+      if (diff <= 0) { setTimeLeft('0:00'); setExpired(true); return; }
       const min = Math.floor(diff / 60000);
       const sec = Math.floor((diff % 60000) / 1000);
       setTimeLeft(`${min}:${String(sec).padStart(2, '0')}`);
@@ -75,13 +87,12 @@ function CheckoutContent() {
     return () => clearInterval(iv);
   }, [expiresAt]);
 
-  /* Format helpers */
   const formatDateShort = (iso: string) => {
     if (!iso) return '';
     const d = new Date(iso);
     const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
     const day = d.getDate();
-    const suffix = day === 1 || day === 21 || day === 31 ? 'st' : day === 2 || day === 22 ? 'nd' : day === 3 || day === 23 ? 'rd' : 'th';
+    const suffix = [1,21,31].includes(day) ? 'st' : [2,22].includes(day) ? 'nd' : [3,23].includes(day) ? 'rd' : 'th';
     const month = d.toLocaleDateString('en-GB', { month: 'short' });
     const year = d.getFullYear();
     return `${weekday} ${day}${suffix} ${month} ${year}`;
@@ -89,18 +100,17 @@ function CheckoutContent() {
   const formatTime = (iso: string) => {
     if (!iso) return '';
     const d = new Date(iso);
-    const h = d.getHours();
-    const m = d.getMinutes();
-    const ampm = h >= 12 ? 'pm' : 'am';
-    const h12 = h % 12 || 12;
-    return `${h12}.${String(m).padStart(2, '0')}${ampm}`;
+    const h = d.getHours(), m = d.getMinutes();
+    return `${h % 12 || 12}.${String(m).padStart(2, '0')}${h >= 12 ? 'pm' : 'am'}`;
   };
 
   const isFormValid = firstName.trim() && lastName.trim() && email.trim() && email.includes('@');
+  const allAgreed = agreeRefund && agreePrivacy && agreeThirdParty;
+  const canSubmit = isFormValid && allAgreed && !submitting && !expired;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isFormValid || expired) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -109,20 +119,12 @@ function CheckoutContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           basketId,
-          leadCustomer: {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.trim(),
-            phone: phone.trim() || undefined,
-          },
+          leadCustomer: { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim() },
         }),
       });
       const d = await r.json();
-      if (d.paymentUrl) {
-        window.location.href = d.paymentUrl;
-      } else {
-        throw new Error(d.error || 'No payment URL returned');
-      }
+      if (d.paymentUrl) window.location.href = d.paymentUrl;
+      else throw new Error(d.error || 'No payment URL returned');
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -130,16 +132,12 @@ function CheckoutContent() {
     }
   }
 
-  if (!basketId) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-20 text-center">
-        <p className="text-red-600 text-lg font-bold mb-4">No basket found</p>
-        <button onClick={() => router.back()} className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold">
-          Go back
-        </button>
-      </div>
-    );
-  }
+  if (!basketId) return (
+    <div className="max-w-lg mx-auto px-4 py-20 text-center">
+      <p className="text-red-600 text-lg font-bold mb-4">No basket found</p>
+      <button onClick={() => router.back()} className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold">Go back</button>
+    </div>
+  );
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -151,16 +149,13 @@ function CheckoutContent() {
       }`}>
         <div className="flex items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={expired ? '#DC2626' : '#2B7FFF'} strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 6v6l4 2"/>
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
           </svg>
           <span className={`text-sm font-semibold ${expired ? 'text-red-700' : 'text-[#0F172A]'}`}>
             {expired ? 'Reservation expired' : 'Seats held for you'}
           </span>
         </div>
-        <span className={`text-lg font-bold tabular-nums ${
-          expired ? 'text-red-600' : parseInt(timeLeft) <= 2 ? 'text-amber-600' : 'text-[#2B7FFF]'
-        }`}>
+        <span className={`text-lg font-bold tabular-nums ${expired ? 'text-red-600' : parseInt(timeLeft) <= 2 ? 'text-amber-600' : 'text-[#2B7FFF]'}`}>
           {timeLeft || '--:--'}
         </span>
       </div>
@@ -169,130 +164,210 @@ function CheckoutContent() {
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-center">
           <p className="text-red-700 font-bold mb-2">Your seat reservation has expired.</p>
           <p className="text-red-600 text-sm mb-4">Please go back and select your seats again.</p>
-          <button
-            onClick={() => router.push(`/${locale}/musical/book/${performanceId}`)}
-            className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold hover:bg-[#1D6AE5]"
-          >
+          <button onClick={() => router.push(`/${locale}/musical/book/${performanceId}`)}
+            className="px-5 py-2 bg-[#2B7FFF] text-white rounded-lg text-sm font-semibold hover:bg-[#1D6AE5]">
             Back to seat selection
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* LEFT: Customer info form */}
-        <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
-            <h2 className="text-lg font-bold text-[#0F172A] mb-1">Customer Information</h2>
-            <p className="text-sm text-[#64748B] mb-5">Please enter your details to complete the booking.</p>
+      <form onSubmit={handleSubmit}>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* LEFT: Customer info */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
+              <h2 className="text-lg font-bold text-[#0F172A] mb-1">Customer Information</h2>
+              <p className="text-sm text-[#64748B] mb-5">Please enter your details to complete the booking.</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-[#0F172A] mb-1">First Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    placeholder="John"
-                    required
-                    className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
-                  />
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-[#0F172A] mb-1">First Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="John" required
+                      className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-[#0F172A] mb-1">Last Name <span className="text-red-500">*</span></label>
+                    <input type="text" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Doe" required
+                      className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]" />
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-semibold text-[#0F172A] mb-1">Last Name <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    placeholder="Doe"
-                    required
-                    className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
-                  />
+                  <label className="block text-sm font-semibold text-[#0F172A] mb-1">Email <span className="text-red-500">*</span></label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="john@example.com" required
+                    className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF]" />
+                  <p className="text-xs text-[#94A3B8] mt-1">Booking confirmation will be sent to this email.</p>
+                </div>
+
+                {/* 약관 동의 */}
+                <div className="border-t border-[#E5E7EB] pt-4 space-y-3">
+                  {/* 요금규정 */}
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" checked={agreeRefund} onChange={e => setAgreeRefund(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
+                    <span className="text-[13px] text-[#374151]">
+                      <span className="font-semibold text-red-600">[필수]</span>{' '}
+                      요금규정 동의 —{' '}
+                      <span className="text-[#0F172A] font-medium">환불/변경 불가</span>
+                      <span className="block text-[11px] text-[#94A3B8] mt-0.5">예약 완료 후 취소 및 변경이 불가합니다.</span>
+                    </span>
+                  </label>
+
+                  {/* 개인정보 수집 및 이용 */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
+                    <span className="text-[13px] text-[#374151]">
+                      <span className="font-semibold text-red-600">[필수]</span>{' '}
+                      개인정보 수집 및 이용 동의{' '}
+                      <button type="button" onClick={() => setShowPrivacyModal(true)}
+                        className="text-[#2B7FFF] underline text-[12px] hover:text-[#1D6AE5]">[내용 보기]</button>
+                    </span>
+                  </label>
+
+                  {/* 개인정보 제 3자 제공 */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" checked={agreeThirdParty} onChange={e => setAgreeThirdParty(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
+                    <span className="text-[13px] text-[#374151]">
+                      <span className="font-semibold text-red-600">[필수]</span>{' '}
+                      개인정보 제 3자 제공 동의{' '}
+                      <button type="button" onClick={() => setShowThirdPartyModal(true)}
+                        className="text-[#2B7FFF] underline text-[12px] hover:text-[#1D6AE5]">[내용 보기]</button>
+                    </span>
+                  </label>
+
+                  {!allAgreed && (firstName || lastName || email) && (
+                    <p className="text-[11px] text-amber-600">모든 필수 항목에 동의해야 결제를 진행할 수 있습니다.</p>
+                  )}
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-[#0F172A] mb-1">Email <span className="text-red-500">*</span></label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="john@example.com"
-                  required
-                  className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
-                />
-                <p className="text-xs text-[#94A3B8] mt-1">Booking confirmation will be sent to this email.</p>
+          {/* RIGHT: Order summary */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 sticky top-[80px]">
+              <h3 className="text-[15px] font-bold text-[#0F172A] mb-3">Order Summary</h3>
+
+              {/* Show 정보 */}
+              <div className="border-b border-[#E5E7EB] pb-3 mb-3">
+                <p className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wide mb-0.5">Show</p>
+                <p className="text-[14px] font-bold text-[#0F172A]">{eventName}</p>
+                {venue && <p className="text-[12px] text-[#64748B] mt-0.5">{venue}</p>}
+                {performanceDate && (
+                  <p className="text-[12px] text-[#2B7FFF] font-medium mt-0.5">
+                    {formatDateShort(performanceDate)} · {formatTime(performanceDate)}
+                  </p>
+                )}
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-[#0F172A] mb-1">Phone <span className="text-[#94A3B8] font-normal">(optional)</span></label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="+44 7700 900000"
-                  className="w-full px-3 py-2.5 border border-[#E5E7EB] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2B7FFF] focus:border-transparent"
-                />
+              {/* Seats */}
+              <div className="space-y-2.5 mb-3">
+                {seats.map((seat, i) => (
+                  <div key={seat.tid || i} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-[#0F172A] text-[13px]">{seat.label}</p>
+                      {seat.description && <p className="text-[11px] text-[#94A3B8] leading-tight mt-0.5">{seat.description}</p>}
+                    </div>
+                    <span className="text-[#0F172A] font-semibold text-[13px] shrink-0">£{seat.price.toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
 
+              {/* Total */}
+              <div className="border-t border-[#E5E7EB] pt-3 flex items-center justify-between mb-4">
+                <span className="text-sm font-bold text-[#0F172A]">Total</span>
+                <span className="text-lg font-extrabold text-[#0F172A]">£{total.toFixed(2)}</span>
+              </div>
+
+              {/* 결제 버튼 — Total 아래 */}
               {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
                   <p className="text-red-600 text-sm">{submitError}</p>
                 </div>
               )}
-
-              <button
-                type="submit"
-                disabled={!isFormValid || submitting || expired}
+              <button type="submit" disabled={!canSubmit}
                 className={`w-full py-3.5 rounded-xl text-[15px] font-bold transition-all ${
-                  !isFormValid || submitting || expired
+                  !canSubmit
                     ? 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
                     : 'bg-[#22c55e] text-white hover:bg-[#16a34a] active:scale-[0.98] shadow-lg'
-                }`}
-              >
+                }`}>
                 {submitting ? 'Processing...' : expired ? 'Reservation expired' : `Proceed to Payment — £${total.toFixed(2)}`}
               </button>
-            </form>
-          </div>
-        </div>
-
-        {/* RIGHT: Order summary */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 sticky top-[80px]">
-            <h3 className="text-[15px] font-bold text-[#0F172A] mb-3">Order Summary</h3>
-
-            {/* Show info */}
-            <div className="border-b border-[#E5E7EB] pb-3 mb-3">
-              <p className="text-sm font-semibold text-[#0F172A]">{eventName}</p>
-              <p className="text-xs text-[#64748B] mt-0.5">{venue}</p>
-              {performanceDate && (
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  {formatDateShort(performanceDate)} · {formatTime(performanceDate)}
-                </p>
+              {!allAgreed && !expired && (
+                <p className="text-[11px] text-[#94A3B8] text-center mt-2">필수 약관 3가지에 모두 동의해 주세요</p>
               )}
             </div>
-
-            {/* Seats */}
-            <div className="space-y-2 mb-3">
-              {seats.map((seat, i) => (
-                <div key={seat.tid || i} className="flex items-center justify-between text-sm">
-                  <div>
-                    <p className="font-medium text-[#0F172A] text-[13px]">{seat.label}</p>
-                    {seat.description && <p className="text-[11px] text-[#94A3B8]">{seat.description}</p>}
-                  </div>
-                  <span className="text-[#0F172A] font-semibold text-[13px]">£{seat.price.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Total */}
-            <div className="border-t border-[#E5E7EB] pt-3 flex items-center justify-between">
-              <span className="text-sm font-bold text-[#0F172A]">Total</span>
-              <span className="text-lg font-extrabold text-[#0F172A]">£{total.toFixed(2)}</span>
-            </div>
           </div>
         </div>
-      </div>
+      </form>
+
+      {/* 개인정보 수집 및 이용 모달 */}
+      {showPrivacyModal && (
+        <Modal title="개인정보 수집 및 이용" onClose={() => setShowPrivacyModal(false)}>
+          <table className="w-full text-[12px] border-collapse border border-[#E5E7EB] mb-4">
+            <thead>
+              <tr className="bg-[#F8FAFC]">
+                {['구분','수집항목','수집목적','보유기간'].map(h => (
+                  <th key={h} className="border border-[#E5E7EB] px-2 py-2 text-left font-semibold text-[#374151]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151] align-top">서비스 제공에 따른 계약 이행 및 요금정산</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">대표 예약자명 정보 : 영문 성명, 이메일, 휴대폰번호</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">뮤지컬티켓 예약/결제/발권/차내서비스처리, 본인확인</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">①고객 삭제 요구 시②관계 법령의 규정에 의하여 관계법령이 정한 기간</td>
+              </tr>
+              <tr>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151] align-top">서비스이용에 따른 자동수집 및 생성정보</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">접속IP정보, 쿠키, 접속로그, 모바일 단말기정보(운영체제 및 버전, 단말기식별번호), 결제기록</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">본인 확인 서비스 이용 통계 작성, 부정이용방지, 맞춤형 서비스 및 마케팅 정보 제공</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">3개월</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="text-[12px] text-[#374151]">회사는 상품판매 및 결제, 상담, 기타 고객 서비스 등을 위해 아래와 같은 개인정보를 수집하고 있습니다.</p>
+          <p className="text-[12px] text-[#64748B] mt-3 font-semibold">*동의를 거부할 권리 및 동의를 거부할 경우의 불이익</p>
+          <p className="text-[12px] text-[#374151] mt-1">개인정보주체는 개인정보 수집 및 이용동의를 거부할 권리가 있습니다. 동의를 거부할 경우 서비스 이용이 불가함을 알려드립니다.</p>
+        </Modal>
+      )}
+
+      {/* 개인정보 제 3자 제공 모달 */}
+      {showThirdPartyModal && (
+        <Modal title="개인정보 제 3자 제공" onClose={() => setShowThirdPartyModal(false)}>
+          <p className="text-[12px] text-[#374151] mb-4">
+            런던쇼글로벌은 정보제공 주체자의 동의가 있거나 관련법령의 규정에 의한 경우를 제외하고는 어떠한 경우에도 &apos;개인정보의 수집 및 이용목적&apos;에서 고지한 범위를 넘어서거나, 서비스 영역과 무관한 타 기업/기관에 제공하거나 이용하지 않습니다.
+          </p>
+          <table className="w-full text-[12px] border-collapse border border-[#E5E7EB] mb-4">
+            <thead>
+              <tr className="bg-[#F8FAFC]">
+                {['제공받는 자','제공하는 항목','이용목적','국외 이전여부','보유 및 이용기간'].map(h => (
+                  <th key={h} className="border border-[#E5E7EB] px-2 py-2 text-left font-semibold text-[#374151]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">London Theatre Direct Ltd</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">이메일, 영문성명</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">티켓 예약 및 문의</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">영국</td>
+                <td className="border border-[#E5E7EB] px-2 py-2 text-[#374151]">이용 목적달성시 까지</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="text-[12px] font-semibold text-[#374151] mb-2">수집한 개인정보의 위탁</p>
+          <p className="text-[12px] text-[#374151] mb-3">
+            런던쇼글로벌은 고객의 원활한 서비스 제공을 위하여 일부 업무를 전문업체에 위탁 운영하고 있으며, 위탁계약시 개인정보 안전하게 관리함에 있어 관계법령에 따라 보호 안전을 기하며, 위탁계약 종료시까지 적법한 처리절차, 보안지시엄수, 개인정보에 관한 비밀유지, 업무 목적 및 범위를 벗어난 사용의 제한, 재위탁 제한 등 사고시의 손해배상 책임부담을 명확히 규정하고 해당 계약내용을 서면 또는 전자적으로 보관하여 이를 엄격하게 관리감독 하고 있으며, 위탁업무내용 또는 수탁자가 변경될 경우에는 지체없이 본 개인정보 처리방침을 통하여 공개합니다.
+          </p>
+          <p className="text-[12px] text-[#64748B] font-semibold">*동의를 거부할 권리 및 동의를 거부할 경우의 불이익</p>
+          <p className="text-[12px] text-[#374151] mt-1">개인정보주체는 개인정보 수집 및 이용동의를 거부할 권리가 있습니다. 동의를 거부할 경우 서비스 이용이 불가함을 알려드립니다.</p>
+        </Modal>
+      )}
     </div>
   );
 }
