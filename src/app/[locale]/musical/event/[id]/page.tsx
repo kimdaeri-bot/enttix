@@ -158,9 +158,16 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
       })
       .catch(() => {});
 
-    fetch(`/api/ltd/event/${id}/reviews`)
+    /* 리뷰가 없을 경우 메인 이벤트 ID로 폴백 */
+    const REVIEW_FALLBACK: Record<string, string> = { '5312': '384' };
+    const reviewId = REVIEW_FALLBACK[id] || id;
+    fetch(`/api/ltd/event/${reviewId}/reviews`)
       .then(r => r.json())
-      .then(d => setReviews(d.reviews || []))
+      .then(d => {
+        const list = d.reviews || [];
+        if (list.length === 0 && reviewId === id) return;
+        setReviews(list);
+      })
       .catch(() => {});
   }, [id]);
 
@@ -323,6 +330,13 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
         'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46210.png',
         'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46206.png',
         'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46208.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46212.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46735.jpg',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46207.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46736.jpg',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46211.png',
+        'https://media.londontheatredirect.com/Event/Wicked/event-gallery-image_46205.png',
+        'https://img-cdn.londontheatredirect.com/8f6438cb-4ce3-4915-962d-9e43b2852400',
       ],
     },
   };
@@ -643,24 +657,29 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* Tab: Gallery */}
               {activeTab === 'gallery' && (
                 <div className="p-6">
-                  {event.Images && event.Images.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {event.Images.map((img, i) => (
-                        <div key={i} className="aspect-[4/3] rounded-xl overflow-hidden bg-[#F1F5F9] cursor-pointer group">
-                          <img
-                            src={img.Url}
-                            alt={`${event.Name} ${i + 1}`}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-16">
-                      <div className="text-5xl mb-3">🖼️</div>
-                      <p className="text-[#94A3B8] text-sm">이미지가 없습니다.</p>
-                    </div>
-                  )}
+                  {(() => {
+                    const apiImgs = (event.Images || []).map(img => img.Url);
+                    const overrideImgs = override?.images || [];
+                    const allImgs = [...new Set([...apiImgs, ...overrideImgs])];
+                    return allImgs.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {allImgs.map((url, i) => (
+                          <div key={i} className="aspect-[4/3] rounded-xl overflow-hidden bg-[#F1F5F9] cursor-pointer group">
+                            <img
+                              src={url}
+                              alt={`${event.Name} ${i + 1}`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-16">
+                        <div className="text-5xl mb-3">🖼️</div>
+                        <p className="text-[#94A3B8] text-sm">이미지가 없습니다.</p>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
