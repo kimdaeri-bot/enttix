@@ -278,62 +278,79 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     <main className="min-h-screen bg-[#F5F7FA] pb-24">
 
       {/* ══════════════════════════════════
-          HERO
+          HERO — londonshow style
       ══════════════════════════════════ */}
       <div className="bg-[#0F172A] relative overflow-hidden">
         <Header hideSearch />
 
-        {/* Background blur image */}
+        {/* Background blur */}
         {event.DetailImageUrl && (
           <div className="absolute inset-0 pointer-events-none">
             <img src={event.DetailImageUrl} alt="" className="w-full h-full object-cover opacity-10 scale-105 blur-sm" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A]/70 via-[#0F172A]/80 to-[#0F172A]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A]/60 via-[#0F172A]/75 to-[#0F172A]" />
           </div>
         )}
 
-        <div className="relative max-w-[1200px] mx-auto px-6 pt-10 pb-16">
-          <div className="flex flex-col md:flex-row gap-8 items-end">
-            {/* Poster / Trailer Slider */}
+        <div className="relative max-w-[1200px] mx-auto px-4 md:px-6 pt-6 pb-8">
+          {/* PC: 좌측 비디오+썸네일 / 우측 공연정보 */}
+          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
+
+            {/* ── LEFT: 큰 트레일러 + 썸네일 슬라이더 ── */}
             {(() => {
-              const slides: { type: 'video'; url: string } | { type: 'image'; url: string } extends infer S
-                ? S[]
-                : never = [];
-              if (youtubeUrl) slides.push({ type: 'video', url: youtubeUrl.replace('autoplay=true', 'autoplay=0') });
-              if (event.MainImageUrl) slides.push({ type: 'image', url: event.MainImageUrl });
-              if (slides.length === 0) slides.push({ type: 'image', url: '' });
+              type Slide = { type: 'video'; url: string } | { type: 'image'; url: string };
+              const mediaImages: Slide[] = (event.MultimediaContent || [])
+                .filter((m: { Type: number; Url: string }) => m.Type !== 0 && m.Url)
+                .map((m: { Type: number; Url: string }) => ({ type: 'image' as const, url: m.Url }));
+              if (event.MainImageUrl && !mediaImages.find(s => s.url === event.MainImageUrl)) {
+                mediaImages.unshift({ type: 'image', url: event.MainImageUrl });
+              }
+              const mainSlides: Slide[] = [];
+              if (youtubeUrl) mainSlides.push({ type: 'video', url: youtubeUrl.replace('autoplay=true', 'autoplay=0') });
+              mediaImages.forEach(s => mainSlides.push(s));
+              if (mainSlides.length === 0) mainSlides.push({ type: 'image', url: '' });
+
               return (
-                <div className="flex-shrink-0 w-[220px] md:w-[280px]">
-                  {/* Slide area */}
-                  <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10 bg-black"
-                    style={{ aspectRatio: slides[activeSlide]?.type === 'video' ? '16/9' : '3/4' }}>
-                    {slides[activeSlide]?.type === 'video' ? (
+                <div className="w-full lg:flex-1 min-w-0">
+                  {/* 메인 플레이어 */}
+                  <div className="relative rounded-xl overflow-hidden bg-black aspect-video shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+                    {mainSlides[activeSlide]?.type === 'video' ? (
                       <iframe
-                        src={(slides[activeSlide] as { type: 'video'; url: string }).url}
+                        src={(mainSlides[activeSlide] as { type: 'video'; url: string }).url}
                         className="w-full h-full"
                         allowFullScreen
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       />
-                    ) : (slides[activeSlide] as { type: 'image'; url: string }).url ? (
-                      <img src={(slides[activeSlide] as { type: 'image'; url: string }).url} alt={event.Name} className="w-full h-full object-cover" />
+                    ) : (mainSlides[activeSlide] as { type: 'image'; url: string }).url ? (
+                      <img src={(mainSlides[activeSlide] as { type: 'image'; url: string }).url} alt={event.Name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-[#1E293B] flex items-center justify-center text-[#475569] text-4xl">🎭</div>
+                      <div className="w-full h-full bg-[#1E293B] flex items-center justify-center text-[#475569] text-6xl">🎭</div>
                     )}
-                    {/* Arrows */}
-                    {slides.length > 1 && (
+                    {mainSlides.length > 1 && (
                       <>
-                        <button onClick={() => setActiveSlide(p => (p - 1 + slides.length) % slides.length)}
-                          className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 text-xs">‹</button>
-                        <button onClick={() => setActiveSlide(p => (p + 1) % slides.length)}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 text-xs">›</button>
+                        <button onClick={() => setActiveSlide(p => (p - 1 + mainSlides.length) % mainSlides.length)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 text-lg font-bold">‹</button>
+                        <button onClick={() => setActiveSlide(p => (p + 1) % mainSlides.length)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 text-lg font-bold">›</button>
                       </>
                     )}
                   </div>
-                  {/* Dots */}
-                  {slides.length > 1 && (
-                    <div className="flex justify-center gap-1.5 mt-2">
-                      {slides.map((_, i) => (
+
+                  {/* 썸네일 슬라이더 */}
+                  {mainSlides.length > 1 && (
+                    <div className="flex gap-2 mt-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+                      {mainSlides.map((slide, i) => (
                         <button key={i} onClick={() => setActiveSlide(i)}
-                          className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeSlide ? 'bg-white w-4' : 'bg-white/40'}`} />
+                          className={`flex-shrink-0 w-[90px] h-[60px] rounded-lg overflow-hidden border-2 transition-all ${i === activeSlide ? 'border-[#2B7FFF]' : 'border-white/20 opacity-60 hover:opacity-90'}`}>
+                          {slide.type === 'video' ? (
+                            <div className="w-full h-full bg-red-600 flex items-center justify-center">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                            </div>
+                          ) : (slide as { type: 'image'; url: string }).url ? (
+                            <img src={(slide as { type: 'image'; url: string }).url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#1E293B]" />
+                          )}
+                        </button>
                       ))}
                     </div>
                   )}
@@ -341,56 +358,70 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               );
             })()}
 
-            {/* Info */}
-            <div className="flex-1 pb-2">
-              <div className="flex items-center gap-2 mb-3">
+            {/* ── RIGHT: 공연 정보 ── */}
+            <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0 pb-2">
+              <div className="flex items-center gap-2 mb-2">
                 <span className="text-[11px] font-bold tracking-widest text-[#93C5FD] uppercase">🎭 London West End</span>
               </div>
-              <h1 className="text-[32px] md:text-[48px] font-extrabold text-white leading-[1.1] tracking-tight mb-3">
+              <h1 className="text-[26px] md:text-[34px] font-extrabold text-white leading-[1.15] tracking-tight mb-3">
                 {event.Name}
               </h1>
               {event.TagLine && (
-                <p className="text-[#94A3B8] text-[15px] leading-relaxed max-w-[680px] mb-5">{event.TagLine}</p>
+                <p className="text-[#94A3B8] text-[14px] leading-relaxed mb-4">{event.TagLine}</p>
               )}
 
-              {/* Badges */}
-              <div className="flex flex-wrap gap-2 mb-5">
-                {event.Venue?.Name && (
-                  <span className="flex items-center gap-1.5 bg-white/10 text-white text-[12px] px-3 py-1.5 rounded-full">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {event.Venue.Name}
-                  </span>
-                )}
-                {event.RunningTime && (
-                  <span className="flex items-center gap-1.5 bg-white/10 text-white text-[12px] px-3 py-1.5 rounded-full">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    {event.RunningTime}
+              {/* 날짜 */}
+              {(event.StartDate || event.EndDate) && (
+                <div className="flex items-center gap-2 text-white text-[13px] mb-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                  <span>{event.StartDate && formatDate(event.StartDate)}{event.EndDate && ` ~ ${formatDate(event.EndDate)}`}</span>
+                </div>
+              )}
+
+              {/* 러닝타임 */}
+              {event.RunningTime && (
+                <div className="flex items-center gap-2 text-white text-[13px] mb-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  <span>{event.RunningTime}</span>
+                </div>
+              )}
+
+              {/* 극장 */}
+              {venueName && (
+                <div className="flex items-center gap-2 text-white text-[13px] mb-3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>{venueName}</span>
+                </div>
+              )}
+
+              {/* 별점 */}
+              {event.AverageScore > 0 && (
+                <div className="flex items-center gap-1.5 mb-4">
+                  {[1,2,3,4,5].map(s => (
+                    <svg key={s} width="14" height="14" viewBox="0 0 24 24"
+                      fill={s <= Math.round(event.AverageScore) ? '#FBBF24' : 'none'}
+                      stroke="#FBBF24" strokeWidth="2">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
+                  <span className="text-[#94A3B8] text-[12px] ml-1">{event.AverageScore.toFixed(1)}{event.TotalReviews > 0 && ` / ${event.TotalReviews.toLocaleString()}`}</span>
+                </div>
+              )}
+
+              {/* 가격 + 연령 */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {event.EventMinimumPrice > 0 && (
+                  <span className="bg-[#7B2D8B] text-white text-[15px] px-5 py-2 rounded-full font-bold shadow">
+                    £ {event.EventMinimumPrice} ~
                   </span>
                 )}
                 {event.AgeRating > 0 && (
-                  <span className="bg-white/10 text-white text-[12px] px-3 py-1.5 rounded-full">
-                    {event.AgeRating}+
-                  </span>
-                )}
-                {event.EventMinimumPrice > 0 && (
-                  <span className="bg-[#2B7FFF] text-white text-[13px] px-4 py-1.5 rounded-full font-bold">
-                    From £{event.EventMinimumPrice}
-                  </span>
+                  <span className="bg-white/10 text-white text-[12px] px-3 py-1.5 rounded-full">{event.AgeRating}+</span>
                 )}
                 {performances.length > 0 && (
-                  <span className="bg-[#10B981] text-white text-[12px] px-3 py-1.5 rounded-full font-semibold">
-                    ✓ Available
-                  </span>
+                  <span className="bg-[#10B981] text-white text-[12px] px-3 py-1.5 rounded-full font-semibold">✓ Available</span>
                 )}
               </div>
-
-              {/* Date range */}
-              {(event.StartDate || event.EndDate) && (
-                <p className="text-[#64748B] text-[13px]">
-                  {event.StartDate && formatDate(event.StartDate)}
-                  {event.EndDate && ` – ${formatDate(event.EndDate)}`}
-                </p>
-              )}
             </div>
           </div>
         </div>
