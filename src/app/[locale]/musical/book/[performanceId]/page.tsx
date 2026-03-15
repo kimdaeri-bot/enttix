@@ -885,33 +885,47 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         {/* Fixed bottom bar - mobile */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t-2 border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
           <div className="px-4 py-3">
-            <div className="flex items-center justify-between mb-2">
-              {selectedTicketIds.length === 0 ? (
-                <p className="text-[13px] text-[#64748B]">No seats selected</p>
-              ) : (
-                <>
-                  <div>
-                    <p className="text-[13px] font-bold text-[#0F172A]">{selectedTicketIds.length} seat(s) selected</p>
-                    <div className="flex gap-1 flex-wrap mt-1">
-                      {selectedSeats.slice(0, 3).map((seat, i) => (
-                        <span key={seat.tid || i} className="px-1.5 py-0.5 bg-[#d60c5b] text-white text-[9px] rounded-full font-medium">{seat.label}</span>
-                      ))}
+            {selectedTicketIds.length === 0 ? (
+              <p className="text-[13px] text-[#64748B] mb-2">No seats selected</p>
+            ) : (
+              <div className="mb-2">
+                {/* 좌석 수 + 날짜/시간 */}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <p className="text-[13px] font-bold text-[#0F172A] shrink-0">{selectedTicketIds.length} seat(s) selected</p>
+                  {currentPerf && (
+                    <p className="text-[11px] text-[#64748B] shrink-0">· {formatDateShort(currentPerf.PerformanceDate)} {formatTime(currentPerf.PerformanceDate)}</p>
+                  )}
+                </div>
+                {/* 좌석 태그 — 가로 슬라이드 */}
+                <div
+                  className="flex gap-1.5 overflow-x-auto pb-1"
+                  style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+                >
+                  {selectedSeats.map((seat, i) => (
+                    <div key={seat.tid || i} className="flex-shrink-0 px-2 py-1 bg-[#d60c5b] text-white rounded-full">
+                      <p className="text-[9px] font-semibold leading-tight whitespace-nowrap">{seat.label}</p>
+                      {seat.description && (
+                        <p className="text-[8px] opacity-80 leading-tight whitespace-nowrap">{seat.description}</p>
+                      )}
                     </div>
-                  </div>
-                  <p className="text-[16px] font-extrabold text-[#7B1FA2]">£{selectedSeatTotal.toFixed(2)}</p>
-                </>
-              )}
-            </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 버튼에 요금 포함 */}
             <button
               onClick={() => goStep2Ref.current()}
               disabled={selectedTicketIds.length === 0 || basketCreating}
-              className={`w-full py-3 rounded-xl text-[15px] font-bold transition-all ${
+              className={`w-full py-3 rounded-xl text-[15px] font-bold transition-all flex items-center justify-between px-4 ${
                 selectedTicketIds.length === 0 || basketCreating
                   ? 'bg-[#E2E8F0] text-[#94A3B8] cursor-not-allowed'
                   : 'bg-[#22c55e] text-white hover:bg-[#16a34a] active:scale-[0.98]'
               }`}
             >
-              {basketCreating ? 'Processing...' : selectedTicketIds.length === 0 ? '좌석을 선택해주세요' : 'Reserve Tickets →'}
+              <span>{basketCreating ? 'Processing...' : selectedTicketIds.length === 0 ? '좌석을 선택해주세요' : 'Reserve Tickets →'}</span>
+              {selectedTicketIds.length > 0 && !basketCreating && (
+                <span className="text-[14px] font-extrabold">£{selectedSeatTotal.toFixed(2)}</span>
+              )}
             </button>
             {basketCreateError && <p className="text-red-500 text-[11px] text-center mt-2">{basketCreateError}</p>}
           </div>
