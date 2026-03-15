@@ -403,7 +403,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
-    const perfKey = `${performanceId}_${isMobile ? 'm' : 'pc'}`;
+    const perfKey = `${performanceId}`;
     if (w.__seatPlanPerf === perfKey) return;
     w.__seatPlanPerf = perfKey;
 
@@ -529,7 +529,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
-      ctx: seatplanEl,
+      ctx: '#seatplan-main',
       locale: 'en-GB',
       canvasFillMethod: 'cover',
       event: { forceScrollY: true, scrollMove: false, scrollZoom: true, doubletapZoom: true },
@@ -580,8 +580,26 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
       document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
       document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
+      // Clear flag so next mount re-initializes the seat plan
+      w.__seatPlanPerf = null;
     };
-  }, [performanceId, isMobile, loading]);
+  }, [performanceId, loading]);
+
+  /* Resize: redraw seat map instead of full re-init */
+  useEffect(() => {
+    const handleResize = () => {
+      const inst = (window as unknown as { LTD?: { SeatPlan?: { instance?: { draw?: { fitToScreen?: () => void; redraw?: () => void } } } } }).LTD?.SeatPlan?.instance;
+      const draw = inst?.draw;
+      if (draw?.fitToScreen) {
+        requestAnimationFrame(() => {
+          draw.fitToScreen?.();
+          setTimeout(() => { draw.fitToScreen?.(); draw.redraw?.(); }, 300);
+        });
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   /* goStep2Ref */
   useEffect(() => {
@@ -660,7 +678,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   return (
     <>
       {/* PC Layout */}
-      {!isMobile && <div className="w-full max-w-[1400px] mx-auto px-4 py-6">
+      {!isMobile && <div className="w-full max-w-[1400px] mx-auto px-4 py-6 pb-24">
         <div className="flex gap-6 items-start">
           {/* LEFT PANEL - 310px, sticky */}
           <div className="w-[310px] flex-shrink-0 sticky top-[70px] self-start space-y-4">
@@ -726,6 +744,19 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
+
+            {/* Search seats button — shown when selected date differs from current */}
+            {selectedDate && currentPerf && selectedDate !== currentPerf.PerformanceDate?.slice(0, 10) && timeSlots.length > 0 && (
+              <button
+                onClick={() => {
+                  const firstAvail = timeSlots.find(t => t.TotalAvailableTickesCount > 0);
+                  if (firstAvail) handleTimeSlotClick(firstAvail);
+                }}
+                className="w-full py-3 rounded-xl bg-[#2B7FFF] text-white text-[14px] font-bold hover:bg-[#1D6AE5] transition-colors shadow-md"
+              >
+                🔍 {formatDateShort(selectedDate + 'T00:00:00')} 좌석 검색
+              </button>
+            )}
 
             {/* Time slots */}
             {timeSlots.length > 0 && (
@@ -800,7 +831,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       </div>}
 
       {/* MOBILE LAYOUT (<1024px) */}
-      {isMobile && <div className="px-4 py-4">
+      {isMobile && <div className="px-4 py-4 pb-36">
         {/* Compact top bar */}
         <div className="flex items-center justify-between mb-4">
           <Link href={eventId ? `/musical/event/${eventId}` : "/musical/west-end"} className="text-[#2B7FFF] text-[13px] font-semibold">
