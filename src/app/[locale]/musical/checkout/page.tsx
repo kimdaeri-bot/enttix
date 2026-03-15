@@ -140,7 +140,7 @@ function CheckoutContent() {
   );
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Timer bar */}
       <div className={`rounded-xl px-4 py-3 mb-6 flex items-center justify-between ${
         expired ? 'bg-red-50 border border-red-200' :
@@ -175,8 +175,8 @@ function CheckoutContent() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* LEFT: Customer info */}
           <div className="lg:col-span-3">
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6">
-              <h2 className="text-lg font-bold text-[#0F172A] mb-1">Customer Information</h2>
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-8">
+              <h2 className="text-xl font-bold text-[#0F172A] mb-1">Customer Information</h2>
               <p className="text-sm text-[#64748B] mb-5">Please enter your details to complete the booking.</p>
 
               <div className="space-y-4">
@@ -201,45 +201,41 @@ function CheckoutContent() {
                 </div>
 
                 {/* 약관 동의 */}
-                <div className="border-t border-[#E5E7EB] pt-4 space-y-3">
+                <div className="border-t border-[#E5E7EB] pt-4 space-y-2.5">
                   {/* 요금규정 */}
-                  <label className="flex items-start gap-3 cursor-pointer group">
+                  <label className="flex items-center gap-2.5 cursor-pointer group py-1">
                     <input type="checkbox" checked={agreeRefund} onChange={e => setAgreeRefund(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
-                    <span className="text-[13px] text-[#374151]">
-                      <span className="font-semibold text-red-600">[필수]</span>{' '}
-                      요금규정 동의 —{' '}
-                      <span className="text-[#0F172A] font-medium">환불/변경 불가</span>
-                      <span className="block text-[11px] text-[#94A3B8] mt-0.5">예약 완료 후 취소 및 변경이 불가합니다.</span>
+                      className="w-4 h-4 accent-[#2B7FFF] cursor-pointer shrink-0" />
+                    <span className="text-[13px] text-[#374151] flex-1">
+                      요금규정 동의 — <span className="font-semibold">환불/변경 불가</span>
+                      <span className="text-red-500 ml-1">(필수)</span>
                     </span>
                   </label>
 
                   {/* 개인정보 수집 및 이용 */}
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
-                    <span className="text-[13px] text-[#374151]">
-                      <span className="font-semibold text-red-600">[필수]</span>{' '}
-                      개인정보 수집 및 이용 동의{' '}
-                      <button type="button" onClick={() => setShowPrivacyModal(true)}
-                        className="text-[#2B7FFF] underline text-[12px] hover:text-[#1D6AE5]">[내용 보기]</button>
-                    </span>
-                  </label>
+                  <div className="flex items-center gap-2.5 py-1">
+                    <input type="checkbox" id="chk-privacy" checked={agreePrivacy} onChange={e => setAgreePrivacy(e.target.checked)}
+                      className="w-4 h-4 accent-[#2B7FFF] cursor-pointer shrink-0" />
+                    <label htmlFor="chk-privacy" className="text-[13px] text-[#374151] flex-1 cursor-pointer">
+                      개인 정보 수집 및 이용<span className="text-red-500 ml-1">(필수)</span>
+                    </label>
+                    <button type="button" onClick={() => setShowPrivacyModal(true)}
+                      className="shrink-0 px-2.5 py-1 bg-[#FF6B35] text-white text-[11px] font-bold rounded hover:bg-[#E55A25]">상세</button>
+                  </div>
 
                   {/* 개인정보 제 3자 제공 */}
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input type="checkbox" checked={agreeThirdParty} onChange={e => setAgreeThirdParty(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 accent-[#2B7FFF] cursor-pointer" />
-                    <span className="text-[13px] text-[#374151]">
-                      <span className="font-semibold text-red-600">[필수]</span>{' '}
-                      개인정보 제 3자 제공 동의{' '}
-                      <button type="button" onClick={() => setShowThirdPartyModal(true)}
-                        className="text-[#2B7FFF] underline text-[12px] hover:text-[#1D6AE5]">[내용 보기]</button>
-                    </span>
-                  </label>
+                  <div className="flex items-center gap-2.5 py-1">
+                    <input type="checkbox" id="chk-third" checked={agreeThirdParty} onChange={e => setAgreeThirdParty(e.target.checked)}
+                      className="w-4 h-4 accent-[#2B7FFF] cursor-pointer shrink-0" />
+                    <label htmlFor="chk-third" className="text-[13px] text-[#374151] flex-1 cursor-pointer">
+                      개인 정보 제 3자 제공<span className="text-red-500 ml-1">(필수)</span>
+                    </label>
+                    <button type="button" onClick={() => setShowThirdPartyModal(true)}
+                      className="shrink-0 px-2.5 py-1 bg-[#FF6B35] text-white text-[11px] font-bold rounded hover:bg-[#E55A25]">상세</button>
+                  </div>
 
                   {!allAgreed && (firstName || lastName || email) && (
-                    <p className="text-[11px] text-amber-600">모든 필수 항목에 동의해야 결제를 진행할 수 있습니다.</p>
+                    <p className="text-[11px] text-amber-600 pt-1">모든 필수 항목에 동의해야 결제를 진행할 수 있습니다.</p>
                   )}
                 </div>
               </div>
@@ -248,17 +244,17 @@ function CheckoutContent() {
 
           {/* RIGHT: Order summary */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-[#E5E7EB] p-5 sticky top-[80px]">
-              <h3 className="text-[15px] font-bold text-[#0F172A] mb-3">Order Summary</h3>
+            <div className="bg-white rounded-xl border border-[#E5E7EB] p-6 sticky top-[80px]">
+              <h3 className="text-[17px] font-bold text-[#0F172A] mb-4">Order Summary</h3>
 
               {/* Show 정보 */}
-              <div className="border-b border-[#E5E7EB] pb-3 mb-3">
-                <p className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wide mb-0.5">Show</p>
-                <p className="text-[14px] font-bold text-[#0F172A]">{eventName}</p>
-                {venue && <p className="text-[12px] text-[#64748B] mt-0.5">{venue}</p>}
+              <div className="border-b border-[#E5E7EB] pb-4 mb-3">
+                <p className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wide mb-1">Show</p>
+                <p className="text-[16px] font-extrabold text-[#0F172A] leading-tight">{eventName !== 'Show' ? eventName : '—'}</p>
+                {venue && <p className="text-[12px] text-[#64748B] mt-1">{venue}</p>}
                 {performanceDate && (
-                  <p className="text-[12px] text-[#2B7FFF] font-medium mt-0.5">
-                    {formatDateShort(performanceDate)} · {formatTime(performanceDate)}
+                  <p className="text-[12px] text-[#2B7FFF] font-semibold mt-1">
+                    📅 {formatDateShort(performanceDate)} · {formatTime(performanceDate)}
                   </p>
                 )}
               </div>
@@ -299,6 +295,7 @@ function CheckoutContent() {
               {!allAgreed && !expired && (
                 <p className="text-[11px] text-[#94A3B8] text-center mt-2">필수 약관 3가지에 모두 동의해 주세요</p>
               )}
+              <p className="text-[12px] font-bold text-red-600 text-center mt-2">⚠️ 해외 결제 가능 카드만 이용가능</p>
             </div>
           </div>
         </div>
