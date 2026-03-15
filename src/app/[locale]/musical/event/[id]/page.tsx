@@ -555,25 +555,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                     </div>
                   )}
 
-                  {/* Seating Plan */}
-                  {event.VenueSeatingPlanUrl && (
-                    <div>
-                      <h3 className="text-[15px] font-bold text-[#0F172A] mb-3 flex items-center gap-2">
-                        🪑 좌석 배치도
-                        {venueName && <span className="text-[12px] font-normal text-[#64748B]">— {venueName}</span>}
-                      </h3>
-                      <div className="rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#F8FAFC]">
-                        <img
-                          src={event.VenueSeatingPlanUrl}
-                          alt={`${venueName || event.Name} seating plan`}
-                          className="w-full object-contain max-h-[600px]"
-                        />
-                      </div>
-                      <p className="text-[11px] text-[#94A3B8] mt-2 text-center">
-                        실제 좌석 배치는 공연장 사정에 따라 다를 수 있습니다
-                      </p>
-                    </div>
-                  )}
+                  {/* Seating Plan removed */}
                 </div>
               )}
 
