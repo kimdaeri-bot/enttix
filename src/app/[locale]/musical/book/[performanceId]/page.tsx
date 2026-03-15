@@ -924,7 +924,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
             >
               <span>{basketCreating ? 'Processing...' : selectedTicketIds.length === 0 ? '좌석을 선택해주세요' : 'Reserve Tickets →'}</span>
               {selectedTicketIds.length > 0 && !basketCreating && (
-                <span className="text-[14px] font-extrabold">£{selectedSeatTotal.toFixed(2)}</span>
+                <span className="text-right leading-tight">
+                  <span className="block text-[13px] font-extrabold">£{selectedSeatTotal.toFixed(2)}</span>
+                  <span className="block text-[10px] opacity-80">{selectedTicketIds.length}석</span>
+                </span>
               )}
             </button>
             {basketCreateError && <p className="text-red-500 text-[11px] text-center mt-2">{basketCreateError}</p>}
