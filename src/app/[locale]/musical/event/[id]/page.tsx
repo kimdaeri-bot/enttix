@@ -413,8 +413,8 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* 가격 + 연령 */}
               <div className="flex items-center gap-3 flex-wrap">
                 {event.EventMinimumPrice > 0 && (
-                  <span className="bg-[#7B2D8B] text-white text-[15px] px-5 py-2 rounded-full font-bold shadow">
-                    £ {event.EventMinimumPrice} ~
+                  <span className="bg-[#2B7FFF] text-white text-[15px] px-5 py-2 rounded-full font-bold shadow">
+                    From £{event.EventMinimumPrice}
                   </span>
                 )}
                 {event.AgeRating > 0 && (
