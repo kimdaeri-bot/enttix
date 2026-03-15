@@ -301,7 +301,22 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
     </main>
   );
 
-  const youtubeUrl = event.MultimediaContent?.find(m => m.Type === 0)?.Url;
+  /* YouTube ID 추출 (shorts/watch/embed/youtu.be 모두 처리) */
+  const extractYouTubeEmbedUrl = (url: string): string | null => {
+    const patterns = [
+      /youtube\.com\/embed\/([A-Za-z0-9_-]+)/,
+      /youtube\.com\/watch\?v=([A-Za-z0-9_-]+)/,
+      /youtube\.com\/shorts\/([A-Za-z0-9_-]+)/,
+      /youtu\.be\/([A-Za-z0-9_-]+)/,
+    ];
+    for (const p of patterns) {
+      const m = url.match(p);
+      if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0`;
+    }
+    return null;
+  };
+  const rawYoutubeUrl = event.MultimediaContent?.find(m => m.Type === 0)?.Url;
+  const youtubeUrl = rawYoutubeUrl ? extractYouTubeEmbedUrl(rawYoutubeUrl) : null;
   const DAYS_HEADER = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const venueName = event.VenueName || event.Venue?.Name || '';
 
@@ -329,14 +344,30 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
             {/* ── LEFT: 큰 트레일러 + 썸네일 슬라이더 ── */}
             {(() => {
               type Slide = { type: 'video'; url: string } | { type: 'image'; url: string };
-              const mediaImages: Slide[] = (event.MultimediaContent || [])
-                .filter((m: { Type: number; Url: string }) => m.Type !== 0 && m.Url)
-                .map((m: { Type: number; Url: string }) => ({ type: 'image' as const, url: m.Url }));
-              if (event.MainImageUrl && !mediaImages.find(s => s.url === event.MainImageUrl)) {
-                mediaImages.unshift({ type: 'image', url: event.MainImageUrl });
+              // 이미지 수집: Images(갤러리) + MainImageUrl + MultimediaContent(Type!=0)
+              const seenUrls = new Set<string>();
+              const mediaImages: Slide[] = [];
+              // 포스터 이미지 먼저
+              if (event.MainImageUrl && !seenUrls.has(event.MainImageUrl)) {
+                seenUrls.add(event.MainImageUrl);
+                mediaImages.push({ type: 'image', url: event.MainImageUrl });
+              }
+              // LTD 갤러리 이미지 (실사)
+              for (const img of (event.Images || [])) {
+                if (img.Url && !seenUrls.has(img.Url)) {
+                  seenUrls.add(img.Url);
+                  mediaImages.push({ type: 'image', url: img.Url });
+                }
+              }
+              // MultimediaContent 이미지 (Type != 0)
+              for (const m of (event.MultimediaContent || [])) {
+                if (m.Type !== 0 && m.Url && !seenUrls.has(m.Url)) {
+                  seenUrls.add(m.Url);
+                  mediaImages.push({ type: 'image', url: m.Url });
+                }
               }
               const mainSlides: Slide[] = [];
-              if (youtubeUrl) mainSlides.push({ type: 'video', url: youtubeUrl.replace('autoplay=true', 'autoplay=0') });
+              if (youtubeUrl) mainSlides.push({ type: 'video', url: youtubeUrl });
               mediaImages.forEach(s => mainSlides.push(s));
               if (mainSlides.length === 0) mainSlides.push({ type: 'image', url: '' });
 
@@ -796,24 +827,22 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               )}
             </div>
 
-            {/* Trust signals */}
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4 space-y-3">
-              {[
-                { icon: '✓', text: 'No booking fees', sub: 'Zero hidden charges' },
-                { icon: '🔒', text: 'Secure checkout', sub: 'London Theatre Direct' },
-                { icon: '📧', text: 'Instant e-ticket', sub: 'Delivered by email' },
-                { icon: '⚠️', text: 'No refunds', sub: 'No refunds or exchanges' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#F0FDF4] flex items-center justify-center text-[14px] flex-shrink-0">
-                    {item.icon}
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-semibold text-[#0F172A]">{item.text}</p>
-                    <p className="text-[11px] text-[#94A3B8]">{item.sub}</p>
-                  </div>
-                </div>
-              ))}
+            {/* 대상별 추천 */}
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] p-4">
+              <p className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-3">이런 분께 추천해요</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { icon: '👫', label: 'Couples' },
+                  { icon: '👨‍👩‍👧', label: 'Families' },
+                  { icon: '🧍', label: 'Solo' },
+                  { icon: '👥', label: 'Friends' },
+                  { icon: '🎒', label: 'Backpackers' },
+                ].map((t) => (
+                  <span key={t.label} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-full text-[12px] text-[#374151] font-medium">
+                    <span>{t.icon}</span>{t.label}
+                  </span>
+                ))}
+              </div>
             </div>
 
             {/* Back link */}
