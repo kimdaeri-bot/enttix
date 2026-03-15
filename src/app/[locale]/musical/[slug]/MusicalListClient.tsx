@@ -354,8 +354,8 @@ export default function MusicalListClient({
     }
   });
 
-  /* ─── Top 10 (TOP_15 기준 상위 10개, 순서 유지) ─── */
-  const top10 = (() => {
+  /* ─── Top 5 (TOP_15 기준 상위 5개) + 6-10위는 Six 앞에 배치 ─── */
+  const { top5, extraTop } = (() => {
     const ranked: Array<{ ev: LTDEvent; rank: number }> = [];
     const unranked: LTDEvent[] = [];
     events.forEach(ev => {
@@ -364,16 +364,17 @@ export default function MusicalListClient({
       else unranked.push(ev);
     });
     ranked.sort((a, b) => a.rank - b.rank);
-    // TOP15 매칭 결과 먼저, 부족하면 가격 높은 순으로 채움
-    const result = ranked.slice(0, 10).map(r => r.ev);
-    if (result.length < 10) {
+    const allTop = ranked.slice(0, 10).map(r => r.ev);
+    if (allTop.length < 10) {
       const fill = unranked
         .sort((a, b) => (b.EventMinimumPrice || 0) - (a.EventMinimumPrice || 0))
-        .slice(0, 10 - result.length);
-      result.push(...fill);
+        .slice(0, 10 - allTop.length);
+      allTop.push(...fill);
     }
-    return result;
+    return { top5: allTop.slice(0, 5), extraTop: allTop.slice(5) };
   })();
+  // 하위 호환용 alias
+  const top10 = top5;
 
   /* ─── Featured Theatres ─── */
   const theatreMap = new Map<string, number>();
@@ -385,9 +386,17 @@ export default function MusicalListClient({
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
 
-  // top10에 이미 표시된 쇼는 메인 그리드에서 제외 (중복 방지)
-  const top10Ids = new Set(top10.map(ev => ev.EventId));
-  const gridEvents = sorted.filter(ev => !top10Ids.has(ev.EventId));
+  // top5 + extraTop에 표시된 쇼는 메인 그리드에서 제외 (중복 방지)
+  const top10Ids = new Set([...top5, ...extraTop].map(ev => ev.EventId));
+  const baseGridEvents = sorted.filter(ev => !top10Ids.has(ev.EventId));
+  // Six 앞에 extraTop(6-10위) 삽입
+  const sixIdx = baseGridEvents.findIndex(ev => ev.Name.toLowerCase().includes('six'));
+  const insertAt = sixIdx >= 0 ? sixIdx : 0;
+  const gridEvents = [
+    ...baseGridEvents.slice(0, insertAt),
+    ...extraTop,
+    ...baseGridEvents.slice(insertAt),
+  ];
   const displayed = gridEvents.slice(0, displayCount);
   const hasMore = displayed.length < gridEvents.length;
 
@@ -480,28 +489,44 @@ export default function MusicalListClient({
         </div>
       </section>
 
-      {/* ─── 2. TOP 10 ────────────────────────────────────── */}
-      {!loading && top10.length > 0 && (
+      {/* ─── 2. TOP 5 ────────────────────────────────────── */}
+      {!loading && top5.length > 0 && (
         <section className="bg-white py-10 border-b border-[#E5E7EB]">
           <div className="max-w-[1280px] mx-auto px-4">
             <h2 className="text-[22px] font-extrabold text-[#0F172A] mb-5">
-              Top 10 West End Shows
+              Top 5 West End Shows
             </h2>
-            <div
-              ref={sliderRef}
-              className={`flex gap-4 overflow-x-auto pb-3 scrollbar-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-              style={{ WebkitOverflowScrolling: 'touch' }}
-              onMouseDown={e => onDragStart(e.clientX)}
-              onMouseMove={e => onDragMove(e.clientX)}
-              onMouseUp={onDragEnd}
-              onMouseLeave={onDragEnd}
-              onTouchStart={e => onDragStart(e.touches[0].clientX)}
-              onTouchMove={e => onDragMove(e.touches[0].clientX)}
-              onTouchEnd={onDragEnd}
-            >
-              {top10.map((ev, i) => (
-                <Top10Card key={ev.EventId} ev={ev} index={i} />
-              ))}
+            <div className="relative">
+              {/* 왼쪽 화살표 */}
+              <button
+                onClick={() => { if (sliderRef.current) sliderRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-md flex items-center justify-center hover:bg-[#F1F5F9] transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div
+                ref={sliderRef}
+                className={`flex gap-4 overflow-x-auto pb-3 scrollbar-none select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                style={{ WebkitOverflowScrolling: 'touch' }}
+                onMouseDown={e => onDragStart(e.clientX)}
+                onMouseMove={e => onDragMove(e.clientX)}
+                onMouseUp={onDragEnd}
+                onMouseLeave={onDragEnd}
+                onTouchStart={e => onDragStart(e.touches[0].clientX)}
+                onTouchMove={e => onDragMove(e.touches[0].clientX)}
+                onTouchEnd={onDragEnd}
+              >
+                {top5.map((ev, i) => (
+                  <Top10Card key={ev.EventId} ev={ev} index={i} />
+                ))}
+              </div>
+              {/* 오른쪽 화살표 */}
+              <button
+                onClick={() => { if (sliderRef.current) sliderRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-10 h-10 rounded-full bg-white border border-[#E2E8F0] shadow-md flex items-center justify-center hover:bg-[#F1F5F9] transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             </div>
           </div>
         </section>
