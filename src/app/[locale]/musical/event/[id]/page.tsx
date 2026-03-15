@@ -1,7 +1,6 @@
 'use client';
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -120,7 +119,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
 
   /* LTD Calendar Widget */
   const [eventUrlId, setEventUrlId] = useState('');
-  const calendarMounted = useRef(false);
 
   /* Tabs */
   const [activeTab, setActiveTab] = useState<Tab>('about');
@@ -165,6 +163,37 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
       .then(d => setReviews(d.reviews || []))
       .catch(() => {});
   }, [id]);
+
+  /* ─── LTD Calendar Widget — dynamic script load ─── */
+  useEffect(() => {
+    if (!eventUrlId) return;
+    // 기존 스크립트 제거 (재진입 시 리셋)
+    const existing = document.getElementById('ltd-calendar-js');
+    if (existing) existing.remove();
+    // calendarWidget DOM 비우기
+    const container = document.getElementById('calendarWidget');
+    if (container) container.innerHTML = '';
+
+    const script = document.createElement('script');
+    script.id = 'ltd-calendar-js';
+    script.src = 'https://calendar.finale-cdn.uk/latest/calendar.js';
+    script.async = true;
+    script.onload = () => {
+      const LTD = (window as unknown as { LTD?: { Calendar: { init: (o: Record<string, unknown>) => void } } }).LTD;
+      LTD?.Calendar.init({
+        rootElementId: 'calendarWidget',
+        affiliateId: '775854e9-b102-48d9-99bc-4b288a67b538',
+        eventUrlId,
+        performanceSelectionRedirectUrl: `${window.location.origin}/ko/musical/book`,
+        isStickyMobileFooter: true,
+      });
+    };
+    document.body.appendChild(script);
+    return () => {
+      const s = document.getElementById('ltd-calendar-js');
+      if (s) s.remove();
+    };
+  }, [eventUrlId]);
 
   /* ─── Calendar derived data ─── */
   const perfDateSet = new Set(
@@ -643,33 +672,12 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* 로딩 중 placeholder */}
               {!eventUrlId && (
                 <div className="px-5 py-10 text-center">
-                  <div className="w-8 h-8 rounded-full border-3 border-[#2B7FFF] border-t-transparent animate-spin mx-auto mb-3" />
+                  <div className="w-8 h-8 rounded-full border-2 border-[#2B7FFF] border-t-transparent animate-spin mx-auto mb-3" />
                   <p className="text-[#94A3B8] text-sm">Loading calendar...</p>
                 </div>
               )}
-              {/* 달력 위젯 컨테이너 */}
+              {/* 달력 위젯 컨테이너 — useEffect에서 LTD.Calendar.init() 실행 */}
               <div id="calendarWidget" />
-
-              {/* 달력 위젯 스크립트 */}
-              {eventUrlId && !calendarMounted.current && (() => {
-                calendarMounted.current = true;
-                return (
-                  <Script
-                    src="https://calendar.finale-cdn.uk/latest/calendar.js"
-                    strategy="afterInteractive"
-                    onLoad={() => {
-                      const LTD = (window as unknown as { LTD?: { Calendar: { init: (o: Record<string, unknown>) => void } } }).LTD;
-                      LTD?.Calendar.init({
-                        rootElementId: 'calendarWidget',
-                        affiliateId: '775854e9-b102-48d9-99bc-4b288a67b538',
-                        eventUrlId,
-                        performanceSelectionRedirectUrl: window.location.origin,
-                        isStickyMobileFooter: true,
-                      });
-                    }}
-                  />
-                );
-              })()}
             </div>
 
             {/* ── 기존 달력 패널 (LEGACY — hidden, schedule tab에서만 사용) ── */}
