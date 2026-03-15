@@ -206,7 +206,7 @@ const SeatPlanArea = React.memo(function SeatPlanArea({
   mobile?: boolean;
 }) {
   const height = mobile
-    ? Math.max(Math.round(containerHeight * 0.75), 520)
+    ? Math.max(Math.round(containerHeight * 0.85), 700)
     : containerHeight;
   const outerClass = mobile
     ? 'bg-white rounded-xl border border-[#E5E7EB] mb-24'
@@ -290,7 +290,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [basketCreateError, setBasketCreateError] = useState('');
 
   /* Seat container height — calculated from scheme API map dimensions */
-  const [seatContainerHeight, setSeatContainerHeight] = useState(900);
+  const [seatContainerHeight, setSeatContainerHeight] = useState(1400);
 
   /* Responsive layout */
   const [isMobile, setIsMobile] = useState(false);
@@ -316,8 +316,8 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           600
         );
         // With canvasFillMethod:'cover', scale = containerW/mapW, canvas height = mapH * scale
-        const neededH = Math.ceil(containerW * mapH / mapW) + 30;
-        setSeatContainerHeight(Math.max(neededH, 700));
+        const neededH = Math.ceil(containerW * mapH / mapW) + 200;
+        setSeatContainerHeight(Math.max(neededH, 900));
       })
       .catch(() => {});
   }, [performanceId]);
@@ -494,7 +494,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       if (!el) return;
       const cw = el.offsetWidth || state.containerWidth || 800;
       // canvasFillMethod:'cover' → scale = cw/mapW → canvas height = mapH * cw/mapW
-      const neededH = Math.ceil(cw * mapH / mapW) + 30;
+      const neededH = Math.ceil(cw * mapH / mapW) + 200;
       const outerEl = el.closest('[data-seat-container]') as HTMLElement | null;
       if (outerEl) {
         outerEl.style.height = `${neededH}px`;
