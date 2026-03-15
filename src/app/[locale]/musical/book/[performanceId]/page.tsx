@@ -278,6 +278,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   const [seatVersion, setSeatVersion] = useState(0);
   const goStep2Ref = useRef<() => void>(() => {});
 
+  /* Selected time slot for date change (not yet navigated) */
+  const [pendingPerf, setPendingPerf] = useState<Performance | null>(null);
+
   /* Price filter state */
   const [priceBands, setPriceBands] = useState<number[]>([]);
   const [priceFilter, setPriceFilter] = useState<number | null>(null);
@@ -387,11 +390,20 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   useEffect(() => {
     if (!eventData || !selectedDate) {
       setTimeSlots([]);
+      setPendingPerf(null);
       return;
     }
     const perfs = eventData.event?.Performances || eventData.performances || [];
     const slots = perfs.filter(p => p.PerformanceDate && p.PerformanceDate.slice(0, 10) === selectedDate);
     setTimeSlots(slots);
+    // Auto-select first available time slot when date changes
+    const isCurrentDate = currentPerf?.PerformanceDate?.slice(0, 10) === selectedDate;
+    if (!isCurrentDate && slots.length > 0) {
+      const firstAvail = slots.find(t => t.TotalAvailableTickesCount > 0);
+      setPendingPerf(firstAvail || null);
+    } else {
+      setPendingPerf(null);
+    }
   }, [eventData, selectedDate]);
 
   /* LTD Embedded Seating Plan */
@@ -647,7 +659,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
   }
 
   const handleTimeSlotClick = (perf: Performance) => {
-    router.push(`/${locale}/musical/book/${perf.PerformanceId}?eventId=${eventId}&eventName=${encodeURIComponent(eventName)}&venue=${encodeURIComponent(venue)}`);
+    setPendingPerf(perf);
+  };
+
+  const handleSearchSeats = () => {
+    const targetPerf = pendingPerf || timeSlots.find(t => t.TotalAvailableTickesCount > 0);
+    if (!targetPerf) return;
+    // Full page load instead of router.push to cleanly re-initialize LTD seat plan
+    window.location.href = `/${locale}/musical/book/${targetPerf.PerformanceId}?eventId=${eventId}&eventName=${encodeURIComponent(eventName)}&venue=${encodeURIComponent(venue)}`;
   };
 
   if (loading) {
@@ -745,19 +764,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
               onSelectDate={setSelectedDate}
             />
 
-            {/* Search seats button — shown when selected date differs from current */}
-            {selectedDate && currentPerf && selectedDate !== currentPerf.PerformanceDate?.slice(0, 10) && timeSlots.length > 0 && (
-              <button
-                onClick={() => {
-                  const firstAvail = timeSlots.find(t => t.TotalAvailableTickesCount > 0);
-                  if (firstAvail) handleTimeSlotClick(firstAvail);
-                }}
-                className="w-full py-3 rounded-xl bg-[#2B7FFF] text-white text-[14px] font-bold hover:bg-[#1D6AE5] transition-colors shadow-md"
-              >
-                🔍 {formatDateShort(selectedDate + 'T00:00:00')} 좌석 검색
-              </button>
-            )}
-
             {/* Time slots */}
             {timeSlots.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E5E7EB] p-3">
@@ -765,28 +771,45 @@ function BookingContent({ performanceId }: { performanceId: string }) {
                 <div className="space-y-2">
                   {timeSlots.map(ts => {
                     const isCurrent = String(ts.PerformanceId) === String(performanceId);
+                    const isPending = pendingPerf && String(ts.PerformanceId) === String(pendingPerf.PerformanceId);
                     return (
-                      <div key={ts.PerformanceId} className={`p-2 rounded-lg border ${isCurrent ? 'border-[#2B7FFF] bg-[#EFF6FF]' : 'border-[#E5E7EB]'}`}>
-                        <div className="flex items-center justify-between mb-1">
+                      <button
+                        key={ts.PerformanceId}
+                        onClick={() => !isCurrent && handleTimeSlotClick(ts)}
+                        disabled={isCurrent}
+                        className={`w-full p-2 rounded-lg border text-left transition-all ${
+                          isCurrent
+                            ? 'border-[#2B7FFF] bg-[#EFF6FF]'
+                            : isPending
+                            ? 'border-[#2B7FFF] bg-[#DBEAFE] ring-2 ring-[#2B7FFF]'
+                            : 'border-[#E5E7EB] hover:border-[#93C5FD] hover:bg-[#F8FAFC]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
                           <span className="text-[12px] font-semibold text-[#0F172A]">{formatTime(ts.PerformanceDate)}</span>
                           <span className="text-[11px] text-[#64748B]">From £{(Number(ts.MinimumTicketPrice) || 0).toFixed(0)}</span>
                         </div>
-                        {!isCurrent && (
-                          <button
-                            onClick={() => handleTimeSlotClick(ts)}
-                            className="w-full py-1 px-2 rounded bg-[#2B7FFF] text-white text-[11px] font-semibold hover:bg-[#1D6AE5] transition-colors"
-                          >
-                            Select
-                          </button>
-                        )}
                         {isCurrent && (
-                          <div className="text-[10px] text-[#2B7FFF] font-semibold text-center">Selected</div>
+                          <div className="text-[10px] text-[#2B7FFF] font-semibold text-center mt-1">Current</div>
                         )}
-                      </div>
+                        {isPending && (
+                          <div className="text-[10px] text-[#2B7FFF] font-semibold text-center mt-1">Selected</div>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
               </div>
+            )}
+
+            {/* Search seats button — shown when a different performance is pending */}
+            {pendingPerf && String(pendingPerf.PerformanceId) !== String(performanceId) && (
+              <button
+                onClick={handleSearchSeats}
+                className="w-full py-3 rounded-xl bg-[#2B7FFF] text-white text-[14px] font-bold hover:bg-[#1D6AE5] transition-colors shadow-md"
+              >
+                {formatDateShort((pendingPerf.PerformanceDate || '') )} · {formatTime(pendingPerf.PerformanceDate || '')} 좌석 검색
+              </button>
             )}
           </div>
 
