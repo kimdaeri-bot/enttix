@@ -122,6 +122,7 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
 
   /* Tabs */
   const [activeTab, setActiveTab] = useState<Tab>('about');
+  const [activeSlide, setActiveSlide] = useState(0);
 
   /* ─── Load event ─── */
   useEffect(() => {
@@ -292,13 +293,53 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
 
         <div className="relative max-w-[1200px] mx-auto px-6 pt-10 pb-16">
           <div className="flex flex-col md:flex-row gap-8 items-end">
-            {/* Poster */}
-            <div className="flex-shrink-0 w-[180px] md:w-[220px] aspect-[3/4] rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10">
-              {event.MainImageUrl
-                ? <img src={event.MainImageUrl} alt={event.Name} className="w-full h-full object-cover" />
-                : <div className="w-full h-full bg-[#1E293B] flex items-center justify-center text-[#475569] text-4xl">🎭</div>
-              }
-            </div>
+            {/* Poster / Trailer Slider */}
+            {(() => {
+              const slides: { type: 'video'; url: string } | { type: 'image'; url: string } extends infer S
+                ? S[]
+                : never = [];
+              if (youtubeUrl) slides.push({ type: 'video', url: youtubeUrl.replace('autoplay=true', 'autoplay=0') });
+              if (event.MainImageUrl) slides.push({ type: 'image', url: event.MainImageUrl });
+              if (slides.length === 0) slides.push({ type: 'image', url: '' });
+              return (
+                <div className="flex-shrink-0 w-[220px] md:w-[280px]">
+                  {/* Slide area */}
+                  <div className="relative rounded-2xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10 bg-black"
+                    style={{ aspectRatio: slides[activeSlide]?.type === 'video' ? '16/9' : '3/4' }}>
+                    {slides[activeSlide]?.type === 'video' ? (
+                      <iframe
+                        src={(slides[activeSlide] as { type: 'video'; url: string }).url}
+                        className="w-full h-full"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      />
+                    ) : (slides[activeSlide] as { type: 'image'; url: string }).url ? (
+                      <img src={(slides[activeSlide] as { type: 'image'; url: string }).url} alt={event.Name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-[#1E293B] flex items-center justify-center text-[#475569] text-4xl">🎭</div>
+                    )}
+                    {/* Arrows */}
+                    {slides.length > 1 && (
+                      <>
+                        <button onClick={() => setActiveSlide(p => (p - 1 + slides.length) % slides.length)}
+                          className="absolute left-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 text-xs">‹</button>
+                        <button onClick={() => setActiveSlide(p => (p + 1) % slides.length)}
+                          className="absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 text-xs">›</button>
+                      </>
+                    )}
+                  </div>
+                  {/* Dots */}
+                  {slides.length > 1 && (
+                    <div className="flex justify-center gap-1.5 mt-2">
+                      {slides.map((_, i) => (
+                        <button key={i} onClick={() => setActiveSlide(i)}
+                          className={`w-1.5 h-1.5 rounded-full transition-all ${i === activeSlide ? 'bg-white w-4' : 'bg-white/40'}`} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Info */}
             <div className="flex-1 pb-2">
@@ -388,6 +429,14 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* Tab: About */}
               {activeTab === 'about' && (
                 <div className="p-6 space-y-6">
+                  {/* 중요 공지 — 소개 내용 최상단 */}
+                  {event.ImportantNotice && (
+                    <div className="bg-[#FFFBEB] border-l-4 border-[#F59E0B] rounded-xl p-4">
+                      <p className="text-[#92400E] text-[13px] font-bold mb-1.5">⚠️ Important Notice</p>
+                      <p className="text-[#78350F] text-[13px] leading-relaxed">{event.ImportantNotice}</p>
+                    </div>
+                  )}
+
                   {event.Description ? (
                     <div>
                       <div
@@ -397,26 +446,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                     </div>
                   ) : (
                     <p className="text-[#94A3B8] text-sm">No description available.</p>
-                  )}
-
-                  {/* YouTube trailer */}
-                  {youtubeUrl && (
-                    <div>
-                      <h3 className="text-[15px] font-bold text-[#0F172A] mb-3 flex items-center gap-2">
-                        <span className="w-5 h-5 bg-red-600 rounded flex items-center justify-center">
-                          <svg width="8" height="10" viewBox="0 0 8 10" fill="white"><path d="M0 0l8 5-8 5z"/></svg>
-                        </span>
-                        Trailer
-                      </h3>
-                      <div className="aspect-video rounded-xl overflow-hidden bg-black">
-                        <iframe
-                          src={youtubeUrl.replace('autoplay=true', 'autoplay=0')}
-                          className="w-full h-full"
-                          allowFullScreen
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                      </div>
-                    </div>
                   )}
 
                   {/* Cast */}
@@ -430,14 +459,6 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
                           </span>
                         ))}
                       </div>
-                    </div>
-                  )}
-
-                  {/* Notice */}
-                  {event.ImportantNotice && (
-                    <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-xl p-4">
-                      <p className="text-[#92400E] text-[13px] font-bold mb-1">⚠️ Important Notice</p>
-                      <p className="text-[#78350F] text-[13px] leading-relaxed">{event.ImportantNotice}</p>
                     </div>
                   )}
 
