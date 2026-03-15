@@ -54,6 +54,7 @@ function CheckoutContent() {
   const [agreeThirdParty, setAgreeThirdParty] = useState(false);
 
   /* Modals */
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showThirdPartyModal, setShowThirdPartyModal] = useState(false);
 
@@ -203,14 +204,16 @@ function CheckoutContent() {
                 {/* 약관 동의 */}
                 <div className="border-t border-[#E5E7EB] pt-4 space-y-2.5">
                   {/* 요금규정 */}
-                  <label className="flex items-center gap-2.5 cursor-pointer group py-1">
-                    <input type="checkbox" checked={agreeRefund} onChange={e => setAgreeRefund(e.target.checked)}
+                  <div className="flex items-center gap-2.5 py-1">
+                    <input type="checkbox" id="chk-refund" checked={agreeRefund} onChange={e => setAgreeRefund(e.target.checked)}
                       className="w-4 h-4 accent-[#2B7FFF] cursor-pointer shrink-0" />
-                    <span className="text-[13px] text-[#374151] flex-1">
+                    <label htmlFor="chk-refund" className="text-[13px] text-[#374151] flex-1 cursor-pointer">
                       요금규정 동의 — <span className="font-semibold">환불/변경 불가</span>
                       <span className="text-red-500 ml-1">(필수)</span>
-                    </span>
-                  </label>
+                    </label>
+                    <button type="button" onClick={() => setShowRefundModal(true)}
+                      className="shrink-0 px-2.5 py-1 bg-[#FF6B35] text-white text-[11px] font-bold rounded hover:bg-[#E55A25]">상세</button>
+                  </div>
 
                   {/* 개인정보 수집 및 이용 */}
                   <div className="flex items-center gap-2.5 py-1">
@@ -250,7 +253,7 @@ function CheckoutContent() {
               {/* Show 정보 */}
               <div className="border-b border-[#E5E7EB] pb-4 mb-3">
                 <p className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wide mb-1">Show</p>
-                <p className="text-[16px] font-extrabold text-[#0F172A] leading-tight">{eventName !== 'Show' ? eventName : '—'}</p>
+                <p className="text-[16px] font-extrabold text-[#0F172A] leading-tight">{eventName}</p>
                 {venue && <p className="text-[12px] text-[#64748B] mt-1">{venue}</p>}
                 {performanceDate && (
                   <p className="text-[12px] text-[#2B7FFF] font-semibold mt-1">
@@ -300,6 +303,26 @@ function CheckoutContent() {
           </div>
         </div>
       </form>
+
+      {/* 요금규정 모달 */}
+      {showRefundModal && (
+        <Modal title="요금규정 — 환불/변경 불가" onClose={() => setShowRefundModal(false)}>
+          <div className="space-y-3">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p className="text-[13px] font-bold text-red-700">⚠️ 예약 완료 후 환불 및 변경이 불가합니다.</p>
+            </div>
+            <p className="text-[13px] text-[#374151]">런던 뮤지컬 티켓 특성상 예약 완료 후 취소, 환불, 날짜 변경, 좌석 변경이 일절 불가합니다.</p>
+            <ul className="text-[12px] text-[#374151] space-y-1.5 list-disc list-inside">
+              <li>예약 확정 후 취소 불가</li>
+              <li>날짜/시간 변경 불가</li>
+              <li>좌석 변경 불가</li>
+              <li>공연 당일 노쇼(No-Show) 시 환불 불가</li>
+              <li>천재지변 등 불가항력에 의한 공연 취소 시 별도 안내</li>
+            </ul>
+            <p className="text-[12px] text-[#64748B]">본 규정에 동의하신 후 결제를 진행해 주시기 바랍니다.</p>
+          </div>
+        </Modal>
+      )}
 
       {/* 개인정보 수집 및 이용 모달 */}
       {showPrivacyModal && (
