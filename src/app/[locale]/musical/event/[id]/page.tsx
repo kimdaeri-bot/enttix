@@ -442,15 +442,15 @@ export default function MusicalEventPage({ params }: { params: Promise<{ id: str
               {/* 가격 + 연령 */}
               <div className="flex items-center gap-3 flex-wrap">
                 {event.EventMinimumPrice > 0 && (
-                  <span className="bg-[#2B7FFF] text-white text-[15px] px-5 py-2 rounded-full font-bold shadow">
+                  <span className="bg-[#2B7FFF] text-white text-[14px] px-4 py-2 rounded-full font-bold shadow">
                     From £{event.EventMinimumPrice}
                   </span>
                 )}
                 {event.AgeRating > 0 && (
-                  <span className="bg-white/10 text-white text-[12px] px-3 py-1.5 rounded-full">{event.AgeRating}+</span>
+                  <span className="bg-white/10 text-white text-[14px] px-4 py-2 rounded-full font-bold">{event.AgeRating}+</span>
                 )}
                 {performances.length > 0 && (
-                  <span className="bg-[#10B981] text-white text-[12px] px-3 py-1.5 rounded-full font-semibold">✓ Available</span>
+                  <span className="bg-[#10B981] text-white text-[14px] px-4 py-2 rounded-full font-bold">✓ Available</span>
                 )}
               </div>
             </div>
