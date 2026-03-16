@@ -20,6 +20,20 @@ interface LTDEvent {
   EventType: number;
   VenueId?: number;
   VenueName?: string;
+  OfferLabel?: string;
+}
+
+/* ─── OFFER LABEL COLOR MAP ─────────────────────────────────── */
+function getOfferStyle(label: string): { bg: string; text: string } {
+  const l = label.toUpperCase();
+  if (l.includes('EXCLUSIVE')) return { bg: '#FF6B35', text: '#fff' };
+  if (l.includes('ON SALE') || l.includes('ONSALE')) return { bg: '#10B981', text: '#fff' };
+  if (l.includes('SELLING FAST')) return { bg: '#EF4444', text: '#fff' };
+  if (l.includes('EXTRA DATES') || l.includes('NEW TICKETS')) return { bg: '#2B7FFF', text: '#fff' };
+  if (l.includes('SAVE UP TO') || l.includes('SAVE UP')) return { bg: '#EF4444', text: '#fff' };
+  if (l.includes('PAY NO FEE') || l.includes('BEST PRICE')) return { bg: '#8B5CF6', text: '#fff' };
+  if (l.includes('TICKETS FROM') || l.includes('SEATS AT') || l.includes('TICKETS')) return { bg: '#0F172A', text: '#fff' };
+  return { bg: '#64748B', text: '#fff' };
 }
 
 /* ─── TOP 15 RANKING (사장님 큐레이션) ──────────────────────── */
@@ -106,9 +120,27 @@ function CardSkeleton() {
 }
 
 /* ─── TOP 10 CARD ─────────────────────────────────────────────── */
-function Top10Card({ ev, index }: { ev: LTDEvent; index: number }) {
+function Top10Card({ ev, index, starRating, onVisible }: {
+  ev: LTDEvent;
+  index: number;
+  starRating?: number;
+  onVisible?: (id: number) => void;
+}) {
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (!onVisible) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { onVisible(ev.EventId); obs.disconnect(); }
+    }, { rootMargin: '300px' });
+    if (cardRef.current) obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, [ev.EventId, onVisible]);
+
+  const offerStyle = ev.OfferLabel ? getOfferStyle(ev.OfferLabel) : null;
+
   return (
     <Link
+      ref={cardRef}
       href={`/musical/event/${ev.EventId}`}
       className="group flex-shrink-0 w-[260px] rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow"
     >
@@ -127,14 +159,37 @@ function Top10Card({ ev, index }: { ev: LTDEvent; index: number }) {
         <div className="absolute top-2 left-2 w-8 h-8 rounded-full bg-[#2B7FFF] text-white font-extrabold text-[15px] flex items-center justify-center shadow-md">
           {index + 1}
         </div>
+        {/* OfferLabel badge */}
+        {offerStyle && ev.OfferLabel && (
+          <span
+            className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded"
+            style={{ background: offerStyle.bg, color: offerStyle.text }}
+          >
+            {ev.OfferLabel}
+          </span>
+        )}
       </div>
       <div className="p-3">
-        <h3 className="text-[13px] font-semibold text-[#0F172A] line-clamp-2 mb-1.5 leading-snug">
+        <h3 className="text-[13px] font-semibold text-[#0F172A] line-clamp-1 mb-1 leading-snug">
           {ev.Name}
         </h3>
-        <span className="text-[#2B7FFF] text-[12px]">★ Official LTD Partner</span>
+        {/* TagLine */}
+        {ev.TagLine && (
+          <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1.5 leading-snug">{ev.TagLine}</p>
+        )}
+        {/* 별점 */}
+        <div className="flex items-center gap-1.5 mb-1">
+          {starRating !== undefined ? (
+            <>
+              <span className="text-[#F59E0B] text-[12px]">★</span>
+              <span className="text-[12px] font-bold text-[#0F172A]">{starRating.toFixed(1)}</span>
+            </>
+          ) : (
+            <span className="text-[#CBD5E1] text-[11px]">★ —</span>
+          )}
+        </div>
         {ev.EventMinimumPrice > 0 && (
-          <p className="text-[13px] font-bold text-[#0F172A] mt-1">From £{ev.EventMinimumPrice}</p>
+          <p className="text-[13px] font-bold text-[#0F172A]">From £{ev.EventMinimumPrice}</p>
         )}
       </div>
     </Link>
@@ -142,14 +197,30 @@ function Top10Card({ ev, index }: { ev: LTDEvent; index: number }) {
 }
 
 /* ─── EVENT CARD ─────────────────────────────────────────────── */
-function EventCard({ ev }: { ev: LTDEvent }) {
+function EventCard({ ev, starRating, onVisible }: {
+  ev: LTDEvent;
+  starRating?: number;
+  onVisible?: (id: number) => void;
+}) {
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    if (!onVisible) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { onVisible(ev.EventId); obs.disconnect(); }
+    }, { rootMargin: '300px' });
+    if (cardRef.current) obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, [ev.EventId, onVisible]);
+
   const endDate = ev.EndDate ? new Date(ev.EndDate) : null;
   const isEnding = endDate && endDate.getTime() - Date.now() < 30 * 24 * 60 * 60 * 1000;
   const typeLabel = EVENT_TYPE_LABELS[ev.EventType] || 'Show';
   const typeBg = EVENT_TYPE_COLORS[ev.EventType] || 'bg-[#0F172A]';
+  const offerStyle = ev.OfferLabel ? getOfferStyle(ev.OfferLabel) : null;
 
   return (
     <Link
+      ref={cardRef}
       href={`/musical/event/${ev.EventId}`}
       className="group cursor-pointer rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col"
     >
@@ -165,29 +236,48 @@ function EventCard({ ev }: { ev: LTDEvent }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">🎭</div>
         )}
-        {/* EventType badge (Bestseller position) */}
+        {/* EventType badge (좌상단) */}
         <span className={`absolute top-2 left-2 ${typeBg} text-white text-[11px] font-bold px-2 py-0.5 rounded`}>
           {typeLabel}
         </span>
-        {/* Ending Soon badge (Skip Line position) */}
-        {isEnding && (
+        {/* OfferLabel badge (우상단) — Ending Soon보다 우선 */}
+        {offerStyle && ev.OfferLabel ? (
+          <span
+            className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded"
+            style={{ background: offerStyle.bg, color: offerStyle.text }}
+          >
+            {ev.OfferLabel}
+          </span>
+        ) : isEnding ? (
           <span className="absolute top-2 right-2 bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded">
             Ending Soon
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Body */}
       <div className="p-3 flex flex-col flex-1">
-        <h3 className="text-[14px] font-semibold text-[#0F172A] line-clamp-2 mb-1.5 leading-snug flex-1">
+        <h3 className="text-[14px] font-semibold text-[#0F172A] line-clamp-1 mb-1 leading-snug">
           {ev.Name}
         </h3>
-        {/* LTD Partner (별점 대신) */}
-        <div className="flex items-center gap-1 mb-1.5">
-          <span className="text-[#2B7FFF] text-[12px]">★ Official LTD Partner</span>
+        {/* TagLine */}
+        {ev.TagLine && (
+          <p className="text-[11px] text-[#64748B] line-clamp-2 mb-1.5 leading-snug">{ev.TagLine}</p>
+        )}
+        {/* 별점 */}
+        <div className="flex items-center gap-1.5 mb-1.5">
+          {starRating !== undefined ? (
+            <>
+              <span className="text-[#F59E0B] text-[13px]">★</span>
+              <span className="text-[12px] font-bold text-[#0F172A]">{starRating.toFixed(1)}</span>
+              <span className="text-[11px] text-[#94A3B8]">/ 5</span>
+            </>
+          ) : (
+            <span className="text-[11px] text-[#CBD5E1]">★ loading…</span>
+          )}
         </div>
         {ev.RunningTime && (
-          <p className="text-[12px] text-[#64748B] mb-1.5">⏱ {ev.RunningTime}</p>
+          <p className="text-[11px] text-[#94A3B8] mb-1">⏱ {ev.RunningTime}</p>
         )}
         {ev.EventMinimumPrice > 0 && (
           <p className="text-[15px] font-bold text-[#0F172A] mt-auto">From £{ev.EventMinimumPrice}</p>
@@ -244,6 +334,23 @@ export default function MusicalListClient({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState<number>(eventType ?? 0);
   const [isDragging, setIsDragging] = useState(false);
+  // 별점 lazy-fetch 캐시 (eventId → 평균 별점)
+  const [starMap, setStarMap] = useState<Record<number, number>>({});
+  const fetchingSet = useRef<Set<number>>(new Set());
+
+  const fetchStarRating = useCallback(async (eventId: number) => {
+    if (fetchingSet.current.has(eventId)) return;
+    fetchingSet.current.add(eventId);
+    try {
+      const r = await fetch(`/api/ltd/event/${eventId}/reviews`);
+      const d = await r.json();
+      const reviews: { Stars: number }[] = d.reviews || [];
+      if (reviews.length > 0) {
+        const avg = reviews.reduce((s, rv) => s + rv.Stars, 0) / reviews.length;
+        setStarMap(prev => ({ ...prev, [eventId]: Math.round(avg * 10) / 10 }));
+      }
+    } catch { /* silent */ }
+  }, []);
 
   const resultsRef = useRef<HTMLDivElement>(null);
   const searchRef  = useRef<HTMLDivElement>(null);
@@ -516,7 +623,13 @@ export default function MusicalListClient({
                 onTouchEnd={onDragEnd}
               >
                 {top5.map((ev, i) => (
-                  <Top10Card key={ev.EventId} ev={ev} index={i} />
+                  <Top10Card
+                    key={ev.EventId}
+                    ev={ev}
+                    index={i}
+                    starRating={starMap[ev.EventId]}
+                    onVisible={fetchStarRating}
+                  />
                 ))}
               </div>
               {/* 오른쪽 화살표 */}
@@ -611,7 +724,12 @@ export default function MusicalListClient({
           <>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {displayed.map(ev => (
-                <EventCard key={ev.EventId} ev={ev} />
+                <EventCard
+                  key={ev.EventId}
+                  ev={ev}
+                  starRating={starMap[ev.EventId]}
+                  onVisible={fetchStarRating}
+                />
               ))}
             </div>
 
