@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     const msg = await client.messages.create({
       model: 'claude-opus-4-5',
-      max_tokens: 1500,
+      max_tokens: 3000,
       messages: [{
         role: 'user',
         content: [
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 }
 
 주의사항:
-- 여러 구간이 있으면 routes 배열에 모두 포함
+- 구간이 여러 개 있으면 routes 배열에 최대 4개까지 모두 포함 (없는 구간은 추가하지 말 것)
 - 읽을 수 없는 항목은 빈 문자열("") 또는 0으로 처리
 - 반드시 JSON만 출력, 다른 텍스트 절대 포함 금지`,
           },
