@@ -49,14 +49,14 @@ const SPORTS_IMAGES = [
   'https://images.unsplash.com/photo-1551958219-acbc608c6377?w=400&h=500&fit=crop',
 ];
 
-const CITY_IMAGES: Record<string, string> = {
-  london: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&h=400&fit=crop',
-  barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&h=400&fit=crop',
-  paris: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&h=400&fit=crop',
-  milan: 'https://images.unsplash.com/photo-1520440229-6469a149ac59?w=600&h=400&fit=crop',
-  manchester: 'https://images.unsplash.com/photo-1605902711622-cfb43c4437b5?w=600&h=400&fit=crop',
-  madrid: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&h=400&fit=crop',
-};
+const POPULAR_COUNTRIES = [
+  { slug: 'italy',         name: 'Italy',          img: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=600&h=400&fit=crop' },
+  { slug: 'united-kingdom',name: 'United Kingdom', img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&h=400&fit=crop' },
+  { slug: 'france',        name: 'France',         img: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=600&h=400&fit=crop' },
+  { slug: 'spain',         name: 'Spain',          img: 'https://images.unsplash.com/photo-1559827291-72416a4b7b9f?w=600&h=400&fit=crop' },
+  { slug: 'portugal',      name: 'Portugal',       img: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=600&h=400&fit=crop' },
+  { slug: 'united-states', name: 'United States',  img: 'https://images.unsplash.com/photo-1485738422979-f5c462d49f74?w=600&h=400&fit=crop' },
+];
 
 
 const REVIEWS = [
@@ -96,8 +96,6 @@ export default async function Home() {
 
   // Newly Added: all matches, max 20
   const newlyAddedMatches = matches.slice(0, 20);
-  const { cities } = demoData;
-
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
       {/* Hero Section */}
@@ -283,12 +281,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Popular Cities */}
+      {/* Popular Countries */}
       <section className="py-12 md:py-24 px-4 md:px-[55.5px]">
         <div className="max-w-[1280px] mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-[24px] font-bold text-[#171717]">{t('popular_cities')}</h2>
+              <h2 className="text-[24px] font-bold text-[#171717]">Popular Destinations</h2>
               <div className="w-12 h-1 bg-[#2B7FFF] rounded-full mt-1" />
             </div>
             <Link href="/attractions" className="text-[13px] font-semibold text-[#2B7FFF] hover:text-[#1D6AE5]">
@@ -296,20 +294,20 @@ export default async function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {cities.map(city => (
+            {POPULAR_COUNTRIES.map(country => (
               <Link
-                key={city.slug}
-                href={`/attractions/${city.slug}`}
+                key={country.slug}
+                href={`/attractions/country/${country.slug}`}
                 className="group relative rounded-[16px] overflow-hidden aspect-[16/10]"
               >
                 <img
-                  src={CITY_IMAGES[city.slug] || `https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&h=400&fit=crop`}
-                  alt={city.name}
+                  src={country.img}
+                  alt={country.name}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 z-10">
-                  <h3 className="text-[20px] font-bold text-white">{city.name}</h3>
+                  <h3 className="text-[20px] font-bold text-white">{country.name}</h3>
                 </div>
               </Link>
             ))}

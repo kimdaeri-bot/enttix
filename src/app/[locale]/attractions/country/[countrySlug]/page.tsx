@@ -87,6 +87,22 @@ const COUNTRY_MAP: Record<string, {
       { slug: 'edinburgh', name: 'Edinburgh', cityId: 62841, photo: 'photo-1506377872008-6645d9d29ef7' },
     ],
   },
+  portugal: {
+    id: '50112',
+    name: 'Portugal',
+    flag: '🇵🇹',
+    photo: 'photo-1555881400-74d7acaacd8b',
+    description: "Discover Portugal's charming cities, golden coastlines, and world-famous pastéis.",
+    guides: [
+      { title: 'Lisbon in 48 hours — the essential guide', category: 'City Guide', gradient: 'from-[#2B7FFF] to-[#1D6AE5]' },
+      { title: 'Best viewpoints in Porto', category: 'Itinerary', gradient: 'from-[#FF6B35] to-[#e55a27]' },
+      { title: 'Sintra day trip from Lisbon', category: 'Day Trips', gradient: 'from-[#0F172A] to-[#1E293B]' },
+    ],
+    cities: [
+      { slug: 'lisbon', name: 'Lisbon', cityId: 66870, photo: 'photo-1555881400-74d7acaacd8b' },
+      { slug: 'porto',  name: 'Porto',  cityId: 67100, photo: 'photo-1555881400-74d7acaacd8b' },
+    ],
+  },
   netherlands: {
     id: '50166',
     name: 'Netherlands',
