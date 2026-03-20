@@ -6,8 +6,9 @@ const TOKEN = process.env.TIXSTOCK_TOKEN!;
 export async function GET(req: NextRequest) {
   try {
     const params = new URLSearchParams(req.nextUrl.searchParams);
-    if (!params.has('lighter_response')) params.set('lighter_response', '1');
-    if (!params.has('per_page')) params.set('per_page', '500');
+    // lighter_response=1 removes seat_details — do NOT set as default
+    // seat_details is needed for seatmap hover highlighting
+    if (!params.has('per_page')) params.set('per_page', '200');
     const res = await fetch(`${BASE_URL}/tickets/feed?${params.toString()}`, {
       headers: { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' },
       cache: 'no-store',

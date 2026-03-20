@@ -123,6 +123,11 @@ export default function EventClient({ id }: { id: string }) {
           const tickData = await tickRes.json();
           const listings = tickData.data || [];
           if (listings.length > 0) {
+            // Extract map_url from first ticket's event field (fallback for feed failures)
+            const firstEvent = (listings[0]?.event as Record<string, unknown>) || {};
+            if (!mapUrl && firstEvent.map_url) {
+              setMapUrl(String(firstEvent.map_url));
+            }
             setTickets(listings.map((l: Record<string, unknown>) => {
               const seat = (l.seat_details as Record<string, string>) || {};
               const proceedPrice = (l.proceed_price as Record<string, string>) || {};
