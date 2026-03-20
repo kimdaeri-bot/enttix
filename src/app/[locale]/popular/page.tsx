@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PopularClient from './PopularClient';
@@ -11,7 +12,9 @@ export default function PopularPage() {
   return (
     <main className="min-h-screen" style={{ background: '#0A0F1E' }}>
       <Header hideSearch />
-      <PopularClient />
+      <Suspense fallback={<div className="min-h-screen" style={{ background: '#0A0F1E' }} />}>
+        <PopularClient />
+      </Suspense>
       <Footer />
     </main>
   );

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -61,6 +62,13 @@ const CATEGORIES: Category[] = [
     viewAllHref: '/sport/football',
     bgImg: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1400&h=600&fit=crop',
     accent: '#F59E0B', tagline: 'Germany\'s top flight — highest attendance in Europe',
+  },
+  {
+    key: 'ligue1', label: 'Ligue 1', flag: '🇫🇷', source: 'tixstock',
+    fetchKey: 'Football', competition: 'Ligue 1',
+    viewAllHref: '/sport/football',
+    bgImg: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1400&h=600&fit=crop',
+    accent: '#2563EB', tagline: "France's premier football division",
   },
   {
     key: 'ucl', label: 'Champions League', flag: '🏆', source: 'tixstock',
@@ -421,7 +429,8 @@ export default function PopularClient() {
   const [tmData,       setTmData]       = useState<Record<string, TmEvent[]>>({});
   const [ltdShows,     setLtdShows]     = useState<LtdEvent[]>([]);
   const [loading,      setLoading]      = useState(true);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const searchParams = useSearchParams();
+  const [activeFilter, setActiveFilter] = useState(searchParams.get('category') || 'all');
 
   useEffect(() => {
     Promise.allSettled([

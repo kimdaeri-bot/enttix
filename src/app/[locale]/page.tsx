@@ -8,6 +8,17 @@ import { getMatches, demoData } from '@/lib/api';
 import { getTranslations } from 'next-intl/server';
 import SearchBar from '@/components/SearchBar';
 
+const LEAGUE_TO_POPULAR: Record<string, string> = {
+  epl: 'premier-league',
+  laliga: 'la-liga',
+  bundesliga: 'bundesliga',
+  seriea: 'serie-a',
+  ligue1: 'ligue1',
+  ucl: 'ucl',
+  f1: 'formula1',
+  nba: 'nba',
+};
+
 const LEAGUE_TABS = [
   { id: 'epl', label: 'PREMIER\nLEAGUE', img: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=200&h=200&fit=crop' },
   { id: 'laliga', label: 'LA LIGA', img: 'https://images.unsplash.com/photo-1489944440615-453fc2b6a9a9?w=200&h=200&fit=crop' },
@@ -74,9 +85,14 @@ const MAN_CITY_MATCH = {
 
 export default async function Home() {
   const t = await getTranslations('home');
-  const apiMatches = await getMatches({ has_listing: 'true', per_page: '10' });
+  const apiMatches = await getMatches({ has_listing: 'true', category_name: 'Football', per_page: '30' });
   // Man City 맨 앞에 추가, 중복 제거
   const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
+
+  // Match Schedule: EPL만, 시작일 빠른 순
+  const eplSchedule = matches
+    .filter(m => m.leagueId === 'epl' || m.leagueName === 'English Premier League')
+    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
   const { cities } = demoData;
 
   return (
@@ -134,7 +150,7 @@ export default async function Home() {
               {LEAGUE_TABS.map(tab => (
                 <Link
                   key={tab.id}
-                  href={`/league/${demoData.leagues.find(l => l.id === tab.id)?.slug || tab.id}`}
+                  href={`/popular?category=${LEAGUE_TO_POPULAR[tab.id] || tab.id}`}
                   className="flex flex-col items-center flex-shrink-0 group"
                 >
                   <div className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] rounded-full overflow-hidden relative shadow-lg group-hover:scale-110 transition-transform">
@@ -212,7 +228,7 @@ export default async function Home() {
 
           {/* Match Rows */}
           <div className="bg-white rounded-[16px] overflow-hidden">
-            {matches.slice(0, 5).map(m => (
+            {eplSchedule.slice(0, 10).map(m => (
               <MatchRow
                 key={m.id}
                 id={m.id}
