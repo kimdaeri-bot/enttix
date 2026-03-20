@@ -85,14 +85,17 @@ const MAN_CITY_MATCH = {
 
 export default async function Home() {
   const t = await getTranslations('home');
-  const apiMatches = await getMatches({ has_listing: 'true', category_name: 'Football', per_page: '30' });
+  const apiMatches = await getMatches({ has_listing: 'true', category_name: 'Football', per_page: '50' });
   // Man City 맨 앞에 추가, 중복 제거
   const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
 
-  // Match Schedule: EPL만, 시작일 빠른 순
+  // Match Schedule: EPL only, sorted by date ascending
   const eplSchedule = matches
     .filter(m => m.leagueId === 'epl' || m.leagueName === 'English Premier League')
     .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+
+  // Newly Added: all matches, max 20
+  const newlyAddedMatches = matches.slice(0, 20);
   const { cities } = demoData;
 
   return (
@@ -264,7 +267,7 @@ export default async function Home() {
             </div>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {matches.slice(0, 6).map((m, i) => (
+            {newlyAddedMatches.map((m, i) => (
               <NewlyAddedCard
                 key={m.id}
                 id={m.id}
