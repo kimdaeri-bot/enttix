@@ -231,7 +231,7 @@ CONTENT RULES:
 
     let feedEvents: Record<string, unknown>[] = [];
     try {
-      const feedUrl = `${TIXSTOCK_BASE}/feed?city=${encodeURIComponent(plan.city)}&date_from=${dateFrom}&date_to=${dateTo}&has_listing=true&per_page=200`;
+      const feedUrl = `${TIXSTOCK_BASE}/feed?city=${encodeURIComponent(plan.city)}&date_from=${dateFrom}&date_to=${dateTo}&listing_available=true&per_page=200`;
       const feedRes = await fetch(feedUrl, {
         headers: { Authorization: `Bearer ${TIXSTOCK_TOKEN}`, 'Content-Type': 'application/json' },
       });

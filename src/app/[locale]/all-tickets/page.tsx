@@ -347,7 +347,7 @@ function AllTicketsContent() {
 
       // Regular / planner fallback — load events for the city if planner
       try {
-        const params = new URLSearchParams({ per_page: '50', has_listing: 'true' });
+        const params = new URLSearchParams({ per_page: '50', listing_available: 'true' });
         if (dateFilter) params.set('date_from', dateFilter);
         if (queryFilter && !isPlanner) params.set('performer', queryFilter);
 

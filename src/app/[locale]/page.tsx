@@ -85,7 +85,7 @@ const MAN_CITY_MATCH = {
 
 export default async function Home() {
   const t = await getTranslations('home');
-  const apiMatches = await getMatches({ has_listing: 'true', category_name: 'Football', per_page: '50' });
+  const apiMatches = await getMatches({ listing_available: "true", per_page: '50' });
   // Man City 맨 앞에 추가, 중복 제거
   const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
 

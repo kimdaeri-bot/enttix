@@ -458,7 +458,7 @@ export async function POST(req: NextRequest) {
     const [tixResult, ltdEvents, tiqetsResults, tmResults] = await Promise.all([
       // Tixstock fetch
       (async () => {
-        const params = new URLSearchParams({ has_listing: 'true', per_page: '50' });
+        const params = new URLSearchParams({ listing_available: 'true', per_page: '50' });
         if (filters.date_from) params.set('date_from', filters.date_from);
         if (filters.date_to) params.set('date_to', filters.date_to);
         if (filters.performer) params.set('performer', filters.performer);
@@ -528,7 +528,7 @@ export async function POST(req: NextRequest) {
     // Fallback: retry without city
     if (events.length === 0 && filters.city) {
       try {
-        const p = new URLSearchParams({ has_listing: 'true', per_page: '50' });
+        const p = new URLSearchParams({ listing_available: 'true', per_page: '50' });
         if (filters.date_from) p.set('date_from', filters.date_from);
         if (filters.date_to) p.set('date_to', filters.date_to);
         if (filters.category) p.set('category', filters.category);
