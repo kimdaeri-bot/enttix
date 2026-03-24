@@ -76,53 +76,80 @@ export async function POST(req: NextRequest) {
     // 본문 이미지 — 상위 30개 (ckeditor, 상품소개 등)
     const bodyImages = sortedImgs.slice(0, 30);
 
-    // 3. 텍스트 추출
-    const cleanText = html
+    // 3. 텍스트 정제 함수
+    const stripHtml = (s: string) => s
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<!--[\s\S]*?-->/g, '')
       .replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#\d+;/g, '')
-      .replace(/\s{3,}/g, '\n').trim()
-      .slice(0, 12000);
+      .replace(/\s{3,}/g, '\n').trim();
 
-    // 4. Claude 파싱 — 완전 범용 프롬프트
+    // 전체 텍스트 (기본 정보 + 항공 + 포함사항 등)
+    const fullText = stripHtml(html);
+    const summaryText = fullText.slice(0, 8000);
+
+    // 일정 전용 텍스트 추출 — 일정 섹션을 HTML에서 직접 찾아 별도 추출
+    let itinText = '';
+    // 패턴 1: tab_cont_content_row (cruznara 등)
+    const tabMatch = html.match(/class="tab_cont_content_row[^"]*"[^>]*>([\s\S]{200,15000}?)<\/div>\s*(?:<div|<\/div)/i);
+    if (tabMatch) {
+      itinText = stripHtml(tabMatch[1]).slice(0, 12000);
+    }
+    // 패턴 2: "일정표" 이후 ~ "선택관광|유의사항|이용후기" 이전 텍스트
+    if (!itinText) {
+      const itinSection = fullText.match(/일정표\s*([\s\S]{100,}?)(?:선택관광|유의사항|이용후기|포함사항|불포함|$)/);
+      if (itinSection) itinText = itinSection[1].slice(0, 10000);
+    }
+    // 패턴 3: "1일차" 또는 "Day 1" 이후 전체 일정 텍스트
+    if (!itinText) {
+      const dayMatch = fullText.match(/((?:1일차|Day\s*1|제\s*1\s*일)[\s\S]{100,})/i);
+      if (dayMatch) itinText = dayMatch[1].slice(0, 10000);
+    }
+    // 패턴 4: 없으면 fullText 뒷부분 (앞 8000자 이후)
+    if (!itinText && fullText.length > 8000) {
+      itinText = fullText.slice(8000, 20000);
+    }
+
+    // 4. Claude 파싱 — 두 텍스트 구간 분리 전달
     const msg = await client.messages.create({
       model: 'claude-opus-4-5',
-      max_tokens: 3000,
-      messages: [{ role: 'user', content: `아래는 크루즈·여행 상품 페이지의 텍스트입니다. 어떤 여행사 사이트든 관계없이 정보를 추출해 JSON으로만 응답하세요. 마크다운 없이 순수 JSON만.
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: `아래는 크루즈·여행 상품 페이지에서 추출한 텍스트입니다.
+[상품 요약 텍스트]와 [일정 텍스트] 두 구간으로 나누어 제공합니다.
+정보를 빠짐없이 추출해 JSON으로만 응답하세요. 마크다운 없이 순수 JSON만.
 
 {
-  "title": "상품명 (페이지 제목에서 추출, 없으면 빈 문자열)",
-  "productNo": "상품번호 또는 상품코드 (없으면 빈 문자열)",
-  "cruiseline": "선사명 (MSC, NCL, Royal Caribbean 등, 없으면 빈 문자열)",
-  "ship": "선박명 (없으면 빈 문자열)",
-  "nights": 숙박일수(숫자, 없으면 0),
-  "category": "지중해|알래스카|카리브해|한국일본|북유럽|아시아중동|기타 중 가장 적합한 것",
-  "period": "여행기간 텍스트 (예: 10박11일, 06.02~06.12)",
-  "departures": [
-    {"date":"YYYY-MM-DD 또는 날짜 텍스트","cabin":"객실타입","priceAdult":성인가격숫자(원화),"priceChild":아동가격숫자(원화)}
-  ],
-  "flightOut": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜텍스트","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜텍스트","arrPort":"도착공항"},
-  "flightIn": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜텍스트","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜텍스트","arrPort":"도착공항"},
+  "title": "상품명",
+  "productNo": "상품번호 (없으면 빈 문자열)",
+  "cruiseline": "선사명",
+  "ship": "선박명",
+  "nights": 숙박일수(숫자),
+  "category": "지중해|알래스카|카리브해|한국일본|북유럽|아시아중동|기타",
+  "period": "여행기간 텍스트",
+  "departures": [{"date":"날짜","cabin":"객실타입","priceAdult":성인가격(원화숫자),"priceChild":아동가격(원화숫자)}],
+  "flightOut": {"airline":"","flightNo":"","depTime":"HH:MM","depDate":"","depPort":"","arrTime":"HH:MM","arrDate":"","arrPort":""},
+  "flightIn":  {"airline":"","flightNo":"","depTime":"HH:MM","depDate":"","depPort":"","arrTime":"HH:MM","arrDate":"","arrPort":""},
   "itinerary": [
-    {"day":"1","date":"날짜텍스트 (예: 12/11(금))","city":"도시명 / 항구명","description":"해당 일차 일정 전체 내용 (호텔조식, 관광지, 시간, 특이사항 등 최대한 상세히 — 줄바꿈으로 구분)"}
+    {"day":"1","date":"날짜 (예: 06/02(화))","city":"도시명/항구명","description":"이 일차의 모든 일정 내용을 줄바꿈\\n으로 구분해 최대한 상세히"}
   ],
-  "included": ["포함사항 항목 배열"],
-  "excluded": ["불포함사항 항목 배열"],
-  "notice": ["유의사항 항목 배열"],
-  "desc": "상품 한줄 요약 (100자 이내)"
+  "included": ["포함사항 배열"],
+  "excluded": ["불포함사항 배열"],
+  "notice": ["유의사항 배열"],
+  "desc": "한줄 요약 100자 이내"
 }
 
-주의:
-- 항공편 정보 없으면 flightOut/flightIn은 빈 객체 {}
+규칙:
+- itinerary: [일정 텍스트]에서 1일차~마지막일차 모두 추출. description은 해당 일차 전체 내용 상세히.
+- 항공 없으면 flightOut/flightIn = {}
 - 가격 없으면 0, 날짜 없으면 빈 문자열
-- itinerary description은 해당 일차의 모든 일정을 줄바꿈(\n)으로 구분해 최대한 상세히 추출
-- 일정이 있으면 반드시 모든 일차를 배열에 포함 (빠뜨리지 말 것)
-- 순수 JSON만 출력, 다른 텍스트 절대 금지
+- 순수 JSON만 출력
 
-텍스트:
-${cleanText}` }],
+=== [상품 요약 텍스트] ===
+${summaryText}
+
+=== [일정 텍스트] ===
+${itinText || '(일정 텍스트 없음)'}` }],
     });
 
     const raw = (msg.content[0] as { type: string; text: string }).text.trim();
