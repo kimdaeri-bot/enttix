@@ -15,107 +15,99 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
-    if (!url) {
-      return NextResponse.json({ error: 'URL이 필요합니다' }, { status: 400, headers: CORS });
-    }
+    const { url, mode } = await req.json();
+    if (!url) return NextResponse.json({ error: 'URL이 필요합니다' }, { status: 400, headers: CORS });
 
-    // 1. 페이지 HTML fetch
+    // 1. 페이지 fetch
     const pageRes = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'ko-KR,ko;q=0.9',
+        'Referer': 'https://www.cruznara.com/',
       },
       signal: AbortSignal.timeout(15000),
     });
-
-    if (!pageRes.ok) {
-      return NextResponse.json({ error: `페이지 로드 실패: HTTP ${pageRes.status}` }, { status: 422, headers: CORS });
-    }
+    if (!pageRes.ok) return NextResponse.json({ error: `HTTP ${pageRes.status}` }, { status: 422, headers: CORS });
 
     const html = await pageRes.text();
+    const baseOrigin = new URL(url).origin;
 
-    // 2. 이미지 URL 추출 (img src 패턴)
-    const imgMatches = html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi);
-    const baseUrl = new URL(url);
-    const images: string[] = [];
-    for (const m of imgMatches) {
-      const src = m[1];
-      if (!src || src.startsWith('data:')) continue;
-      // 아이콘/로고/버튼 등 제외 (작은 이미지)
-      if (src.includes('icon') || src.includes('logo') || src.includes('btn') || src.includes('arrow')) continue;
-      // 절대경로 변환
-      const absUrl = src.startsWith('http') ? src : new URL(src, baseUrl).href;
-      if (!images.includes(absUrl)) images.push(absUrl);
-      if (images.length >= 5) break;
+    // 2. 상품 썸네일 이미지 (슬라이더)
+    const thumbImgs: string[] = [];
+    const thumbRe = /upload\/cruznara\/image\/goods\/main\/[^"']+\.(?:jpg|jpeg|png|webp)/gi;
+    for (const m of html.matchAll(thumbRe)) {
+      const abs = baseOrigin + '/' + m[0];
+      if (!thumbImgs.includes(abs)) thumbImgs.push(abs);
     }
 
-    // 3. HTML → 텍스트 변환 (태그 제거)
-    const plainText = html
+    // 3. 상품 상세 본문 이미지 (ckeditor)
+    const bodyImgs: string[] = [];
+    const bodyRe = /(?:src=["'])([^"']*\/upload\/cruznara\/(?:ckeditor|image)[^"']*\.(?:jpg|jpeg|png|gif|webp))["']/gi;
+    for (const m of html.matchAll(bodyRe)) {
+      const src = m[1];
+      const abs = src.startsWith('http') ? src : baseOrigin + src;
+      if (!bodyImgs.includes(abs)) bodyImgs.push(abs);
+    }
+
+    // 4. 기항지 이미지 (tourinfo)
+    const portImgs: string[] = [];
+    const portRe = /upload\/cruznara\/image\/tourinfo\/[^"']+\.(?:jpg|jpeg|png|webp)/gi;
+    for (const m of html.matchAll(portRe)) {
+      const abs = baseOrigin + '/' + m[0];
+      if (!portImgs.includes(abs)) portImgs.push(abs);
+    }
+
+    // 5. 텍스트 추출
+    const cleanText = html
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
       .replace(/<[^>]+>/g, ' ')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/\s{3,}/g, '\n')
-      .trim()
-      .slice(0, 8000); // Claude 입력 제한
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+      .replace(/\s{3,}/g, '\n').trim().slice(0, 10000);
 
-    // 4. Claude로 구조화 파싱
+    // 6. Claude 파싱
     const msg = await client.messages.create({
       model: 'claude-opus-4-5',
-      max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: `아래는 크루즈 여행상품 페이지의 텍스트입니다.
-이 내용을 분석해서 아래 JSON 형식으로만 응답하세요. 마크다운이나 설명 없이 순수 JSON만 출력하세요.
+      max_tokens: 3000,
+      messages: [{ role: 'user', content: `크루즈 여행상품 페이지 텍스트에서 정보를 추출해 JSON으로만 응답하세요. 마크다운 없이 순수 JSON만.
 
 {
-  "title": "상품명 (예: 지중해 이탈리아·그리스 9박 크루즈)",
-  "cruiseline": "선사명 (예: MSC Cruises, Norwegian Cruise Line 등)",
-  "ship": "선박명 (예: MSC Bellissima)",
-  "nights": 박수(숫자),
-  "category": "지중해|알래스카|카리브해|한국일본|북유럽|아시아중동|기타 중 하나",
-  "desc": "상품 한 줄 설명 (100자 이내)",
-  "departures": ["YYYY-MM-DD 형식 출발일 배열"],
-  "fares": [
-    { "type": "객실 타입 (예: 인사이드, 오션뷰, 발코니, 스위트)", "price": 숫자(원화면 0으로), "priceKRW": 숫자(원화 가격), "note": "비고" }
-  ],
-  "itinerary": [
-    { "day": "1", "port": "항구/도시명", "arrive": "", "depart": "", "note": "" }
-  ],
+  "title": "상품명",
+  "productNo": "상품번호",
+  "cruiseline": "선사명",
+  "ship": "선박명",
+  "nights": 박수숫자,
+  "category": "지중해|알래스카|카리브해|한국일본|북유럽|아시아중동|기타",
+  "period": "여행기간 텍스트 (예: 10박11일 06.02~06.12)",
+  "departures": [{"date":"YYYY-MM-DD","cabin":"객실타입","priceAdult":성인가격숫자KRW,"priceChild":아동가격숫자KRW}],
+  "flightOut": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜","arrPort":"도착공항"},
+  "flightIn": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜","arrPort":"도착공항"},
+  "itinerary": [{"day":"1","date":"날짜","city":"도시명","description":"일정 설명"}],
   "included": ["포함사항 배열"],
-  "excluded": ["불포함사항 배열"]
+  "excluded": ["불포함사항 배열"],
+  "notice": ["유의사항 배열"]
 }
 
-주의:
-- 날짜는 반드시 YYYY-MM-DD 형식
-- 가격이 원화(KRW)이면 priceKRW에 숫자만, price는 0
-- 일정 정보가 없으면 itinerary는 빈 배열
-- 순수 JSON만 출력, 다른 텍스트 절대 금지
-
-페이지 텍스트:
-${plainText}`,
-      }],
+텍스트:
+${cleanText}` }],
     });
 
     const raw = (msg.content[0] as { type: string; text: string }).text.trim();
     const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     const match = cleaned.match(/\{[\s\S]*\}/);
-    if (!match) {
-      return NextResponse.json({ error: '파싱 실패', raw }, { status: 422, headers: CORS });
-    }
+    if (!match) return NextResponse.json({ error: '파싱 실패', raw }, { status: 422, headers: CORS });
 
     const parsed = JSON.parse(match[0]);
 
-    // 5. 이미지 병합 (파싱된 이미지 + HTML에서 추출한 이미지)
-    const finalImages = [...new Set([...(parsed.images || []), ...images])].slice(0, 5);
-
-    return NextResponse.json({ ...parsed, images: finalImages }, { headers: CORS });
+    return NextResponse.json({
+      ...parsed,
+      thumbImages: thumbImgs.slice(0, 8),
+      bodyImages: bodyImgs.slice(0, 20),
+      portImages: portImgs.slice(0, 50),
+      baseOrigin,
+    }, { headers: CORS });
 
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500, headers: CORS });
