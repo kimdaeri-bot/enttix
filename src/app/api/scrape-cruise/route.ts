@@ -76,6 +76,43 @@ export async function POST(req: NextRequest) {
     // 본문 이미지 — 상위 30개 (ckeditor, 상품소개 등)
     const bodyImages = sortedImgs.slice(0, 30);
 
+    // 2-1. cruznara 전용: goodSeq+eventSeq 있으면 일정 API 직접 호출
+    let crzItinerary: Array<{day:string,date:string,city:string,description:string,images:string[]}> = [];
+    try {
+      const urlObj = new URL(url);
+      const goodSeq = urlObj.searchParams.get('goodSeq');
+      const eventSeq = urlObj.searchParams.get('eventSeq');
+      if (goodSeq && eventSeq && urlObj.hostname.includes('cruznara')) {
+        const schedRes = await fetch(
+          `${baseOrigin}/goods/getEventScheduleList.json?goodSeq=${goodSeq}&eventSeq=${eventSeq}`,
+          { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': url }, signal: AbortSignal.timeout(10000) }
+        );
+        if (schedRes.ok) {
+          const schedData = await schedRes.json();
+          const list: Array<Record<string,unknown>> = schedData.list || [];
+          // dayCnt 기준으로 그룹핑
+          const dayMap = new Map<number, Array<Record<string,unknown>>>();
+          for (const item of list) {
+            const d = Number(item.dayCnt) || 1;
+            if (!dayMap.has(d)) dayMap.set(d, []);
+            dayMap.get(d)!.push(item);
+          }
+          for (const [dayCnt, items] of [...dayMap.entries()].sort((a,b)=>a[0]-b[0])) {
+            const cityNm = String(items[0].cityNm || items[0].travelDayNm || '').trim();
+            const travelDay = String(items[0].travelDay || '').trim();
+            const desc = items
+              .map(it => String(it.detailConts || ''))
+              .join('\n')
+              .replace(/<br\s*\/?>/gi, '\n')
+              .replace(/<[^>]+>/g, '')
+              .replace(/&nbsp;/g, ' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+              .replace(/\n{3,}/g, '\n\n').trim();
+            crzItinerary.push({ day: String(dayCnt), date: travelDay, city: cityNm, description: desc, images: [] });
+          }
+        }
+      }
+    } catch {}
+
     // 3. 텍스트 정제 함수
     const stripHtml = (s: string) => s
       .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -159,8 +196,12 @@ ${itinText || '(일정 텍스트 없음)'}` }],
 
     const parsed = JSON.parse(match[0]);
 
+    // cruznara API로 가져온 일정이 있으면 Claude 파싱 결과보다 우선
+    const finalItinerary = crzItinerary.length > 0 ? crzItinerary : (parsed.itinerary || []);
+
     return NextResponse.json({
       ...parsed,
+      itinerary: finalItinerary,
       thumbImages,
       bodyImages,
       baseOrigin,
