@@ -90,6 +90,27 @@ export async function POST(req: NextRequest) {
         if (schedRes.ok) {
           const schedData = await schedRes.json();
           const list: Array<Record<string,unknown>> = schedData.list || [];
+
+          // infoSeq → 이미지 캐시
+          const infoImgCache = new Map<number, string[]>();
+          const fetchInfoImgs = async (infoSeq: number): Promise<string[]> => {
+            if (infoSeq <= 0) return [];
+            if (infoImgCache.has(infoSeq)) return infoImgCache.get(infoSeq)!;
+            try {
+              const r = await fetch(`${baseOrigin}/goods/add/tourist_info_pop?infoSeq=${infoSeq}`, {
+                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': url },
+                signal: AbortSignal.timeout(5000),
+              });
+              if (!r.ok) return [];
+              const h = await r.text();
+              const imgs = [...h.matchAll(/src=["']([^"']*\/upload\/[^"']+\.(?:jpg|jpeg|png))["']/gi)]
+                .map(m => m[1].startsWith('http') ? m[1] : baseOrigin + m[1])
+                .slice(0, 4);
+              infoImgCache.set(infoSeq, imgs);
+              return imgs;
+            } catch { return []; }
+          };
+
           // dayCnt 기준으로 그룹핑
           const dayMap = new Map<number, Array<Record<string,unknown>>>();
           for (const item of list) {
@@ -107,7 +128,19 @@ export async function POST(req: NextRequest) {
               .replace(/<[^>]+>/g, '')
               .replace(/&nbsp;/g, ' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
               .replace(/\n{3,}/g, '\n\n').trim();
-            crzItinerary.push({ day: String(dayCnt), date: travelDay, city: cityNm, description: desc, images: [] });
+
+            // infoSeq 이미지 수집 (1~3)
+            const imgSet = new Set<string>();
+            for (const item of items) {
+              for (const key of ['infoSeq1','infoSeq2','infoSeq3']) {
+                const seq = Number(item[key] || 0);
+                if (seq > 0) {
+                  const imgs = await fetchInfoImgs(seq);
+                  imgs.forEach(i => imgSet.add(i));
+                }
+              }
+            }
+            crzItinerary.push({ day: String(dayCnt), date: travelDay, city: cityNm, description: desc, images: [...imgSet].slice(0, 6) });
           }
         }
       }
