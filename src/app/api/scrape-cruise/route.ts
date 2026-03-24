@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
   "flightOut": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜텍스트","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜텍스트","arrPort":"도착공항"},
   "flightIn": {"airline":"항공사","flightNo":"편명","depTime":"HH:MM","depDate":"날짜텍스트","depPort":"출발공항","arrTime":"HH:MM","arrDate":"날짜텍스트","arrPort":"도착공항"},
   "itinerary": [
-    {"day":"1","date":"날짜텍스트","city":"도시명","description":"일정 설명"}
+    {"day":"1","date":"날짜텍스트 (예: 12/11(금))","city":"도시명 / 항구명","description":"해당 일차 일정 전체 내용 (호텔조식, 관광지, 시간, 특이사항 등 최대한 상세히 — 줄바꿈으로 구분)"}
   ],
   "included": ["포함사항 항목 배열"],
   "excluded": ["불포함사항 항목 배열"],
@@ -117,6 +117,8 @@ export async function POST(req: NextRequest) {
 주의:
 - 항공편 정보 없으면 flightOut/flightIn은 빈 객체 {}
 - 가격 없으면 0, 날짜 없으면 빈 문자열
+- itinerary description은 해당 일차의 모든 일정을 줄바꿈(\n)으로 구분해 최대한 상세히 추출
+- 일정이 있으면 반드시 모든 일차를 배열에 포함 (빠뜨리지 말 것)
 - 순수 JSON만 출력, 다른 텍스트 절대 금지
 
 텍스트:
