@@ -541,7 +541,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
-      ctx: '#seatplan-main',
+      ctx: seatplanEl,
       locale: 'en-GB',
       canvasFillMethod: 'cover',
       event: { forceScrollY: true, scrollMove: false, scrollZoom: true, doubletapZoom: true },
