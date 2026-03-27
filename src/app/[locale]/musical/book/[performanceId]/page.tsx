@@ -432,8 +432,21 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const updateSelection = (e: Event) => {
       try {
         const detail = (e as CustomEvent<LTDSeatDetail>).detail;
+        console.log('[LTD SeatEvent]', e.type, JSON.stringify(detail));
         const prevSelection: LTDSeat[] = detail?.selection || [];
-        const seat = detail?.seat;
+        // seat-plan.js may use lowercase or alternate key names — normalise
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rawSeat: any = detail?.seat;
+        const seat: LTDSeat | undefined = rawSeat ? {
+          Tid: rawSeat.Tid ?? rawSeat.tid ?? rawSeat.TId ?? rawSeat.ticketId ?? rawSeat.TicketId,
+          SP: rawSeat.SP ?? rawSeat.sp ?? rawSeat.sellingPrice,
+          A: rawSeat.A ?? rawSeat.a ?? rawSeat.area,
+          R: rawSeat.R ?? rawSeat.r ?? rawSeat.row,
+          S: rawSeat.S ?? rawSeat.s ?? rawSeat.seat,
+          D: rawSeat.D ?? rawSeat.d ?? rawSeat.description,
+          SN: rawSeat.SN ?? rawSeat.sn ?? rawSeat.seatName,
+        } : undefined;
+
         const isSelect = e.type === 'LTD.SeatPlan.OnSeatSelected';
 
         // detail.selection is the state BEFORE the change — manually add/remove detail.seat
@@ -451,6 +464,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
         }
 
         const infos = currentSeats.map(seatToInfo).filter(s => s.tid > 0);
+        console.log('[LTD SeatData] infos:', JSON.stringify(infos));
         seatDataRef.current = {
           seats: infos,
           ticketIds: infos.map(s => s.tid),
