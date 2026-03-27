@@ -417,7 +417,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const w = window as unknown as Record<string, unknown>;
     const perfKey = `${performanceId}`;
     if (w.__seatPlanPerf === perfKey) return;
-    w.__seatPlanPerf = perfKey;
+    // Note: flag is set after script loads (for fresh load) or immediately (if script already in DOM)
 
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string; D?: string; SN?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
@@ -553,35 +553,46 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
     };
 
-    // Init helper
+    // Init helper — clears window flag on failure so retry is possible
     const doInit = () => {
       const ltd = (window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => void } } }).LTD;
       if (ltd?.SeatPlan) {
-        ltd.SeatPlan.init(initOpts);
-        return true;
+        try {
+          ltd.SeatPlan.init(initOpts);
+          return true;
+        } catch {
+          w.__seatPlanPerf = null; // allow retry on error
+          return false;
+        }
       }
       return false;
     };
 
-    // If LTD already loaded, init directly
-    if (doInit()) {
-      // done
+    const LTD_SCRIPT_SRC = 'https://finale-cdn.uk/latest/seat-plan.js';
+
+    const startInit = () => {
+      if (doInit()) return;
+      // poll until LTD is ready (handles async script + cached script scenarios)
+      const poll = setInterval(() => { if (doInit()) clearInterval(poll); }, 200);
+      setTimeout(() => clearInterval(poll), 15000);
+    };
+
+    const existingScript = document.querySelector(`script[src="${LTD_SCRIPT_SRC}"]`);
+    if (existingScript) {
+      // Script already in DOM (cached) — set flag and poll until LTD ready
+      w.__seatPlanPerf = perfKey;
+      startInit();
     } else {
-      const existingScript = document.querySelector('script[src="https://finale-cdn.uk/latest/seat-plan.js"]');
-      if (existingScript) {
-        // Script tag exists but LTD not ready yet — wait for it
-        existingScript.addEventListener('load', () => doInit());
-        // Also poll in case the load event already fired
-        const poll = setInterval(() => { if (doInit()) clearInterval(poll); }, 200);
-        setTimeout(() => clearInterval(poll), 15000);
-      } else {
-        // Load script fresh
-        const script = document.createElement('script');
-        script.src = 'https://finale-cdn.uk/latest/seat-plan.js';
-        script.async = true;
-        script.onload = () => doInit();
-        document.head.appendChild(script);
-      }
+      // Fresh load — set flag only after script successfully loads
+      const script = document.createElement('script');
+      script.src = LTD_SCRIPT_SRC;
+      script.async = true;
+      script.onload = () => {
+        w.__seatPlanPerf = perfKey;
+        startInit();
+      };
+      script.onerror = () => { w.__seatPlanPerf = null; };
+      document.head.appendChild(script);
     }
 
     return () => {
