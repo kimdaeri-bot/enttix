@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import SeatMap from '@/components/SeatMap';
 import MatchAnalysis from '@/components/MatchAnalysis';
 import F1Analysis from '@/components/F1Analysis';
+import EventSidePanel from '@/components/EventSidePanel';
 import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -486,15 +487,25 @@ export default function EventClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* RIGHT: Seat Map (fills remaining) */}
-        <div ref={seatMapRef} className="flex-1 bg-[#F8FAFC] hidden lg:flex flex-col">
-          <SeatMap
-            venueName={match.venue.name}
-            mapUrl={mapUrl || undefined}
-            sections={seatMapSections}
-            selectedSection={selectedMapSection}
-            hoverSection={hoveredTicketSection}
-            onSectionClick={setSelectedMapSection}
+        {/* RIGHT: Seat Map + Side Panel */}
+        <div ref={seatMapRef} className="flex-1 bg-[#F8FAFC] hidden lg:flex flex-col overflow-hidden">
+          {/* Seat Map: 상단 58% */}
+          <div className="flex-1 min-h-0">
+            <SeatMap
+              venueName={match.venue.name}
+              mapUrl={mapUrl || undefined}
+              sections={seatMapSections}
+              selectedSection={selectedMapSection}
+              hoverSection={hoveredTicketSection}
+              onSectionClick={setSelectedMapSection}
+            />
+          </div>
+          {/* Side Panel: 하단 — 축구/F1일 때만 */}
+          <EventSidePanel
+            eventName={match.name}
+            homeTeam={match.homeTeam}
+            awayTeam={match.awayTeam}
+            leagueName={match.leagueName}
           />
         </div>
       </div>
