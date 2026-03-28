@@ -2,6 +2,7 @@
 import Header from '@/components/Header';
 import SeatMap from '@/components/SeatMap';
 import MatchAnalysis from '@/components/MatchAnalysis';
+import F1Analysis from '@/components/F1Analysis';
 import Link from 'next/link';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -498,8 +499,17 @@ export default function EventClient({ id }: { id: string }) {
         </div>
       </div>
 
-      {/* ── Match Analysis (축구 경기에만 표시) ── */}
-      {match.homeTeam && match.awayTeam && (
+      {/* ── F1 Analysis ── */}
+      {match.name && (match.name.toLowerCase().includes('grand prix') || match.name.toLowerCase().includes('formula')) && (
+        <div className="max-w-[860px] mx-auto px-4 pb-12">
+          <F1Analysis gpName={match.name} />
+        </div>
+      )}
+
+      {/* ── Football Match Analysis ── */}
+      {match.homeTeam && match.awayTeam &&
+        !match.name?.toLowerCase().includes('grand prix') &&
+        !match.name?.toLowerCase().includes('formula') && (
         <div className="max-w-[860px] mx-auto px-4 pb-12">
           <MatchAnalysis eventName={`${match.homeTeam} vs ${match.awayTeam}`} />
         </div>
