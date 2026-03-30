@@ -8,6 +8,7 @@ interface CategoryPageProps {
   slug: string;
   displayName: string;
   categoryType: 'sport' | 'concert';
+  categoryId?: string;
 }
 
 // Unsplash images per category
@@ -43,80 +44,87 @@ const heroImages: Record<string, string> = {
   metal: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=1400&q=80',
 };
 
-const demoCategoryEvents: Match[] = [
-  {
-    id: 'demo-cat-1', name: 'Manchester City FC vs Newcastle United FC', homeTeam: 'Manchester City FC', awayTeam: 'Newcastle United FC',
-    datetime: '2026-02-21T15:00:00+0000', venue: { id: 'v1', name: 'Etihad Stadium', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 0, longitude: 0 },
-    leagueId: 'epl', leagueName: 'English Premier League', startingPrice: 151.45, currency: 'USD', ticketsLeft: 4,
-  },
-  {
-    id: 'demo-cat-2', name: 'Arsenal FC vs Chelsea FC', homeTeam: 'Arsenal FC', awayTeam: 'Chelsea FC',
-    datetime: '2026-02-28T15:00:00+0000', venue: { id: 'v2', name: 'Emirates Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 0, longitude: 0 },
-    leagueId: 'epl', leagueName: 'English Premier League', startingPrice: 120, currency: 'USD', ticketsLeft: 2,
-  },
-  {
-    id: 'demo-cat-3', name: 'Liverpool FC vs West Ham FC', homeTeam: 'Liverpool FC', awayTeam: 'West Ham FC',
-    datetime: '2026-03-04T20:00:00+0000', venue: { id: 'v3', name: 'Anfield', address_line_1: '', address_line_2: '', city: 'Liverpool', state: 'England', postcode: '', country_code: 'GB', latitude: 0, longitude: 0 },
-    leagueId: 'epl', leagueName: 'English Premier League', startingPrice: 85, currency: 'USD', ticketsLeft: 2,
-  },
-  {
-    id: 'demo-cat-4', name: 'Real Madrid CF vs FC Barcelona', homeTeam: 'Real Madrid CF', awayTeam: 'FC Barcelona',
-    datetime: '2026-03-15T20:00:00+0000', venue: { id: 'v4', name: 'Santiago Bernabéu', address_line_1: '', address_line_2: '', city: 'Madrid', state: '', postcode: '', country_code: 'ES', latitude: 0, longitude: 0 },
-    leagueId: 'laliga', leagueName: 'Spanish La Liga', startingPrice: 250, currency: 'USD', ticketsLeft: 6,
-  },
-  {
-    id: 'demo-cat-5', name: 'Bayern Munich vs Borussia Dortmund', homeTeam: 'Bayern Munich', awayTeam: 'Borussia Dortmund',
-    datetime: '2026-03-22T17:30:00+0000', venue: { id: 'v5', name: 'Allianz Arena', address_line_1: '', address_line_2: '', city: 'Munich', state: '', postcode: '', country_code: 'DE', latitude: 0, longitude: 0 },
-    leagueId: 'bundesliga', leagueName: 'German Bundesliga', startingPrice: 95, currency: 'USD', ticketsLeft: 10,
-  },
-  {
-    id: 'demo-cat-6', name: 'Juventus vs AC Milan', homeTeam: 'Juventus', awayTeam: 'AC Milan',
-    datetime: '2026-04-05T19:45:00+0000', venue: { id: 'v6', name: 'Allianz Stadium', address_line_1: '', address_line_2: '', city: 'Turin', state: '', postcode: '', country_code: 'IT', latitude: 0, longitude: 0 },
-    leagueId: 'seriea', leagueName: 'Italian Serie A', startingPrice: 110, currency: 'USD', ticketsLeft: 3,
-  },
-];
+// 더미 데이터 제거 — 실데이터만 사용
 
-export default function CategoryPage({ slug, displayName, categoryType }: CategoryPageProps) {
+function mapTixstockEvent(ev: Record<string, unknown>, displayName: string): Match {
+  const venue = (ev.venue as Record<string, unknown>) || {};
+  const name = (ev.name as string) || '';
+  const parts = name.split(/\s+vs?\s+/i);
+  // 최저가: listings에서 계산
+  const listings = (ev.listings as Array<Record<string, unknown>>) || [];
+  let startingPrice = 0;
+  if (listings.length > 0) {
+    const prices = listings
+      .map((l) => {
+        const fv = l.face_value as Record<string, unknown>;
+        return fv ? parseFloat(String(fv.amount || '0')) : 0;
+      })
+      .filter(p => p > 0);
+    if (prices.length > 0) startingPrice = Math.min(...prices);
+  }
+  const listingsCount = (ev.listings_count as number) || listings.length;
+  return {
+    id: String(ev.id), name,
+    homeTeam: parts[0]?.trim() || name,
+    awayTeam: parts[1]?.trim() || '',
+    datetime: (ev.datetime as string) || '',
+    venue: {
+      id: String(venue.id || ''), name: (venue.name as string) || '', address_line_1: '', address_line_2: '',
+      city: (venue.city as string) || '', state: (venue.state as string) || '', postcode: '', country_code: (venue.country_code as string) || '',
+      latitude: 0, longitude: 0,
+    },
+    leagueId: '', leagueName: displayName,
+    startingPrice,
+    currency: 'EUR',
+    ticketsLeft: listingsCount,
+  };
+}
+
+export default function CategoryPage({ slug, displayName, categoryType, categoryId }: CategoryPageProps) {
   const [events, setEvents] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterPerformer, setFilterPerformer] = useState('');
   const [filterLocation, setFilterLocation] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalEvents, setTotalEvents] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    async function load() {
+    async function load(page: number) {
+      setLoading(true);
       try {
-        const res = await fetch(`/api/tixstock/feed?category_name=${encodeURIComponent(displayName)}`);
+        const params = new URLSearchParams({ per_page: '50', page: String(page) });
+        if (categoryId) {
+          params.set('category_id', categoryId);
+        } else {
+          params.set('category_name', displayName);
+        }
+        const res = await fetch(`/api/tixstock/feed?${params}`);
         if (res.ok) {
           const data = await res.json();
-          const items = data.data || [];
-          if (items.length > 0) {
-            setEvents(items.map((ev: Record<string, unknown>) => {
-              const venue = (ev.venue as Record<string, unknown>) || {};
-              const name = (ev.name as string) || '';
-              const parts = name.split(/\s+vs?\s+/i);
-              return {
-                id: String(ev.id), name, homeTeam: parts[0]?.trim() || name, awayTeam: parts[1]?.trim() || '',
-                datetime: (ev.datetime as string) || '', venue: {
-                  id: String(venue.id || ''), name: (venue.name as string) || '', address_line_1: '', address_line_2: '',
-                  city: (venue.city as string) || '', state: (venue.state as string) || '', postcode: '', country_code: (venue.country_code as string) || '',
-                  latitude: 0, longitude: 0,
-                },
-                leagueId: '', leagueName: displayName, startingPrice: (ev.min_ticket_price as number) || 0, currency: (ev.currency as string) || 'USD', ticketsLeft: (ev.total_tickets as number) || 0,
-              };
-            }));
-            setLoading(false);
-            return;
-          }
+          const items: Record<string, unknown>[] = data.data || [];
+          const meta = data.meta || {};
+          setTotalPages(meta.last_page || 1);
+          setTotalEvents(meta.total || items.length);
+          // listings 있는 이벤트만 표시
+          const withTickets = items.filter(ev => {
+            const listings = (ev.listings as unknown[]) || [];
+            const cnt = (ev.listings_count as number) || listings.length;
+            return cnt > 0;
+          });
+          setEvents(withTickets.map(ev => mapTixstockEvent(ev, displayName)));
+          setLoading(false);
+          return;
         }
       } catch (e) {
-        console.warn('API failed, using demo data', e);
+        console.warn('Tixstock feed failed', e);
       }
-      setEvents(demoCategoryEvents);
+      setEvents([]);
       setLoading(false);
     }
-    load();
-  }, [displayName]);
+    load(currentPage);
+  }, [displayName, categoryId, currentPage]);
 
   const heroImg = heroImages[slug] || heroImages['football'];
 
@@ -143,7 +151,7 @@ export default function CategoryPage({ slug, displayName, categoryType }: Catego
         <div className="relative max-w-[1280px] mx-auto px-4 h-full flex flex-col justify-center">
           <p className="text-[14px] text-[#94A3B8] mb-2 uppercase tracking-wider">{categoryType === 'sport' ? 'Sports' : 'Concerts'}</p>
           <h1 className="text-[36px] md:text-[48px] font-extrabold text-white leading-tight">{displayName} Tickets</h1>
-          <p className="text-[16px] text-[#CBD5E1] mt-2">{events.length} events available</p>
+          <p className="text-[16px] text-[#CBD5E1] mt-2">{loading ? 'Loading...' : `${totalEvents} events available`}</p>
         </div>
       </div>
 
@@ -219,7 +227,7 @@ export default function CategoryPage({ slug, displayName, categoryType }: Catego
           {/* Event List */}
           <div className="flex-1">
             <h2 className="text-[18px] font-bold text-[#171717] mb-4">
-              {loading ? 'Loading events...' : `${filtered.length} Events`}
+              {loading ? 'Loading events...' : `${filtered.length} Events${totalPages > 1 ? ` (Page ${currentPage} / ${totalPages})` : ''}`}
             </h2>
 
             {!loading && filtered.length === 0 && (
@@ -263,6 +271,27 @@ export default function CategoryPage({ slug, displayName, categoryType }: Catego
                 );
               })}
             </div>
+
+            {/* Pagination */}
+            {!loading && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Prev
+                </button>
+                <span className="px-4 py-2.5 text-[13px] text-[#6B7280]">{currentPage} / {totalPages}</span>
+                <button
+                  onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  disabled={currentPage >= totalPages}
+                  className="px-4 py-2.5 rounded-[10px] border border-[#E5E7EB] text-[13px] font-semibold text-[#374151] hover:bg-[#F1F5F9] disabled:opacity-40 transition-colors flex items-center gap-1.5"
+                >
+                  Next<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
