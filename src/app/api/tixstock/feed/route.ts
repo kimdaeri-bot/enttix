@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const maxDuration = 30; // Vercel serverless max duration (seconds)
+
 const BASE_URL = process.env.TIXSTOCK_BASE_URL!;
 const TOKEN = process.env.TIXSTOCK_TOKEN!;
 const INTERNAL_URL = 'https://sandbox-internal-2.tixstock.com/v1';

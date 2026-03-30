@@ -94,7 +94,7 @@ export default function CategoryPage({ slug, displayName, categoryType, category
     async function load(page: number) {
       setLoading(true);
       try {
-        const params = new URLSearchParams({ per_page: '50', page: String(page) });
+        const params = new URLSearchParams({ per_page: '10', page: String(page) });
         if (categoryId) {
           params.set('category_id', categoryId);
         } else {
