@@ -1,3 +1,6 @@
+// ISR: 5분마다 재생성 (매 요청 SSR → Vercel 엣지 캐시)
+export const revalidate = 300;
+
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import TrendingCard from '@/components/TrendingCard';

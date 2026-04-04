@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface TrendingCardProps {
   id: string;
@@ -23,7 +24,7 @@ export default function TrendingCard({ id, homeTeam, awayTeam, datetime, startin
     <Link href={`/event/${id}`} className="block min-w-[240px] max-w-[280px] flex-shrink-0">
       <div className="relative rounded-[16px] overflow-hidden aspect-[4/5] group cursor-pointer">
         {/* Background Image */}
-        <img src={imageUrl} alt={`${homeTeam} vs ${awayTeam}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        <Image src={imageUrl} alt={`${homeTeam} vs ${awayTeam}`} fill sizes="(max-width: 768px) 100vw, 300px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 

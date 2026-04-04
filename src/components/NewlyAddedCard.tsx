@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface NewlyAddedCardProps {
   id: string;
@@ -18,7 +19,7 @@ export default function NewlyAddedCard({ id, homeTeam, awayTeam, datetime, start
   return (
     <Link href={`/event/${id}`} className="block min-w-[220px] max-w-[260px] flex-shrink-0">
       <div className="relative rounded-[16px] overflow-hidden aspect-[3/4] group cursor-pointer">
-        <img src={imageUrl} alt={`${homeTeam} vs ${awayTeam}`} className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        <Image src={imageUrl} alt={`${homeTeam} vs ${awayTeam}`} fill sizes="(max-width: 768px) 50vw, 200px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Ticket badge */}
