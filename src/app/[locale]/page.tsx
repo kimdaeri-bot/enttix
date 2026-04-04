@@ -83,16 +83,100 @@ const MAN_CITY_MATCH = {
   ticketsLeft: 4,
 };
 
+// 추가 EPL 경기 데이터 (실제 시즌 일정 기반)
+const EXTRA_EPL_MATCHES = [
+  {
+    id: 'epl-crystal-palace-newcastle-apr12',
+    name: 'Crystal Palace FC vs Newcastle United FC',
+    homeTeam: 'Crystal Palace FC',
+    awayTeam: 'Newcastle United FC',
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'selhurst', name: 'Selhurst Park Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.3983, longitude: -0.0855 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 83.91,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-sunderland-tottenham-apr12',
+    name: 'Sunderland AFC vs Tottenham Hotspur FC',
+    homeTeam: 'Sunderland AFC',
+    awayTeam: 'Tottenham Hotspur FC',
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'stadium-of-light', name: 'Stadium of Light', address_line_1: '', address_line_2: '', city: 'Sunderland', state: 'England', postcode: '', country_code: 'GB', latitude: 54.9144, longitude: -1.3882 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 79.04,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-nottingham-astonvilla-apr12',
+    name: 'Nottingham Forest FC vs Aston Villa FC',
+    homeTeam: 'Nottingham Forest FC',
+    awayTeam: 'Aston Villa FC',
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'city-ground', name: 'City Ground', address_line_1: '', address_line_2: '', city: 'Nottingham', state: 'England', postcode: '', country_code: 'GB', latitude: 52.9400, longitude: -1.1327 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 0,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-chelsea-mancity-apr12',
+    name: 'Chelsea FC vs Manchester City FC',
+    homeTeam: 'Chelsea FC',
+    awayTeam: 'Manchester City FC',
+    datetime: '2026-04-12T16:30:00+0100',
+    venue: { id: 'stamford-bridge', name: 'Stamford Bridge', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.4817, longitude: -0.1910 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 211.60,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-arsenal-liverpool-apr18',
+    name: 'Arsenal FC vs Liverpool FC',
+    homeTeam: 'Arsenal FC',
+    awayTeam: 'Liverpool FC',
+    datetime: '2026-04-18T17:30:00+0100',
+    venue: { id: 'emirates', name: 'Emirates Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.5549, longitude: -0.1084 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 189.50,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-manutd-chelsea-apr25',
+    name: 'Manchester United FC vs Chelsea FC',
+    homeTeam: 'Manchester United FC',
+    awayTeam: 'Chelsea FC',
+    datetime: '2026-04-25T15:00:00+0100',
+    venue: { id: 'old-trafford', name: 'Old Trafford', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4631, longitude: -2.2913 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 145.00,
+    currency: 'EUR',
+    ticketsLeft: 6,
+  },
+];
+
 export default async function Home() {
   const t = await getTranslations('home');
   const apiMatches = await getMatches({ listing_available: "true", per_page: '50' });
   // Man City 맨 앞에 추가, 중복 제거
   const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
 
-  // Match Schedule: EPL only, sorted by date ascending
-  const eplSchedule = matches
-    .filter(m => m.leagueId === 'epl' || m.leagueName === 'English Premier League')
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
+  // Match Schedule: EPL only, sorted by date ascending + 추가 경기 병합
+  const extraIds = new Set(EXTRA_EPL_MATCHES.map(m => m.id));
+  const eplSchedule = [
+    ...matches.filter(m => (m.leagueId === 'epl' || m.leagueName === 'English Premier League') && !extraIds.has(m.id)),
+    ...EXTRA_EPL_MATCHES,
+  ].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
   // Newly Added: all matches, max 20
   const newlyAddedMatches = matches.slice(0, 20);
@@ -218,18 +302,9 @@ export default async function Home() {
             </Link>
           </div>
 
-          {/* Grid Header */}
-          <div className="hidden md:grid grid-cols-[60px_1fr_200px_120px_40px] gap-4 px-6 pb-3 mt-6 text-[11px] font-semibold text-[#9CA3AF] tracking-[0.5px] border-b border-[#E5E7EB]">
-            <span>{t('event')}</span>
-            <span></span>
-            <span>{t('location')}</span>
-            <span className="text-right">{t('price')}</span>
-            <span></span>
-          </div>
-
           {/* Match Rows */}
-          <div className="bg-white rounded-[16px] overflow-hidden">
-            {eplSchedule.slice(0, 10).map(m => (
+          <div className="mt-6">
+            {eplSchedule.slice(0, 15).map(m => (
               <MatchRow
                 key={m.id}
                 id={m.id}
