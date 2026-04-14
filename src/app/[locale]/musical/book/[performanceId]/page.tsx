@@ -408,16 +408,28 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
   /* LTD Embedded Seating Plan */
   useEffect(() => {
-    // DOM에 #seatplan-main이 없을 때(로딩 중)는 skip — loading=false 후 re-run됨
     if (loading) return;
-    const seatplanEl = document.getElementById('seatplan-main');
-    if (!seatplanEl) return;
 
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
     const perfKey = `${performanceId}`;
     if (w.__seatPlanPerf === perfKey) return;
-    // Note: flag is set after script loads (for fresh load) or immediately (if script already in DOM)
+
+    // SPA 네비게이션 시 DOM 커밋 보장 — rAF 후 체크, 없으면 재시도
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout>;
+
+    // AbortController로 이벤트 리스너 수명 관리
+    const abortCtrl = new AbortController();
+    const { signal } = abortCtrl;
+
+    const tryInit = () => {
+      if (cancelled) return;
+      const seatplanEl = document.getElementById('seatplan-main');
+      if (!seatplanEl) {
+        retryTimer = setTimeout(tryInit, 100);
+        return;
+      }
 
     type LTDSeat = { Tid?: string; SP?: number; A?: string; R?: string; S?: string; D?: string; SN?: string };
     type LTDSeatDetail = { seat?: LTDSeat; selection?: LTDSeat[] };
@@ -491,11 +503,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const getLTDInstance = (): LTDInstance | undefined =>
       (window as unknown as { LTD?: { SeatPlan?: { instance?: LTDInstance } } }).LTD?.SeatPlan?.instance;
 
-    const triggerZoomReset = () => {
-      const btn = document.querySelector('.ltd-seatplan__zoomreset') as HTMLElement | null;
-      if (btn) btn.click();
-    };
-
     // Resize the seat map container to fit the full map, then zoom-to-fit
     const resizeContainerToFitMap = () => {
       const inst = getLTDInstance();
@@ -507,12 +514,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       const el = document.getElementById('seatplan-main');
       if (!el) return;
       const cw = el.offsetWidth || state.containerWidth || 800;
-      // canvasFillMethod:'cover' → scale = cw/mapW → canvas height = mapH * cw/mapW
       const neededH = Math.ceil(cw * mapH / mapW) + 200;
       const outerEl = el.closest('[data-seat-container]') as HTMLElement | null;
       if (outerEl) {
         outerEl.style.height = `${neededH}px`;
-        // After DOM update, force LTD to redraw at new dimensions
         requestAnimationFrame(() => {
           draw?.fitToScreen?.();
           setTimeout(() => { draw?.fitToScreen?.(); draw?.redraw?.(); }, 300);
@@ -545,12 +550,12 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     };
     const onBasketSubmit = () => { goStep2Ref.current(); };
 
-    document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
-    document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
-    document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
-    document.addEventListener('LTD.SeatPlan.OnReady', onReady);
-    document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
-    document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
+    document.addEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection, { signal });
+    document.addEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection, { signal });
+    document.addEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished, { signal });
+    document.addEventListener('LTD.SeatPlan.OnReady', onReady, { signal });
+    document.addEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished, { signal });
+    document.addEventListener('LTD.Basket.OnSubmit', onBasketSubmit, { signal });
 
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
@@ -567,7 +572,6 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
     };
 
-    // Init helper — clears window flag on failure so retry is possible
     const doInit = () => {
       const ltd = (window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => void } } }).LTD;
       if (ltd?.SeatPlan) {
@@ -575,7 +579,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
           ltd.SeatPlan.init(initOpts);
           return true;
         } catch {
-          w.__seatPlanPerf = null; // allow retry on error
+          w.__seatPlanPerf = null;
           return false;
         }
       }
@@ -586,18 +590,15 @@ function BookingContent({ performanceId }: { performanceId: string }) {
 
     const startInit = () => {
       if (doInit()) return;
-      // poll until LTD is ready (handles async script + cached script scenarios)
       const poll = setInterval(() => { if (doInit()) clearInterval(poll); }, 200);
       setTimeout(() => clearInterval(poll), 15000);
     };
 
     const existingScript = document.querySelector(`script[src="${LTD_SCRIPT_SRC}"]`);
     if (existingScript) {
-      // Script already in DOM (cached) — set flag and poll until LTD ready
       w.__seatPlanPerf = perfKey;
       startInit();
     } else {
-      // Fresh load — set flag only after script successfully loads
       const script = document.createElement('script');
       script.src = LTD_SCRIPT_SRC;
       script.async = true;
@@ -608,16 +609,15 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       script.onerror = () => { w.__seatPlanPerf = null; };
       document.head.appendChild(script);
     }
+    }; // end tryInit
+
+    // DOM 커밋 후 초기화 시작
+    requestAnimationFrame(() => tryInit());
 
     return () => {
-      clearTimeout(spinnerTimeout);
-      document.removeEventListener('LTD.SeatPlan.OnSeatSelected', updateSelection);
-      document.removeEventListener('LTD.SeatPlan.OnSeatUnselected', updateSelection);
-      document.removeEventListener('LTD.SeatPlan.OnAvailabilityFinished', onAvailabilityFinished);
-      document.removeEventListener('LTD.SeatPlan.OnReady', onReady);
-      document.removeEventListener('LTD.SeatPlan.OnDrawFinished', onDrawFinished);
-      document.removeEventListener('LTD.Basket.OnSubmit', onBasketSubmit);
-      // Clear flag so next mount re-initializes the seat plan
+      cancelled = true;
+      clearTimeout(retryTimer);
+      abortCtrl.abort(); // 모든 이벤트 리스너 제거
       w.__seatPlanPerf = null;
     };
   }, [performanceId, loading]);
