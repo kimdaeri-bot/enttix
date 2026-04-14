@@ -339,8 +339,8 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
-          {/* Popular dropdown */}
-          <div className="relative" onMouseEnter={() => handleEnter('popular')} onMouseLeave={handleLeave}>
+          {/* Popular dropdown — 임시 숨김 */}
+          {/* <div className="relative" onMouseEnter={() => handleEnter('popular')} onMouseLeave={handleLeave}>
             <Link
               href="/popular"
               className="px-5 py-2.5 rounded-full text-[14px] font-semibold leading-[20px] tracking-[-0.15px] text-[#DBEAFE] hover:text-white transition-colors flex items-center gap-1"
@@ -349,7 +349,7 @@ export default function Header({ transparent = false, hideSearch = false }: { tr
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="mt-0.5"><path d="M6 9l6 6 6-6"/></svg>
             </Link>
             {openDropdown === 'popular' && <PopularDropdown onClose={() => setOpenDropdown(null)} />}
-          </div>
+          </div> */}
 
           {/* Sports dropdown */}
           <div className="relative" onMouseEnter={() => handleEnter('sports')} onMouseLeave={handleLeave}>
