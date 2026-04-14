@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enttix Event Cards</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #F0F4F8;
+    font-family: 'Inter', sans-serif;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+  h1 { color: #1a1f2e; font-size: 24px; font-weight: 700; }
+  .cards { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .card {
+    width: 280px;
+    height: 380px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  .card-bg {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.55) saturate(1.1);
+    transition: filter 0.3s;
+  }
+  .card:hover .card-bg { filter: brightness(0.65) saturate(1.2); }
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(10,15,30,0.92) 0%, rgba(10,15,30,0.3) 50%, transparent 100%);
+  }
+  .card-content {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 24px;
+    color: white;
+  }
+  .badge {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: rgba(34,197,94,0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(34,197,94,0.3);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+  .date {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .matchup {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+  .vs {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  .venue {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 16px;
+  }
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .price {
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .price span { font-size: 12px; font-weight: 500; opacity: 0.7; }
+  .cta {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(43,127,255,0.15);
+    border: 1px solid rgba(43,127,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #60a5fa;
+  }
+  .cta svg { width: 16px; height: 16px; }
+  .note {
+    color: #64748b;
+    font-size: 13px;
+    text-align: center;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<h1>Popular Events — Card Designs</h1>
+<p class="note">각 카드 우클릭 → 이미지 저장, 또는 전체 스크린샷 후 크롭해서 사용.<br>배경 이미지는 Unsplash License (상업적 사용 무료).</p>
+
+<div class="cards">
+
+  <!-- Card 1: Champions League -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge">TICKET</div>
+      <div class="date">APR 9, 2026 · 20:00</div>
+      <div class="matchup">Liverpool FC vs<br>Paris Saint-Germain</div>
+      <div class="vs">CHAMPIONS LEAGUE</div>
+      <div class="venue">📍 Parc des Princes, Paris</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$261</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: La Liga -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge">TICKET</div>
+      <div class="date">APR 8, 2026 · 20:00</div>
+      <div class="matchup">Atlético Madrid vs<br>FC Barcelona</div>
+      <div class="vs">LA LIGA</div>
+      <div class="venue">📍 Camp Nou, Barcelona</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$291</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Monte Carlo Masters -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1530549387789-4c1017266635?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge">TICKET</div>
+      <div class="date">APR 10, 2026 · 11:00</div>
+      <div class="matchup">Rolex Monte-Carlo<br>Masters</div>
+      <div class="vs">ATP 1000</div>
+      <div class="venue">📍 Monte-Carlo Country Club</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$343</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: Europa League -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1459865264687-595d652de67e?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge">TICKET</div>
+      <div class="date">APR 8, 2026 · 17:45</div>
+      <div class="matchup">Real Betis vs<br>SC Braga</div>
+      <div class="vs">EUROPA LEAGUE</div>
+      <div class="venue">📍 Estádio Municipal, Braga</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$178</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 5: Premier League -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge">TICKET</div>
+      <div class="date">APR 9, 2026 · 20:00</div>
+      <div class="matchup">Crystal Palace vs<br>ACF Fiorentina</div>
+      <div class="vs">PREMIER LEAGUE</div>
+      <div class="venue">📍 Selhurst Park, London</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$62</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 6: Concert -->
+  <div class="card">
+    <div class="card-bg" style="background-image:url('https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=600&q=80')"></div>
+    <div class="card-overlay"></div>
+    <div class="card-content">
+      <div class="badge" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.3);color:#c084fc;">CONCERT</div>
+      <div class="date">APR 12, 2026 · 19:30</div>
+      <div class="matchup">Live at<br>The Brighton Centre</div>
+      <div class="vs">ENTERTAINMENT</div>
+      <div class="venue">📍 Brighton Centre, Brighton</div>
+      <div class="bottom-row">
+        <div class="price">From <span>$115</span></div>
+        <div class="cta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

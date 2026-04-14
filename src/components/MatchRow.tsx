@@ -12,7 +12,7 @@ interface MatchRowProps {
   ticketsLeft: number;
 }
 
-export default function MatchRow({ id, homeTeam, awayTeam, datetime, venue, city, startingPrice, ticketsLeft }: MatchRowProps) {
+export default function MatchRow({ id, homeTeam, awayTeam, datetime, venue, city, startingPrice, currency, ticketsLeft }: MatchRowProps) {
   const date = new Date(datetime);
   const month = date.toLocaleDateString('en-US', { month: 'short' });
   const day = date.getDate();
