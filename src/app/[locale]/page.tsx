@@ -33,7 +33,7 @@ const LEAGUE_TABS = [
   { id: 'nba', label: 'NBA', img: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=200&h=200&fit=crop' },
 ];
 
-const TREND_TAGS = ['Premier League', 'Champions League Final', 'F1 Monaco GP', 'El Clasico', 'Serie A'];
+const TREND_TAGS = ['Premier League', 'F1 Las Vegas', 'NBA Finals', 'El Clasico', 'Champions League'];
 
 const STADIUM_IMAGES = [
   'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500&h=600&fit=crop',
@@ -71,112 +71,117 @@ const REVIEWS = [
 
 const TRENDING_LEAGUES = ['Premier League', 'Formula 1', 'NBA', 'La Liga', 'Champions League'];
 
-// 2026년 5월 주요 경기 (시즌 최종전 & 빅매치)
-const FEATURED_MAY_MATCHES = [
+// Man City vs Newcastle — Diplat Co 리스팅 (Tixstock 내부 API에서 확인된 실제 데이터)
+const MAN_CITY_MATCH = {
+  id: '01kdmq9xzg3fpwa884q65vpcrs',
+  name: 'Manchester City FC vs Newcastle United FC',
+  homeTeam: 'Manchester City FC',
+  awayTeam: 'Newcastle United FC',
+  datetime: '2026-02-21T15:00:00+0000',
+  venue: { id: 'etihad', name: 'Etihad Stadium', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4831, longitude: -2.2004 },
+  leagueId: 'epl',
+  leagueName: 'English Premier League',
+  startingPrice: 111,
+  currency: 'GBP',
+  ticketsLeft: 4,
+};
+
+// 추가 EPL 경기 데이터 (실제 시즌 일정 기반)
+const EXTRA_EPL_MATCHES = [
   {
-    id: 'epl-arsenal-newcastle-may3',
-    name: 'Arsenal FC vs Newcastle United FC',
-    homeTeam: 'Arsenal FC',
+    id: 'epl-crystal-palace-newcastle-apr12',
+    name: 'Crystal Palace FC vs Newcastle United FC',
+    homeTeam: 'Crystal Palace FC',
     awayTeam: 'Newcastle United FC',
-    datetime: '2026-05-03T15:00:00+0100',
-    venue: { id: 'emirates', name: 'Emirates Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.5549, longitude: -0.1084 },
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'selhurst', name: 'Selhurst Park Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.3983, longitude: -0.0855 },
     leagueId: 'epl',
     leagueName: 'English Premier League',
-    startingPrice: 175.00,
+    startingPrice: 83.91,
     currency: 'EUR',
-    ticketsLeft: 8,
+    ticketsLeft: 0,
   },
   {
-    id: 'epl-liverpool-manutd-may9',
-    name: 'Liverpool FC vs Manchester United FC',
-    homeTeam: 'Liverpool FC',
-    awayTeam: 'Manchester United FC',
-    datetime: '2026-05-09T17:30:00+0100',
-    venue: { id: 'anfield', name: 'Anfield', address_line_1: '', address_line_2: '', city: 'Liverpool', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4308, longitude: -2.9608 },
-    leagueId: 'epl',
-    leagueName: 'English Premier League',
-    startingPrice: 220.00,
-    currency: 'EUR',
-    ticketsLeft: 5,
-  },
-  {
-    id: 'epl-chelsea-tottenham-may10',
-    name: 'Chelsea FC vs Tottenham Hotspur FC',
-    homeTeam: 'Chelsea FC',
+    id: 'epl-sunderland-tottenham-apr12',
+    name: 'Sunderland AFC vs Tottenham Hotspur FC',
+    homeTeam: 'Sunderland AFC',
     awayTeam: 'Tottenham Hotspur FC',
-    datetime: '2026-05-10T15:00:00+0100',
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'stadium-of-light', name: 'Stadium of Light', address_line_1: '', address_line_2: '', city: 'Sunderland', state: 'England', postcode: '', country_code: 'GB', latitude: 54.9144, longitude: -1.3882 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 79.04,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-nottingham-astonvilla-apr12',
+    name: 'Nottingham Forest FC vs Aston Villa FC',
+    homeTeam: 'Nottingham Forest FC',
+    awayTeam: 'Aston Villa FC',
+    datetime: '2026-04-12T14:00:00+0100',
+    venue: { id: 'city-ground', name: 'City Ground', address_line_1: '', address_line_2: '', city: 'Nottingham', state: 'England', postcode: '', country_code: 'GB', latitude: 52.9400, longitude: -1.1327 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 0,
+    currency: 'EUR',
+    ticketsLeft: 0,
+  },
+  {
+    id: 'epl-chelsea-mancity-apr12',
+    name: 'Chelsea FC vs Manchester City FC',
+    homeTeam: 'Chelsea FC',
+    awayTeam: 'Manchester City FC',
+    datetime: '2026-04-12T16:30:00+0100',
     venue: { id: 'stamford-bridge', name: 'Stamford Bridge', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.4817, longitude: -0.1910 },
     leagueId: 'epl',
     leagueName: 'English Premier League',
-    startingPrice: 165.00,
+    startingPrice: 211.60,
     currency: 'EUR',
-    ticketsLeft: 12,
+    ticketsLeft: 0,
   },
   {
-    id: 'epl-mancity-arsenal-may17',
-    name: 'Manchester City FC vs Arsenal FC',
-    homeTeam: 'Manchester City FC',
-    awayTeam: 'Arsenal FC',
-    datetime: '2026-05-17T15:00:00+0100',
-    venue: { id: 'etihad', name: 'Etihad Stadium', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4831, longitude: -2.2004 },
+    id: 'epl-arsenal-liverpool-apr18',
+    name: 'Arsenal FC vs Liverpool FC',
+    homeTeam: 'Arsenal FC',
+    awayTeam: 'Liverpool FC',
+    datetime: '2026-04-18T17:30:00+0100',
+    venue: { id: 'emirates', name: 'Emirates Stadium', address_line_1: '', address_line_2: '', city: 'London', state: 'England', postcode: '', country_code: 'GB', latitude: 51.5549, longitude: -0.1084 },
     leagueId: 'epl',
     leagueName: 'English Premier League',
-    startingPrice: 250.00,
+    startingPrice: 189.50,
     currency: 'EUR',
-    ticketsLeft: 3,
+    ticketsLeft: 0,
   },
   {
-    id: 'ucl-final-may30',
-    name: 'UEFA Champions League Final 2026',
-    homeTeam: 'TBD',
-    awayTeam: 'TBD',
-    datetime: '2026-05-30T20:00:00+0200',
-    venue: { id: 'puskas-arena', name: 'Puskás Aréna', address_line_1: '', address_line_2: '', city: 'Budapest', state: 'Hungary', postcode: '', country_code: 'HU', latitude: 47.5027, longitude: 19.0981 },
-    leagueId: 'ucl',
-    leagueName: 'Champions League',
-    startingPrice: 450.00,
+    id: 'epl-manutd-chelsea-apr25',
+    name: 'Manchester United FC vs Chelsea FC',
+    homeTeam: 'Manchester United FC',
+    awayTeam: 'Chelsea FC',
+    datetime: '2026-04-25T15:00:00+0100',
+    venue: { id: 'old-trafford', name: 'Old Trafford', address_line_1: '', address_line_2: '', city: 'Manchester', state: 'England', postcode: '', country_code: 'GB', latitude: 53.4631, longitude: -2.2913 },
+    leagueId: 'epl',
+    leagueName: 'English Premier League',
+    startingPrice: 145.00,
     currency: 'EUR',
-    ticketsLeft: 2,
-  },
-  {
-    id: 'f1-monaco-may24',
-    name: 'Formula 1 Monaco Grand Prix 2026',
-    homeTeam: 'Monaco GP',
-    awayTeam: '',
-    datetime: '2026-05-24T14:00:00+0200',
-    venue: { id: 'monaco-circuit', name: 'Circuit de Monaco', address_line_1: '', address_line_2: '', city: 'Monte Carlo', state: 'Monaco', postcode: '', country_code: 'MC', latitude: 43.7347, longitude: 7.4206 },
-    leagueId: 'f1',
-    leagueName: 'Formula 1',
-    startingPrice: 380.00,
-    currency: 'EUR',
-    ticketsLeft: 10,
+    ticketsLeft: 6,
   },
 ];
 
 export default async function Home() {
   const t = await getTranslations('home');
   const apiMatches = await getMatches({ listing_available: "true", per_page: '50' });
-  const now = new Date();
+  // Man City 맨 앞에 추가, 중복 제거
+  const matches = [MAN_CITY_MATCH, ...apiMatches.filter(m => m.id !== MAN_CITY_MATCH.id)];
 
-  // 과거 경기 필터링 — 오늘 이후 경기만
-  const futureApiMatches = apiMatches.filter(m => new Date(m.datetime) >= now);
+  // Match Schedule: EPL only, sorted by date ascending + 추가 경기 병합
+  const extraIds = new Set(EXTRA_EPL_MATCHES.map(m => m.id));
+  const eplSchedule = [
+    ...matches.filter(m => (m.leagueId === 'epl' || m.leagueName === 'English Premier League') && !extraIds.has(m.id)),
+    ...EXTRA_EPL_MATCHES,
+  ].sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
 
-  // 5월 피처드 경기 병합, 중복 제거
-  const featuredIds = new Set(FEATURED_MAY_MATCHES.map(m => m.id));
-  const matches = [
-    ...FEATURED_MAY_MATCHES,
-    ...futureApiMatches.filter(m => !featuredIds.has(m.id)),
-  ];
-
-  // Match Schedule: 정렬
-  const eplSchedule = matches
-    .filter(m => m.leagueId === 'epl' || m.leagueName === 'English Premier League')
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime());
-
-  // Trending: 전체 리그
-  const trendingMatches = matches.slice(0, 5);
-
-  // Newly Added: max 20
+  // Newly Added: all matches, max 20
   const newlyAddedMatches = matches.slice(0, 20);
   return (
     <main className="min-h-screen bg-[#F5F7FA]">
@@ -267,7 +272,7 @@ export default async function Home() {
               </div>
             </div>
             <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide">
-              {trendingMatches.map((m, i) => (
+              {matches.slice(0, 5).map((m, i) => (
                 <TrendingCard
                   key={m.id}
                   id={m.id}
