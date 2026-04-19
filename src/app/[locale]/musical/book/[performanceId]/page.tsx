@@ -413,9 +413,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     // Use window flag to survive Strict Mode double-mount
     const w = window as unknown as Record<string, unknown>;
     const perfKey = `${performanceId}`;
-    if (w.__seatPlanPerf === perfKey) return;
+    // 항상 초기화 허용 — SPA 네비게이션/뒤로가기/날짜 변경 시에도 좌석맵 리프레시
+    w.__seatPlanPerf = null;
 
-    // SPA 네비게이션 시 DOM 커밋 보장 — rAF 후 체크, 없으면 재시도
+    // SPA 네비게이션 시 DOM 커밋 보장 — 충분한 대기 + 폴링
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout>;
 
@@ -426,8 +427,9 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const tryInit = () => {
       if (cancelled) return;
       const seatplanEl = document.getElementById('seatplan-main');
-      if (!seatplanEl) {
-        retryTimer = setTimeout(tryInit, 100);
+      // DOM이 아직 마운트 안 됐거나 내부가 비어있으면 재시도
+      if (!seatplanEl || !seatplanEl.offsetParent) {
+        retryTimer = setTimeout(tryInit, 150);
         return;
       }
 
@@ -530,14 +532,29 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       resizeContainerToFitMap();
       if (drawFixApplied) return;
       drawFixApplied = true;
-      const inst = getLTDInstance();
-      const avail = inst?.availability;
-      if (avail && avail._done === 0) {
-        avail._firstFetch = undefined;
-        avail._attempts = 3;
-        avail.fetch(true);
-        setTimeout(() => inst?.draw?.redraw(), 2000);
-      }
+      // Availability 재시도 — 여러 번 폴링하며 완료 확인
+      let availRetryCount = 0;
+      const ensureAvailability = () => {
+        if (cancelled || availRetryCount > 10) return;
+        availRetryCount++;
+        const inst = getLTDInstance();
+        const avail = inst?.availability as Record<string, unknown> | undefined;
+        if (!avail) {
+          setTimeout(ensureAvailability, 500);
+          return;
+        }
+        const done = avail._done as number | undefined;
+        if (done === undefined || done === 0) {
+          avail._firstFetch = undefined;
+          avail._attempts = 3;
+          (avail as { fetch: (b: boolean) => void }).fetch(true);
+          setTimeout(() => {
+            inst?.draw?.redraw?.();
+            ensureAvailability();
+          }, 1500);
+        }
+      };
+      setTimeout(ensureAvailability, 300);
     };
 
     const onAvailabilityFinished = () => {
@@ -611,13 +628,18 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     }
     }; // end tryInit
 
-    // DOM 커밋 후 초기화 시작
-    requestAnimationFrame(() => tryInit());
+    // DOM 커밋 후 초기화 시작 — rAF 2번 연속으로 hydration 완료 보장
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(tryInit, 50);
+    }));
 
     return () => {
       cancelled = true;
       clearTimeout(retryTimer);
       abortCtrl.abort(); // 모든 이벤트 리스너 제거
+      // 기존 LTD 인스턴스 정리
+      const ltd = (window as unknown as { LTD?: { SeatPlan?: { instance?: { destroy?: () => void } } } }).LTD;
+      try { ltd?.SeatPlan?.instance?.destroy?.(); } catch {}
       w.__seatPlanPerf = null;
     };
   }, [performanceId, loading]);
