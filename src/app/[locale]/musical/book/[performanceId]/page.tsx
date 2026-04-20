@@ -558,10 +558,16 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     };
 
     const onAvailabilityFinished = () => {
+      console.log('[LTD] OnAvailabilityFinished fired');
       hideSpinner();
-      setTimeout(() => getLTDInstance()?.draw?.redraw(), 100);
+      setTimeout(() => {
+        getLTDInstance()?.draw?.redraw();
+        // 강제 redraw 한 번 더
+        setTimeout(() => getLTDInstance()?.draw?.redraw(), 500);
+      }, 100);
     };
     const onReady = () => {
+      console.log('[LTD] OnReady fired');
       hideSpinner();
       setTimeout(resizeContainerToFitMap, 300);
     };
@@ -583,7 +589,7 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       event: { forceScrollY: true, scrollMove: false, scrollZoom: true, doubletapZoom: true },
       behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
       url: {
-        availability: `/api/ltd/availability?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
+        availability: `https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx?_=${Date.now()}&l=en-GB&p=${performanceId}&s=false&a=775854e9-b102-48d9-99bc-4b288a67b538`,
         scheme: `/api/ltd/scheme`,
       },
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
