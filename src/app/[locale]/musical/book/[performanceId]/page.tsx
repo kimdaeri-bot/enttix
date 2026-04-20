@@ -583,16 +583,14 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
-      ctx: seatplanEl,
+      displayFacePrice: false,
+      filterPriceBands: true,
       locale: 'en-GB',
-      canvasFillMethod: 'cover',
-      event: { forceScrollY: true, scrollMove: false, scrollZoom: true, doubletapZoom: true },
+      event: { doubletapZoom: true, scrollZoom: false, scrollMove: true },
       behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
       url: {
-        // Base URL only — library appends ?l=&p=&s=&a= automatically
-        // spdp accepts shorthand params + has CORS * → direct fetch works
-        availability: 'https://spdp.londontheatredirect.com/GetSeatingPlanAvailability.ashx',
-        // Scheme needs proxy: spdp scheme rejects shorthand params (403), only accepts full names
+        // Scheme needs proxy: spdp rejects shorthand params (403)
+        // Library sends ?locale=&performanceId=&clientId= which works with our proxy
         scheme: '/api/ltd/scheme',
       },
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
