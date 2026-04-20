@@ -583,23 +583,33 @@ function BookingContent({ performanceId }: { performanceId: string }) {
     const initOpts = {
       clientId: '775854e9-b102-48d9-99bc-4b288a67b538',
       performanceId: performanceId,
+      ctx: '#seatplan-main',
       displayFacePrice: false,
       filterPriceBands: true,
-      locale: 'en-GB',
-      event: { doubletapZoom: true, scrollZoom: false, scrollMove: true },
+      canvasFillMethod: 'cover',
+      stretchToCanvas: true,
+      margin: 60,
+      event: { doubletapZoom: true, forceScrollY: false, scrollMove: true, scrollZoom: false },
       behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
-      // No url overrides — library calls spdp directly with full param names
-      // scheme: locale/performanceId/clientId (full names) → 200 OK
-      // availability: l/p/s/a (shorthand) → 200 OK, CORS * → fetch works
-      // scheme proxy NOT needed: spdp accepts full params + has CORS *
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
     };
 
     const doInit = () => {
-      const ltd = (window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => void } } }).LTD;
+      const ltd = (window as unknown as { LTD?: { SeatPlan?: { init: (opts: Record<string, unknown>) => Promise<{ wrap: HTMLElement }> | void } } }).LTD;
       if (ltd?.SeatPlan) {
         try {
-          ltd.SeatPlan.init(initOpts);
+          const container = document.getElementById('seatplan-main');
+          if (container) container.innerHTML = '';
+          const result = ltd.SeatPlan.init(initOpts);
+          // LTD official pattern: init returns { wrap } — append to container
+          if (result && typeof result.then === 'function') {
+            result.then((r: { wrap: HTMLElement }) => {
+              if (container && r?.wrap) {
+                container.innerHTML = '';
+                container.appendChild(r.wrap);
+              }
+            }).catch(() => {});
+          }
           return true;
         } catch {
           w.__seatPlanPerf = null;
