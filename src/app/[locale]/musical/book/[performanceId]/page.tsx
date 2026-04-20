@@ -588,11 +588,10 @@ function BookingContent({ performanceId }: { performanceId: string }) {
       locale: 'en-GB',
       event: { doubletapZoom: true, scrollZoom: false, scrollMove: true },
       behavior: { formatPrice: (num: number) => `£${num.toFixed(2)}` },
-      url: {
-        // Scheme needs proxy: spdp rejects shorthand params (403)
-        // Library sends ?locale=&performanceId=&clientId= which works with our proxy
-        scheme: '/api/ltd/scheme',
-      },
+      // No url overrides — library calls spdp directly with full param names
+      // scheme: locale/performanceId/clientId (full names) → 200 OK
+      // availability: l/p/s/a (shorthand) → 200 OK, CORS * → fetch works
+      // scheme proxy NOT needed: spdp accepts full params + has CORS *
       i18n: { basket: { addSingle: 'Reserve %d seat', addMultiple: 'Reserve %d seats', add: 'Proceed to Booking →' } },
     };
 
