@@ -31,6 +31,9 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    if (!Array.isArray(body) || body.length === 0) {
+      return NextResponse.json({ error: 'Empty data not allowed' }, { status: 400, headers: corsHeaders });
+    }
     const getRes = await fetch(API, {
       headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json' },
     });
