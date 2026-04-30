@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json' },
     });
     const existing = await getRes.json();
-    const content = Buffer.from(unescape(encodeURIComponent(JSON.stringify(body, null, 2)))).toString('base64');
+    const content = Buffer.from(JSON.stringify(body, null, 2), 'utf-8').toString('base64');
     const putRes = await fetch(API, {
       method: 'PUT',
       headers: { Authorization: `token ${GITHUB_TOKEN}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
